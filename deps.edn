@@ -1,14 +1,15 @@
 {:paths ["src" "resources"]
- :deps {org.clojure/clojure {:mvn/version "1.10.1"}}
+ :deps  {org.clojure/clojure       {:mvn/version "1.10.1"}
+         io.forward/clojure-mail   {:mvn/version "1.0.8"}
+         http-kit                  {:mvn/version "2.3.0"}
+         clj-rss                   {:mvn/version "0.2.5"}
+         hiccup                    {:mvn/version "1.0.5"}
+         metosin/reitit            {:mvn/version "0.5.1"}
+         metosin/reitit-ring       {:mvn/version "0.5.1"}
+         metosin/reitit-middleware {:mvn/version "0.5.1"}
+         ring-cors                 {:mvn/version "0.1.13"}
+         clojure.java-time         {:mvn/version "0.3.2"}}
  :aliases
- {:test {:extra-paths ["test"]
-         :extra-deps {org.clojure/test.check {:mvn/version "1.0.0"}}}
-  :runner
-  {:extra-deps {com.cognitect/test-runner
-                {:git/url "https://github.com/cognitect-labs/test-runner"
-                 :sha "f7ef16dc3b8332b0d77bc0274578ad5270fbfedd"}}
-   :main-opts ["-m" "cognitect.test-runner"
-               "-d" "test"]}
-  :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.0.94"}}
-            :main-opts ["-m" "hf.depstar.uberjar" "woof.jar"
-                        "-C" "-m" "bzg.woof"]}}}
+ {:uberjar {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
+            :main-opts  ["-m" "hf.depstar.uberjar" "woof.jar"
+                         "-C" "-m" "bzg.woof"]}}}
