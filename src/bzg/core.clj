@@ -1,18 +1,21 @@
-(ns bzg.woof
+(ns bzg.core
   (:require [clojure-mail.core :as mail]
             [clojure-mail.message :as message]
             [clojure-mail.events :as events]
             [clojure.string :as string]
-            [clojure.edn :as edn])
-  (:gen-class))
+            [clojure.edn :as edn]
+            [mount.core :as mount]
+            [bzg.config :as config]))
 
-(def config
-  {:user            (System/getenv "WOOF_MAIL_USER")
-   :server          (System/getenv "WOOF_MAIL_SERVER")
-   :password        (System/getenv "WOOF_MAIL_PASSWORD")
-   :mailing-list    (System/getenv "WOOF_MAILING_LIST")
-   :release-manager (System/getenv "WOOF_RELEASE_MANAGER")
-   :folder          "inbox"})
+(defn format-default-fn
+  [{:keys [subject date id version versions commit]}]
+  [:p [:a {:href   (format config/mail-archive-formatting-string id)
+           :title  "Read the mail in www.mail-archive.com"
+           :target "_blank"}
+       subject]])
+
+(defn intern-id [m]
+  (map (fn [[k v]] (assoc v :id k)) m))
 
 (def db (atom (or (try (edn/read-string (slurp "db.edn"))
                        (catch Exception _ nil))
@@ -53,8 +56,7 @@
   (->>
    (filter #(= (:type (val %)) "release") db)
    (take 10)
-   (into {})
-   (map (fn [[k v]] (assoc v :id k)))))
+   (into {})))
 
 (defn process-incoming-message
   [{:keys [id from subject date-sent] :as msg}]
@@ -70,7 +72,7 @@
                (into #{})))]
 
     ;; Only process emails if they are sent from the mailing list.
-    (when (= X-Original-To (:mailing-list config))
+    (when (= X-Original-To (:mailing-list config/config))
 
       ;; If any email with references contains in its references the id
       ;; of a known bug, add the message-id of this mail to the refs of
@@ -84,6 +86,7 @@
         (not-empty X-Woof-Change)
         (let [c-specs (string/split X-Woof-Change #"\s")]
           (swap! db conj {id {:type     "change"
+                              :from     from
                               :commit   (first c-specs)
                               :versions (into #{} (next c-specs))
                               :subject  subject
@@ -92,9 +95,9 @@
 
         ;; Or confirm a bug and add it to the registry.  Anyone can
         ;; confirm a bug.
-        (and X-Woof-Bug
-             (string/includes? X-Woof-Bug "confirmed"))
+        (and X-Woof-Bug (re-find #"(?i)confirmed" X-Woof-Bug))
         (do (swap! db conj {id {:type    "bug"
+                                :from    from
                                 :refs    (into #{} (conj refs id))
                                 :subject subject
                                 :date    date-sent}})
@@ -105,7 +108,7 @@
         ;; email and see if we can find a matching ref in those of a bug,
         ;; and if yes, then we mark the bug as :fixed by the message id.
         (and X-Woof-Bug refs
-             (string/includes? X-Woof-Bug "fixed")
+             (re-find #"(?i)fixed" X-Woof-Bug)
              (some @db-bug-refs refs))
         (do (doseq [e (get-unfixed-bugs @db)]
               (when (some (:refs (val e)) refs)
@@ -115,9 +118,10 @@
         ;; Or make a release.
         (and (not-empty X-Woof-Release)
              ;; Only the release manager can announce a release.
-             (= from (:release-manager config)))
+             (= from (:release-manager config/config)))
         (do ;; Add the release to the db
           (swap! db conj {id {:type    "release"
+                              :from    from
                               :version X-Woof-Release
                               :subject subject
                               :date    date-sent}})
@@ -127,25 +131,29 @@
               (swap! db assoc-in [k :released] X-Woof-Release)))
           (println from "released" X-Woof-Release "via" id))))))
 
-(defn -main []
+(defn start-manager []
   (let [session      (mail/get-session "imaps")
         mystore      (mail/store "imaps" session
-                                 (:server config)
-                                 (:user config)
-                                 (:password config))
-        folder       (mail/open-folder mystore (:folder config) :readonly)
+                                 (:server config/config)
+                                 (:user config/config)
+                                 (:password config/config))
+        folder       (mail/open-folder mystore (:folder config/config) :readonly)
         idle-manager (events/new-idle-manager session)]
     (events/add-message-count-listener
      ;; Process incoming mails
      (fn [e] (prn (->> e :messages
                        (map message/read-message)
                        (map process-incoming-message))))
-     ;; Process deleted mails
+     ;; Don't process deleted mails
      nil
      folder
      idle-manager)
-    idle-manager)
-  (println "Monitoring mails sent from"
-           (:mailing-list config) "to" (:user config)))
+    idle-manager))
 
-;; (-main)
+(mount/defstate woof-manager
+  :start (do (println "Woof manager started")
+             (start-manager))
+  :stop (when woof-manager
+          (println "Woof manager stopped")
+          (events/stop woof-manager)))
+

@@ -9,12 +9,15 @@
                http-kit                  {:mvn/version "2.3.0"}
                clj-rss                   {:mvn/version "0.2.5"}
                hiccup                    {:mvn/version "1.0.5"}
-               metosin/reitit            {:mvn/version "0.5.1"}
-               metosin/reitit-ring       {:mvn/version "0.5.1"}
-               metosin/reitit-middleware {:mvn/version "0.5.1"}
+               metosin/reitit            {:mvn/version "0.5.2"}
+               metosin/reitit-ring       {:mvn/version "0.5.2"}
+               metosin/reitit-middleware {:mvn/version "0.5.2"}
+               metosin/jsonista          {:mvn/version "0.2.6"}
+               metosin/muuntaja          {:mvn/version "0.6.7"}
                ring-cors                 {:mvn/version "0.1.13"}
-               clojure.java-time         {:mvn/version "0.3.2"}}
+               clojure.java-time         {:mvn/version "0.3.2"}
+               mount                     {:mvn/version "0.1.16"}}
  :aliases
  {:uberjar {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
             :main-opts  ["-m" "hf.depstar.uberjar" "woof.jar"
-                         "-C" "-m" "bzg.woof"]}}}
+                         "-C" "-m" "bzg.web"]}}}
