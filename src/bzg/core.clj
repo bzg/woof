@@ -9,8 +9,8 @@
 
 (defn format-default-fn
   [{:keys [subject date id version versions commit]}]
-  [:p [:a {:href   (format config/mail-archive-formatting-string id)
-           :title  "Read the mail in www.mail-archive.com"
+  [:p [:a {:href   (format (:mail-url-format config/config) id)
+           :title  "Find and read the mail on the web"
            :target "_blank"}
        subject]])
 

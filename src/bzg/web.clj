@@ -19,7 +19,7 @@
 (defn feed [_]
   (letfn [(format-item [{:keys [id subject date from]}]
             {:title       subject
-             :link        (format config/mail-archive-formatting-string id)
+             :link        (format (:mail-url-format config/config) id)
              :description subject
              :author      from
              :pubDate     date})]
@@ -27,7 +27,7 @@
      :body
      (rss/channel-xml
       {:title       (:feed-title config/config)
-       :link        (str (:woof-base-url config/config) "/feed.xml")
+       :link        (str (:base-url config/config) "/feed.xml")
        :description (:feed-description config/config)}
       (sort-by
        :pubDate
@@ -52,12 +52,12 @@
    [:body
     [:section.hero
      [:div.hero-body
-      [:h1.title.has-text-centered (:woof-page-title config/config)]
+      [:h1.title.has-text-centered (:project-title config/config)]
       [:h2.subtitle.column.is-8.is-offset-2.has-text-centered
-       [:a {:href (str (:woof-base-url config/config) "/feed.xml")} "Subscribe"]
+       [:a {:href (str (:base-url config/config) "/feed.xml")} "Subscribe"]
        " / "
-       [:a {:href (:main-website-url config/config)}
-        (:main-website-name config/config)]]]]
+       [:a {:href (:project-url config/config)}
+        (:project-name config/config)]]]]
     [:div.container.is-8
      [:div.columns
       [:div.column
