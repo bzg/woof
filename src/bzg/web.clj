@@ -125,10 +125,10 @@
        :access-control-allow-methods [:get])]}))
 
 (mount/defstate woof-server
-  :start (do (println "Woof started on localhost:3000")
+  :start (do (println "Woof monitoring started on localhost:3000")
              (server/run-server handler {:port 3000}))
   :stop (do (when woof-server
-              (println "Woof stopped")
+              (println "Woof monitoring stopped")
               (woof-server :timeout 100))))
 
 (defn -main [& [json]]
