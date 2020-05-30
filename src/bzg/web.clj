@@ -19,12 +19,27 @@
 (defn intern-id [m]
   (map (fn [[k v]] (assoc v :id k)) m))
 
-(defn format-default-fn
-  [{:keys [subject date id version versions commit]}]
-  [:p [:a {:href   (format (:mail-url-format config/config) id)
-           :title  "Find and read the mail on the web"
-           :target "_blank"}
-       subject]])
+(defn format-link-fn
+  [{:keys [subject date id version versions commit]} type]
+  (condp = type
+    :bug     [:p [:a {:href   (format (:mail-url-format config/config) id)
+                      :title  "Find and read the message"
+                      :target "_blank"}
+                  subject]]
+    :change  [:p
+              [:a {:href   (format (:mail-url-format config/config) id)
+                   :title  "Find and read the message"
+                   :target "_blank"}
+               subject]
+              " / ("
+              [:a {:href   (format (:commit-url-format config/config) commit)
+                   :title  "Find and read the commit"
+                   :target "_blank"}
+               id] ")"]
+    :release [:p [:a {:href   (format (:mail-url-format config/config) id)
+                      :title  "Find and read the release message"
+                      :target "_blank"}
+                  subject]]))
 
 (defn feed [_]
   (letfn [(format-item [{:keys [id subject date from]}]
@@ -77,7 +92,7 @@
            [:h1.title "Confirmed bugs"]
            [:div.content
             (for [bug bugs]
-              (format-default-fn bug))]]])]
+              (format-link-fn bug :bug))]]])]
       [:div.column
        (when-let [changes (intern-id (core/get-unreleased-changes @core/db))]
          [:section.section
@@ -85,14 +100,14 @@
            [:h1.title "Future changes"]
            [:div.content
             (for [change changes]
-              (format-default-fn change))]]])
+              (format-link-fn change :change))]]])
        (when-let [releases (intern-id (core/get-releases @core/db))]
          [:section.section
           [:div.container
            [:h1.title "Latest releases"]
            [:div.content
             (for [release (take 3 releases)]
-              (format-default-fn release))]]])]]]
+              (format-link-fn release :release))]]])]]]
     [:footer.footer
      [:div.columns
       [:div.column.is-offset-4.is-4.has-text-centered
