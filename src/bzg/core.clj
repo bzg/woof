@@ -7,42 +7,23 @@
             [mount.core :as mount]
             [bzg.config :as config]))
 
-(defn format-default-fn
-  [{:keys [subject date id version versions commit]}]
-  [:p [:a {:href   (format (:mail-url-format config/config) id)
-           :title  "Find and read the mail on the web"
-           :target "_blank"}
-       subject]])
+(def ^:dynamic db-file-name "db.edn")
 
-(defn intern-id [m]
-  (map (fn [[k v]] (assoc v :id k)) m))
-
-(def db (atom (or (try (edn/read-string (slurp "db.edn"))
-                       (catch Exception _ nil))
-                  {})))
+(def db
+  (atom (or (try (edn/read-string (slurp db-file-name))
+                 (catch Exception _ nil))
+            {})))
 
 (def db-bug-refs (atom #{}))
 
-(defn all-bug-refs [db]
+(defn- all-bug-refs [db]
   (into #{} (apply clojure.set/union (map :refs (vals db)))))
 
 (add-watch
  db :serialize-bug-refs
  (fn [_ _ _ newdb]
    (reset! db-bug-refs (all-bug-refs newdb))
-   (spit "db.edn" (pr-str newdb))))
-
-(defn update-bug-refs [id new-refs]
-  (loop [refs new-refs
-         ref  (some @db-bug-refs refs)]
-    (when ref
-      (doseq [e @db]
-        (if-let [rfs (:refs (val e))]
-          (when (rfs ref)
-            (swap! db assoc-in [(key e) :refs] (conj rfs id))))))
-    (when-let [rest-refs (last (next (partition-by #{ref} refs)))]
-      (recur rest-refs
-             (some @db-bug-refs rest-refs)))))
+   (spit db-file-name (pr-str newdb))))
 
 (defn get-unfixed-bugs [db]
   (filter #(and (= (:type (val %)) "bug")
@@ -58,8 +39,19 @@
    (take 10)
    (into {})))
 
+(defn- update-bug-refs [id new-refs]
+  (loop [refs new-refs
+         ref  (some @db-bug-refs refs)]
+    (when ref
+      (doseq [e @db]
+        (if-let [rfs (:refs (val e))]
+          (when (rfs ref)
+            (swap! db assoc-in [(key e) :refs] (conj rfs id))))))
+    (when-let [rest-refs (last (next (partition-by #{ref} refs)))]
+      (recur rest-refs
+             (some @db-bug-refs rest-refs)))))
 
-(defn add-change [{:keys [id from subject date-sent]} X-Woof-Change]
+(defn- add-change [{:keys [id from subject date-sent]} X-Woof-Change]
   (let [c-specs (string/split X-Woof-Change #"\s")]
     (swap! db conj {id {:type     "change"
                         :from     from
@@ -69,7 +61,7 @@
                         :date     date-sent}})
     (println from "added a change via" id)))
 
-(defn add-confirmed-bug [{:keys [id from subject date-sent]} refs]
+(defn- add-confirmed-bug [{:keys [id from subject date-sent]} refs]
   (swap! db conj {id {:type    "bug"
                       :from    from
                       :refs    (into #{} (conj refs id))
@@ -77,13 +69,13 @@
                       :date    date-sent}})
   (println from "added a bug via" id))
 
-(defn add-fixed-bug [{:keys [id from subject date-sent]} refs]
+(defn- add-fixed-bug [{:keys [id from subject date-sent]} refs]
   (doseq [e (get-unfixed-bugs @db)]
     (when (some (:refs (val e)) refs)
       (swap! db assoc-in [(key e) :fixed] id)))
   (println from "marked bug fixed via" id))
 
-(defn add-release [{:keys [id from subject date-sent]} X-Woof-Release]
+(defn- add-release [{:keys [id from subject date-sent]} X-Woof-Release]
   ;; Add the release to the db
   (swap! db conj {id {:type    "release"
                       :from    from
@@ -115,10 +107,10 @@
       ;; this bug.
       (when refs (update-bug-refs id refs))
       (cond
-        (not-empty X-Woof-Change)
         ;; Announce a breaking change in the current development
         ;; branches and associate it with future version(s).  Anyone
         ;; can announce a breaking change.
+        X-Woof-Change
         (add-change msg X-Woof-Change)
         ;; Or confirm a bug and add it to the registry.  Anyone can
         ;; confirm a bug.
@@ -133,12 +125,12 @@
              (some @db-bug-refs refs))
         (add-fixed-bug msg refs)
         ;; Or make a release.
-        (and (not-empty X-Woof-Release)
+        (and X-Woof-Release
              ;; Only the release manager can announce a release.
              (= from (:release-manager config/config)))
         (add-release msg X-Woof-Release)))))
 
-(defn start-inbox-monitor []
+(defn- start-inbox-monitor []
   (let [session      (mail/get-session "imaps")
         mystore      (mail/store "imaps" session
                                  (:server config/config)

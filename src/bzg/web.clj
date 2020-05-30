@@ -16,6 +16,16 @@
             [java-time :as t])
   (:gen-class))
 
+(defn intern-id [m]
+  (map (fn [[k v]] (assoc v :id k)) m))
+
+(defn format-default-fn
+  [{:keys [subject date id version versions commit]}]
+  [:p [:a {:href   (format (:mail-url-format config/config) id)
+           :title  "Find and read the mail on the web"
+           :target "_blank"}
+       subject]])
+
 (defn feed [_]
   (letfn [(format-item [{:keys [id subject date from]}]
             {:title       subject
@@ -33,11 +43,11 @@
        :pubDate
        (concat
         (map format-item
-             (core/intern-id (core/get-unfixed-bugs @core/db)))
+             (intern-id (core/get-unfixed-bugs @core/db)))
         (map format-item
-             (core/intern-id (core/get-unreleased-changes @core/db)))
+             (intern-id (core/get-unreleased-changes @core/db)))
         (map format-item
-             (core/intern-id (core/get-releases @core/db))))))}))
+             (intern-id (core/get-releases @core/db))))))}))
 
 (defn homepage []
   (h/html5
@@ -61,28 +71,28 @@
     [:div.container.is-8
      [:div.columns
       [:div.column
-       (when-let [bugs (core/intern-id (core/get-unfixed-bugs @core/db))]
+       (when-let [bugs (intern-id (core/get-unfixed-bugs @core/db))]
          [:section.section
           [:div.container
            [:h1.title "Confirmed bugs"]
            [:div.content
             (for [bug bugs]
-              (core/format-default-fn bug))]]])]
+              (format-default-fn bug))]]])]
       [:div.column
-       (when-let [changes (core/intern-id (core/get-unreleased-changes @core/db))]
+       (when-let [changes (intern-id (core/get-unreleased-changes @core/db))]
          [:section.section
           [:div.container
            [:h1.title "Future changes"]
            [:div.content
             (for [change changes]
-              (core/format-default-fn change))]]])
-       (when-let [releases (core/intern-id (core/get-releases @core/db))]
+              (format-default-fn change))]]])
+       (when-let [releases (intern-id (core/get-releases @core/db))]
          [:section.section
           [:div.container
            [:h1.title "Latest releases"]
            [:div.content
             (for [release (take 3 releases)]
-              (core/format-default-fn release))]]])]]]
+              (format-default-fn release))]]])]]]
     [:footer.footer
      [:div.columns
       [:div.column.is-offset-4.is-4.has-text-centered
@@ -95,15 +105,15 @@
 
 (defn get-bugs [_]
   {:status 200
-   :body   (core/intern-id (core/get-unfixed-bugs @core/db))})
+   :body   (intern-id (core/get-unfixed-bugs @core/db))})
 
 (defn get-releases [_]
   {:status 200
-   :body   (core/intern-id (core/get-releases @core/db))})
+   :body   (intern-id (core/get-releases @core/db))})
 
 (defn get-changes [_]
   {:status 200
-   :body   (core/intern-id (core/get-unreleased-changes @core/db))})
+   :body   (intern-id (core/get-unreleased-changes @core/db))})
 
 (def handler
   (ring/ring-handler
