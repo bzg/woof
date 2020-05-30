@@ -68,13 +68,19 @@
           :headers   [{"X-Original-To" (:mailing-list config/config)}
                       {"X-Woof-Release" "8.3"}]}
    :msg5 {:id        "id5"
+          :subject   "Release 8.4"
+          :from      (list {:address (:release-manager config/config)})
+          :date-sent #inst "2020-05-28T00:13:11.037044Z"
+          :headers   [{"X-Original-To" (:mailing-list config/config)}
+                      {"X-Woof-Release" "8.4"}]}
+   :msg6 {:id        "id6"
           :subject   "[BUG] Bug in release 8.3"
           :from      (list {:address (:user config/config)})
           :date-sent #inst "2020-05-28T00:13:11.037044Z"
           :headers   [{"X-Original-To" (:mailing-list config/config)}
-                      {"References" "id4"}
+                      {"References" "id4 id0"}
                       {"X-Woof-Bug" "confirmed"}]}
-   :msg6 {:id        "id6"
+   :msg7 {:id        "id7"
           :subject   "Fix for bug wrt release 8.3"
           :from      (list {:address (:user config/config)})
           :date-sent #inst "2020-05-28T00:13:11.037044Z"
@@ -112,8 +118,9 @@
     (testing "Fix a bug a release wrt to a change"
       (core/process-incoming-message (:msg4 test-data))
       (core/process-incoming-message (:msg5 test-data))
-      (is (= 1 (count (core/get-unfixed-bugs @core/db))))
       (core/process-incoming-message (:msg6 test-data))
+      (is (= 1 (count (core/get-unfixed-bugs @core/db))))
+      (core/process-incoming-message (:msg7 test-data))
       (is (= 0 (count (core/get-unfixed-bugs @core/db))))
       (reset! core/db {}))
     (sh/sh "rm" "db-test.edn")))

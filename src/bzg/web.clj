@@ -93,7 +93,10 @@
     [:div.container.is-8
      [:div.columns
       [:div.column
-       (when-let [bugs (intern-id (core/get-unfixed-bugs @core/db))]
+       (when-let [bugs (->> (core/get-unfixed-bugs @core/db)
+                            intern-id
+                            (sort-by #(count (:refs %)))
+                            reverse)]
          [:section.section
           [:div.container
            [:h1.title "Confirmed bugs"]
@@ -101,14 +104,19 @@
             (for [bug bugs]
               (format-link-fn bug :bug))]]])]
       [:div.column
-       (when-let [changes (intern-id (core/get-unreleased-changes @core/db))]
+       (when-let [changes (->> (core/get-unreleased-changes @core/db)
+                               intern-id
+                               (sort-by :date))]
          [:section.section
           [:div.container
            [:h1.title "Future changes"]
            [:div.content
             (for [change changes]
               (format-link-fn change :change))]]])
-       (when-let [releases (intern-id (core/get-releases @core/db))]
+       (when-let [releases (->> (core/get-releases @core/db)
+                                intern-id
+                                (sort-by :date)
+                                reverse)]
          [:section.section
           [:div.container
            [:h1.title "Latest releases"]
