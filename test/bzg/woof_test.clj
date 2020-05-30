@@ -1,7 +1,42 @@
 (ns bzg.woof-test
   (:require [bzg.core :as core]
             [bzg.config :as config]
-            [clojure.test :refer :all]))
+            [clojure.spec.alpha :as spec]
+            [clojure.test :refer :all]
+            [clojure.string :as s]))
+
+(spec/def ::user             string?)
+(spec/def ::server           string?)
+(spec/def ::password         string?)
+(spec/def ::mailing-list     string?)
+(spec/def ::release-manager  string?)
+(spec/def ::mail-url-format  string?)
+(spec/def ::folder           string?)
+(spec/def ::project-name     string?)
+(spec/def ::project-url      string?)
+(spec/def ::title            string?)
+(spec/def ::base-url         string?)
+(spec/def ::feed-title       string?)
+(spec/def ::feed-description string?)
+
+(spec/def ::config
+  (spec/keys :req-un [::user
+                      ::server
+                      ::password
+                      ::mailing-list
+                      ::mail-url-format
+                      ::release-manager
+                      ::folder
+                      ::project-url
+                      ::project-name
+                      ::title
+                      ::base-url
+                      ::feed-title
+                      ::feed-description]))
+
+(deftest configuration
+  (testing "Testing configuration"
+    (is (spec/valid? ::config config/config))))
 
 ;; Confirm a bug
 (def msg1 {:id        "id1"
@@ -32,10 +67,6 @@
            :date-sent #inst "2020-05-27T00:13:11.037044Z"
            :headers   [{"X-Original-To" (:mailing-list config/config)}
                        {"X-Woof-Release" "8.3"}]})
-
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
 
 ;; (process-incoming-message msg1)
 ;; (process-incoming-message msg2)
