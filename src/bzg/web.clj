@@ -13,7 +13,8 @@
             [mount.core :as mount]
             [hiccup.page :as h]
             [clj-rss.core :as rss]
-            [java-time :as t])
+            [java-time :as t]
+            [clojure.string :as string])
   (:gen-class))
 
 (defn intern-id [m]
@@ -22,24 +23,27 @@
 (defn format-link-fn
   [{:keys [subject date id version versions commit]} type]
   (condp = type
-    :bug     [:p [:a {:href   (format (:mail-url-format config/config) id)
-                      :title  "Find and read the message"
-                      :target "_blank"}
-                  subject]]
-    :change  [:p
-              [:a {:href   (format (:mail-url-format config/config) id)
-                   :title  "Find and read the message"
-                   :target "_blank"}
-               subject]
-              " / ("
-              [:a {:href   (format (:commit-url-format config/config) commit)
-                   :title  "Find and read the commit"
-                   :target "_blank"}
-               id] ")"]
-    :release [:p [:a {:href   (format (:mail-url-format config/config) id)
-                      :title  "Find and read the release message"
-                      :target "_blank"}
-                  subject]]))
+    :bug
+    [:p [:a {:href   (format (:mail-url-format config/config) id)
+             :title  "Find and read the message"
+             :target "_blank"}
+         subject]]
+    :change
+    [:p
+     [:a {:href   (format (:mail-url-format config/config) id)
+          :title  "Find and read the message"
+          :target "_blank"}
+      subject]
+     " ("
+     [:a {:href   (format (:commit-url-format config/config) commit)
+          :title  "Find and read the commit"
+          :target "_blank"}
+      (if (< (count commit) 8) commit (subs commit 0 8))] ")"]
+    :release
+    [:p [:a {:href   (format (:mail-url-format config/config) id)
+             :title  "Find and read the release message"
+             :target "_blank"}
+         subject]]))
 
 (defn feed [_]
   (letfn [(format-item [{:keys [id subject date from]}]
@@ -52,7 +56,8 @@
      :body
      (rss/channel-xml
       {:title       (:feed-title config/config)
-       :link        (str (:base-url config/config) "/feed.xml")
+       :link        (string/replace
+                     (:base-url config/config) #"([^/])/*$" "$1/feed")
        :description (:feed-description config/config)}
       (sort-by
        :pubDate
@@ -77,9 +82,11 @@
    [:body
     [:section.hero
      [:div.hero-body
-      [:h1.title.has-text-centered (:project-title config/config)]
+      [:h1.title.has-text-centered (:title config/config)]
       [:h2.subtitle.column.is-8.is-offset-2.has-text-centered
-       [:a {:href (str (:base-url config/config) "/feed.xml")} "Subscribe"]
+       [:a {:href (string/replace
+                   (:base-url config/config) #"([^/])/*$" "$1/feed")}
+        "Subscribe"]
        " / "
        [:a {:href (:project-url config/config)}
         (:project-name config/config)]]]]
