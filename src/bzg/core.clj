@@ -54,7 +54,7 @@
 (defn- add-change [{:keys [id from subject date-sent]} X-Woof-Change]
   (let [c-specs (string/split X-Woof-Change #"\s")]
     (swap! db conj {id {:type     "change"
-                        :from     from
+                        :from     (:address (first from))
                         :commit   (first c-specs)
                         :versions (into #{} (next c-specs))
                         :subject  subject
@@ -63,7 +63,7 @@
 
 (defn- add-confirmed-bug [{:keys [id from subject date-sent]} refs]
   (swap! db conj {id {:type    "bug"
-                      :from    from
+                      :from    (:address (first from))
                       :refs    (into #{} (conj refs id))
                       :subject subject
                       :date    date-sent}})
@@ -78,7 +78,7 @@
 (defn- add-release [{:keys [id from subject date-sent]} X-Woof-Release]
   ;; Add the release to the db
   (swap! db conj {id {:type    "release"
-                      :from    from
+                      :from    (:address (first from))
                       :version X-Woof-Release
                       :subject subject
                       :date    date-sent}})
@@ -89,9 +89,8 @@
   (println from "released" X-Woof-Release "via" id))
 
 (defn process-incoming-message
-  [{:keys [id from subject date-sent] :as msg}]
-  (let [from (:address (first from))
-        {:keys [X-Woof-Bug X-Woof-Release X-Woof-Change
+  [{:keys [id from] :as msg}]
+  (let [{:keys [X-Woof-Bug X-Woof-Release X-Woof-Change
                 X-Original-To References]}
         (clojure.walk/keywordize-keys
          (apply conj (:headers msg)))
@@ -127,7 +126,8 @@
         ;; Or make a release.
         (and X-Woof-Release
              ;; Only the release manager can announce a release.
-             (= from (:release-manager config/config)))
+             (= (:address (first from))
+                (:release-manager config/config)))
         (add-release msg X-Woof-Release)))))
 
 (defn- start-inbox-monitor []
