@@ -3,7 +3,8 @@
             [bzg.config :as config]
             [clojure.spec.alpha :as spec]
             [clojure.test :refer :all]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [clojure.java.shell :as sh]))
 
 (spec/def ::user             string?)
 (spec/def ::server           string?)
@@ -38,40 +39,58 @@
   (testing "Testing configuration"
     (is (spec/valid? ::config config/config))))
 
-;; Confirm a bug
-(def msg1 {:id        "id1"
-           :subject   "Subject message id1"
-           :from      '({:address (:user config/config)})
-           :date-sent #inst "2020-05-27T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/config)}
-                       {"X-Woof-Bug" "confirmed"}]})
+(def test-data
+  {:msg1 {:id        "id1"
+          :subject   "Subject message id1"
+          :from      (list {:address (:user config/config)})
+          :date-sent #inst "2020-05-27T00:13:11.037044Z"
+          :headers   [{"X-Original-To" (:mailing-list config/config)}
+                      {"X-Woof-Bug" "confirmed"}]}
+   :msg2 {:id        "id2"
+          :subject   "Subject message id2"
+          :from      (list {:address (:user config/config)})
+          :date-sent #inst "2020-05-27T00:13:11.037044Z"
+          :headers   [{"X-Original-To" (:mailing-list config/config)}
+                      {"References" "id1"}
+                      {"X-Woof-Bug" "fixed"}]}
+   :msg3 {:id        "id3"
+          :subject   "Incompatible change for release 8.3"
+          :from      (list {:address (:user config/config)})
+          :date-sent #inst "2020-05-27T00:13:11.037044Z"
+          :headers   [{"X-Original-To" (:mailing-list config/config)}
+                      {"X-Woof-Change" "commithash 8.3"}]}
+   :msg4 {:id        "id4"
+          :subject   "Release 8.3"
+          :from      (list {:address (:release-manager config/config)})
+          :date-sent #inst "2020-05-27T00:13:11.037044Z"
+          :headers   [{"X-Original-To" (:mailing-list config/config)}
+                      {"X-Woof-Release" "8.3"}]}})
 
-(def msg2 {:id        "id2"
-           :subject   "Subject message id2"
-           :from      '({:address (:user config/config)})
-           :date-sent #inst "2020-05-27T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/config)}
-                       {"References" "id1"}
-                       {"X-Woof-Bug" "fixed"}]})
-
-(def msg3 {:id        "id3"
-           :subject   "Release 8.2"
-           :from      '({:address (:user config/config)})
-           :date-sent #inst "2020-05-27T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/config)}
-                       {"X-Woof-Release" "8.2"}]})
-
-(def msg4 {:id        "id4"
-           :subject   "Release 8.3"
-           :from      '({:address (:user config/config)})
-           :date-sent #inst "2020-05-27T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/config)}
-                       {"X-Woof-Release" "8.3"}]})
-
-;; (process-incoming-message msg1)
-;; (process-incoming-message msg2)
-;; (process-incoming-message msg3)
-;; @db
-;; (get-unfixed-bugs @db)
-;; (get-releases @db)
-;; (get-unfixed-bugs @db)
+(deftest message-processing
+  (binding [core/db-file-name "db-test.edn"]
+    (testing "Add a bug"
+      (core/process-incoming-message (:msg1 test-data))
+      (is (= 1 (count @core/db)))
+      (is (not-empty (get @core/db "id1")))
+      (reset! core/db {}))
+    (testing "Add a bug and fix it"
+      (core/process-incoming-message (:msg1 test-data))
+      (core/process-incoming-message (:msg2 test-data))
+      (is (= 1 (count @core/db)))
+      (is (= 0 (count (core/get-unfixed-bugs @core/db))))
+      (reset! core/db {}))
+    (testing "Add a release"
+      (core/process-incoming-message (:msg4 test-data))
+      (is (= 1 (count (core/get-releases @core/db))))
+      (reset! core/db {}))
+    (testing "Add a change"
+      (core/process-incoming-message (:msg3 test-data))
+      (is (= 1 (count (core/get-unreleased-changes @core/db))))
+      (reset! core/db {}))
+    (testing "Add a release wrt to a change"
+      (core/process-incoming-message (:msg3 test-data))
+      (is (= 1 (count (core/get-unreleased-changes @core/db))))
+      (core/process-incoming-message (:msg4 test-data))
+      (is (= 0 (count (core/get-unreleased-changes @core/db))))
+      (reset! core/db {}))
+    (sh/sh "rm" "db-test.edn")))
