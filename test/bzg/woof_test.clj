@@ -6,18 +6,19 @@
             [clojure.string :as s]
             [clojure.java.shell :as sh]))
 
-(spec/def ::user             string?)
-(spec/def ::server           string?)
-(spec/def ::password         string?)
-(spec/def ::mailing-list     string?)
-(spec/def ::release-manager  string?)
-(spec/def ::mail-url-format  string?)
-(spec/def ::folder           string?)
-(spec/def ::project-name     string?)
-(spec/def ::project-url      string?)
-(spec/def ::title            string?)
-(spec/def ::base-url         string?)
-(spec/def ::feed-title       string?)
+(spec/def ::user string?)
+(spec/def ::server string?)
+(spec/def ::password string?)
+(spec/def ::mailing-list string?)
+(spec/def ::release-manager string?)
+(spec/def ::mail-url-format string?)
+(spec/def ::commit-url-format string?)
+(spec/def ::folder string?)
+(spec/def ::project-name string?)
+(spec/def ::project-url string?)
+(spec/def ::title string?)
+(spec/def ::base-url string?)
+(spec/def ::feed-title string?)
 (spec/def ::feed-description string?)
 
 (spec/def ::config
@@ -26,6 +27,7 @@
                       ::password
                       ::mailing-list
                       ::mail-url-format
+                      ::commit-url-format
                       ::release-manager
                       ::folder
                       ::project-url
@@ -41,20 +43,20 @@
 
 (def test-data
   {:msg1 {:id        "id1"
-          :subject   "Subject message id1"
+          :subject   "[BUG] Confirmed bug"
           :from      (list {:address (:user config/config)})
           :date-sent #inst "2020-05-27T00:13:11.037044Z"
           :headers   [{"X-Original-To" (:mailing-list config/config)}
                       {"X-Woof-Bug" "confirmed"}]}
    :msg2 {:id        "id2"
-          :subject   "Subject message id2"
+          :subject   "[FIXED] Fixed bug"
           :from      (list {:address (:user config/config)})
           :date-sent #inst "2020-05-27T00:13:11.037044Z"
           :headers   [{"X-Original-To" (:mailing-list config/config)}
                       {"References" "id1"}
                       {"X-Woof-Bug" "fixed"}]}
    :msg3 {:id        "id3"
-          :subject   "Incompatible change for release 8.3"
+          :subject   "Incompatible change for 8.3"
           :from      (list {:address (:user config/config)})
           :date-sent #inst "2020-05-27T00:13:11.037044Z"
           :headers   [{"X-Original-To" (:mailing-list config/config)}
@@ -64,7 +66,21 @@
           :from      (list {:address (:release-manager config/config)})
           :date-sent #inst "2020-05-27T00:13:11.037044Z"
           :headers   [{"X-Original-To" (:mailing-list config/config)}
-                      {"X-Woof-Release" "8.3"}]}})
+                      {"X-Woof-Release" "8.3"}]}
+   :msg5 {:id        "id5"
+          :subject   "[BUG] Bug in release 8.3"
+          :from      (list {:address (:user config/config)})
+          :date-sent #inst "2020-05-28T00:13:11.037044Z"
+          :headers   [{"X-Original-To" (:mailing-list config/config)}
+                      {"References" "id4"}
+                      {"X-Woof-Bug" "confirmed"}]}
+   :msg6 {:id        "id6"
+          :subject   "Fix for bug wrt release 8.3"
+          :from      (list {:address (:user config/config)})
+          :date-sent #inst "2020-05-28T00:13:11.037044Z"
+          :headers   [{"X-Original-To" (:mailing-list config/config)}
+                      {"References" "id4"}
+                      {"X-Woof-Bug" "fixed"}]}})
 
 (deftest message-processing
   (binding [core/db-file-name "db-test.edn"]
@@ -92,5 +108,12 @@
       (is (= 1 (count (core/get-unreleased-changes @core/db))))
       (core/process-incoming-message (:msg4 test-data))
       (is (= 0 (count (core/get-unreleased-changes @core/db))))
+      (reset! core/db {}))
+    (testing "Fix a bug a release wrt to a change"
+      (core/process-incoming-message (:msg4 test-data))
+      (core/process-incoming-message (:msg5 test-data))
+      (is (= 1 (count (core/get-unfixed-bugs @core/db))))
+      (core/process-incoming-message (:msg6 test-data))
+      (is (= 0 (count (core/get-unfixed-bugs @core/db))))
       (reset! core/db {}))
     (sh/sh "rm" "db-test.edn")))
