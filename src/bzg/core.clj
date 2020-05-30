@@ -58,6 +58,44 @@
    (take 10)
    (into {})))
 
+
+(defn add-change [{:keys [id from subject date-sent]} X-Woof-Change]
+  (let [c-specs (string/split X-Woof-Change #"\s")]
+    (swap! db conj {id {:type     "change"
+                        :from     from
+                        :commit   (first c-specs)
+                        :versions (into #{} (next c-specs))
+                        :subject  subject
+                        :date     date-sent}})
+    (println from "added a change via" id)))
+
+(defn add-confirmed-bug [{:keys [id from subject date-sent]} refs]
+  (swap! db conj {id {:type    "bug"
+                      :from    from
+                      :refs    (into #{} (conj refs id))
+                      :subject subject
+                      :date    date-sent}})
+  (println from "added a bug via" id))
+
+(defn add-fixed-bug [{:keys [id from subject date-sent]} refs]
+  (doseq [e (get-unfixed-bugs @db)]
+    (when (some (:refs (val e)) refs)
+      (swap! db assoc-in [(key e) :fixed] id)))
+  (println from "marked bug fixed via" id))
+
+(defn add-release [{:keys [id from subject date-sent]} X-Woof-Release]
+  ;; Add the release to the db
+  (swap! db conj {id {:type    "release"
+                      :from    from
+                      :version X-Woof-Release
+                      :subject subject
+                      :date    date-sent}})
+  ;; Mark related changes as released
+  (doseq [[k v] (get-unreleased-changes @db)]
+    (when ((:versions v) X-Woof-Release)
+      (swap! db assoc-in [k :released] X-Woof-Release)))
+  (println from "released" X-Woof-Release "via" id))
+
 (defn process-incoming-message
   [{:keys [id from subject date-sent] :as msg}]
   (let [from (:address (first from))
@@ -70,39 +108,22 @@
           (->> (string/split References #"\s")
                (keep not-empty)
                (into #{})))]
-
     ;; Only process emails if they are sent from the mailing list.
     (when (= X-Original-To (:mailing-list config/config))
-
       ;; If any email with references contains in its references the id
       ;; of a known bug, add the message-id of this mail to the refs of
       ;; this bug.
       (when refs (update-bug-refs id refs))
-
       (cond
+        (not-empty X-Woof-Change)
         ;; Announce a breaking change in the current development
         ;; branches and associate it with future version(s).  Anyone
         ;; can announce a breaking change.
-        (not-empty X-Woof-Change)
-        (let [c-specs (string/split X-Woof-Change #"\s")]
-          (swap! db conj {id {:type     "change"
-                              :from     from
-                              :commit   (first c-specs)
-                              :versions (into #{} (next c-specs))
-                              :subject  subject
-                              :date     date-sent}})
-          (println from "added a change via" id))
-
+        (add-change msg X-Woof-Change)
         ;; Or confirm a bug and add it to the registry.  Anyone can
         ;; confirm a bug.
         (and X-Woof-Bug (re-find #"(?i)confirmed" X-Woof-Bug))
-        (do (swap! db conj {id {:type    "bug"
-                                :from    from
-                                :refs    (into #{} (conj refs id))
-                                :subject subject
-                                :date    date-sent}})
-            (println from "added a bug via" id))
-
+        (add-confirmed-bug msg refs)
         ;; Or mark a bug as fixed.  Anyone can mark a bug as fixed.  If an
         ;; email contains X-Woof-Bug: fixed, we scan all refs from this
         ;; email and see if we can find a matching ref in those of a bug,
@@ -110,28 +131,14 @@
         (and X-Woof-Bug refs
              (re-find #"(?i)fixed" X-Woof-Bug)
              (some @db-bug-refs refs))
-        (do (doseq [e (get-unfixed-bugs @db)]
-              (when (some (:refs (val e)) refs)
-                (swap! db assoc-in [(key e) :fixed] id)))
-            (println from "marked bug fixed via" id))
-
+        (add-fixed-bug msg refs)
         ;; Or make a release.
         (and (not-empty X-Woof-Release)
              ;; Only the release manager can announce a release.
              (= from (:release-manager config/config)))
-        (do ;; Add the release to the db
-          (swap! db conj {id {:type    "release"
-                              :from    from
-                              :version X-Woof-Release
-                              :subject subject
-                              :date    date-sent}})
-          ;; Mark related changes as released
-          (doseq [[k v] (get-unreleased-changes @db)]
-            (when ((:versions v) X-Woof-Release)
-              (swap! db assoc-in [k :released] X-Woof-Release)))
-          (println from "released" X-Woof-Release "via" id))))))
+        (add-release msg X-Woof-Release)))))
 
-(defn start-manager []
+(defn start-inbox-monitor []
   (let [session      (mail/get-session "imaps")
         mystore      (mail/store "imaps" session
                                  (:server config/config)
@@ -152,8 +159,7 @@
 
 (mount/defstate woof-manager
   :start (do (println "Woof manager started")
-             (start-manager))
+             (start-inbox-monitor))
   :stop (when woof-manager
           (println "Woof manager stopped")
           (events/stop woof-manager)))
-
