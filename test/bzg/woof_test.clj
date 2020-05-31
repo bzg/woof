@@ -102,6 +102,8 @@
       (reset! core/db {}))
     (testing "Add a release"
       (core/process-incoming-message (:msg4 test-data))
+      ;; Ignore a second release with the same version
+      (core/process-incoming-message (:msg4 test-data))
       (is (= 1 (count (core/get-releases @core/db))))
       (reset! core/db {}))
     (testing "Add a change"
