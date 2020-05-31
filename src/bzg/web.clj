@@ -11,7 +11,8 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [mount.core :as mount]
             [hiccup.page :as h]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [clojure.edn :as edn])
   (:gen-class))
 
 (defn homepage []
@@ -138,12 +139,13 @@
        :access-control-allow-origin [#"^*$"]
        :access-control-allow-methods [:get])]}))
 
-(mount/defstate woof-server
-  :start (do (println "Woof monitoring started on localhost:3000")
-             (server/run-server handler {:port 3000}))
-  :stop (when woof-server
-          (println "Woof monitoring stopped")
-          (woof-server :timeout 100)))
+(let [port (edn/read-string (:port config/woof))]
+  (mount/defstate woof-server
+    :start (do (println (format "Woof monitoring on localhost:%s started" port))
+               (server/run-server handler {:port port}))
+    :stop (when woof-server
+            (println (format "Woof monitoring on localhost:%s stopped" port))
+            (woof-server :timeout 100))))
 
 (defn -main []
   (mount/start #'core/woof-manager #'woof-server))

@@ -19,6 +19,7 @@
 (spec/def ::base-url string?)
 (spec/def ::feed-title string?)
 (spec/def ::feed-description string?)
+(spec/def ::port string?)
 
 (spec/def ::config
   (spec/keys :req-un [::user
@@ -34,7 +35,8 @@
                       ::title
                       ::base-url
                       ::feed-title
-                      ::feed-description]))
+                      ::feed-description
+                      ::port]))
 
 (deftest configuration
   (testing "Testing configuration"
