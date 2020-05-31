@@ -10,3 +10,4 @@
 .hgignore
 .hg/
 todo.org
+.envrc
