@@ -3,6 +3,7 @@
             [reitit.ring :as ring]
             [bzg.core :as core]
             [bzg.config :as config]
+            [bzg.feeds :as feeds]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [ring.middleware.params :as params]
             [muuntaja.core :as m]
@@ -10,7 +11,6 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [mount.core :as mount]
             [hiccup.page :as h]
-            [clj-rss.core :as rss]
             [clojure.string :as string])
   (:gen-class))
 
@@ -45,30 +45,6 @@
                :target "_blank"}
            subject]])))
 
-(defn feed [_]
-  (letfn [(format-item [{:keys [id subject date from]}]
-            {:title       subject
-             :link        (format (:mail-url-format config/config) id)
-             :description subject
-             :author      from
-             :pubDate     date})]
-    {:status 200
-     :body
-     (rss/channel-xml
-      {:title       (:feed-title config/config)
-       :link        (string/replace
-                     (:base-url config/config) #"([^/])/*$" "$1/feed")
-       :description (:feed-description config/config)}
-      (sort-by
-       :pubDate
-       (concat
-        (map format-item
-             (intern-id (core/get-unfixed-bugs @core/db)))
-        (map format-item
-             (intern-id (core/get-unreleased-changes @core/db)))
-        (map format-item
-             (intern-id (core/get-releases @core/db))))))}))
-
 (defn homepage []
   (h/html5
    {:lang "en"}
@@ -85,7 +61,8 @@
       [:h1.title.has-text-centered (:title config/config)]
       [:h2.subtitle.column.is-8.is-offset-2.has-text-centered
        [:a {:href (string/replace
-                   (:base-url config/config) #"([^/])/*$" "$1/feed")}
+                   (:base-url config/config)
+                   #"([^/])/*$" "$1/feed/updates")}
         "Subscribe"]
        " / "
        [:a {:href (:project-url config/config)}
@@ -152,7 +129,11 @@
      ["/bugs" {:get get-bugs}]
      ["/releases" {:get get-releases}]
      ["/changes" {:get get-changes}]
-     ["/feed" {:get feed}]]
+     ["/feed"
+      ["/updates" {:get feeds/feed-updates}]
+      ["/bugs" {:get feeds/feed-bugs}]
+      ["/releases" {:get feeds/feed-releases}]
+      ["/changes" {:get feeds/feed-changes}]]]
     {:data {:muuntaja   m/instance
       	    :middleware [params/wrap-params
                          muuntaja/format-middleware]}})
