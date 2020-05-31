@@ -35,6 +35,9 @@
 (defn intern-id [m]
   (map (fn [[k v]] (assoc v :id k)) m))
 
+(defn get-from [from]
+  (:address (first from)))
+
 (defn format-link-fn
   [{:keys [from subject date id commit]} type]
   (let [shortcommit  (if (< (count commit) 8) commit (subs commit 0 8))
@@ -79,6 +82,9 @@
    (take 10)
    (into {})))
 
+(defn get-released-versions [db]
+  (into #{} (map :version (vals (get-releases db)))))
+
 ;;; Core functions to update the db
 
 (defn- update-bug-refs [id new-refs]
@@ -94,48 +100,63 @@
              (some @db-bug-refs rest-refs)))))
 
 (defn- add-change [{:keys [id from subject date-sent]} X-Woof-Change]
-  (let [c-specs  (string/split X-Woof-Change #"\s")
-        commit   (first c-specs)
-        versions (into #{} (next c-specs))]
-    (if (some (into #{} (map :version (vals (get-releases @db)))) versions)
-      (println "%s tried to add a change against a know release, ignoring %s"
-               from id)
+  (let [c-specs   (string/split X-Woof-Change #"\s")
+        commit    (first c-specs)
+        versions  (into #{} (next c-specs))
+        released  (get-released-versions @db)
+        true-from (get-from from)]
+    (cond
+      (and released (some released versions))
+      (format "%s tried to add a change against a know release, ignoring %s"
+              true-from id)
+      (empty? versions)
+      (format "%s tried to add a change with a wrong header format, ignoring %s"
+              true-from id)
+      :else
       (do (swap! db conj {id {:type     "change"
-                              :from     (:address (first from))
+                              :from     true-from
                               :commit   commit
                               :versions versions
                               :subject  subject
                               :date     date-sent}})
-          (println from "added a change via" id)))))
+          (format "%s added a change for version %s via %s"
+                  true-from (first versions) id)))))
 
 (defn- add-confirmed-bug [{:keys [id from subject date-sent]} refs]
-  (swap! db conj {id {:type    "bug"
-                      :from    (:address (first from))
-                      :refs    (into #{} (conj refs id))
-                      :subject subject
-                      :date    date-sent}})
-  (println from "added a bug via" id))
+  (let [true-from (get-from from)]
+    (swap! db conj {id {:type    "bug"
+                        :from    true-from
+                        :refs    (into #{} (conj refs id))
+                        :subject subject
+                        :date    date-sent}})
+    (format "%s added a bug via %s" true-from id)))
 
 (defn- add-fixed-bug [{:keys [id from date-sent]} refs]
-  (doseq [e (get-unfixed-bugs @db)]
-    (when (some (:refs (val e)) refs)
-      (swap! db assoc-in [(key e) :fixed] id)
-      (swap! db assoc-in [(key e) :fixed-by] from)
-      (swap! db assoc-in [(key e) :fixed-at] date-sent)))
-  (println from "marked bug fixed via" id))
+  (let [true-from (get-from from)]
+    (doseq [e (get-unfixed-bugs @db)]
+      (when (some (:refs (val e)) refs)
+        (swap! db assoc-in [(key e) :fixed] id)
+        (swap! db assoc-in [(key e) :fixed-by] true-from)
+        (swap! db assoc-in [(key e) :fixed-at] date-sent)))
+    (format "%s marked bug fixed via %s" true-from id)))
 
 (defn- add-release [{:keys [id from subject date-sent]} X-Woof-Release]
-  ;; Add the release to the db
-  (swap! db conj {id {:type    "release"
-                      :from    (:address (first from))
-                      :version X-Woof-Release
-                      :subject subject
-                      :date    date-sent}})
-  ;; Mark related changes as released
-  (doseq [[k v] (get-unreleased-changes @db)]
-    (when ((:versions v) X-Woof-Release)
-      (swap! db assoc-in [k :released] X-Woof-Release)))
-  (println from "released" X-Woof-Release "via" id))
+  (let [released  (get-released-versions @db)
+        true-from (get-from from)]
+    (if (and released (some released #{X-Woof-Release}))
+      (format "%s tried to release with a known version number via %s"
+              true-from id)
+      ;; Add the release to the db
+      (do (swap! db conj {id {:type    "release"
+                              :from    true-from
+                              :version X-Woof-Release
+                              :subject subject
+                              :date    date-sent}})
+          ;; Mark related changes as released
+          (doseq [[k v] (get-unreleased-changes @db)]
+            (when ((:versions v) X-Woof-Release)
+              (swap! db assoc-in [k :released] X-Woof-Release)))
+          (format "%s released %s via %s" true-from X-Woof-Release id)))))
 
 (defn process-incoming-message
   [{:keys [id from] :as msg}]
@@ -174,7 +195,7 @@
         ;; Or make a release.
         (and X-Woof-Release
              ;; Only the release manager can announce a release.
-             (= (:address (first from))
+             (= (get-from from)
                 (:release-manager config/woof)))
         (add-release msg X-Woof-Release)))))
 
@@ -190,9 +211,14 @@
         idle-manager (events/new-idle-manager session)]
     (events/add-message-count-listener
      ;; Process incoming mails
-     (fn [e] (prn (->> e :messages
-                       (map message/read-message)
-                       (map process-incoming-message))))
+     (fn [e]
+       (doall
+        (map #(do (println %)
+                  (spit "logs.txt" (str % "\n") :append true))
+             (remove nil?
+                     (->> e :messages
+                          (map message/read-message)
+                          (map process-incoming-message))))))
      ;; Don't process deleted mails
      nil
      folder
