@@ -14,37 +14,6 @@
             [clojure.string :as string])
   (:gen-class))
 
-(defn intern-id [m]
-  (map (fn [[k v]] (assoc v :id k)) m))
-
-(defn format-link-fn
-  [{:keys [from subject date id commit]} type]
-  (let [shortcommit  (if (< (count commit) 8) commit (subs commit 0 8))
-        mail-title   (format "Visit email sent by %s on %s" from date)
-        commit-title (format "Visit commit %s made by %s" shortcommit from)]
-    (condp = type
-      :bug
-      [:p [:a {:href   (format (:mail-url-format config/config) id)
-               :title  mail-title
-               :target "_blank"}
-           subject]]
-      :change
-      [:p
-       [:a {:href   (format (:mail-url-format config/config) id)
-            :title  mail-title
-            :target "_blank"}
-        subject]
-       " ("
-       [:a {:href   (format (:commit-url-format config/config) commit)
-            :title  commit-title
-            :target "_blank"}
-        shortcommit] ")"]
-      :release
-      [:p [:a {:href   (format (:mail-url-format config/config) id)
-               :title  mail-title
-               :target "_blank"}
-           subject]])))
-
 (defn homepage []
   (h/html5
    {:lang "en"}
@@ -58,20 +27,20 @@
    [:body
     [:section.hero
      [:div.hero-body
-      [:h1.title.has-text-centered (:title config/config)]
+      [:h1.title.has-text-centered (:title config/woof)]
       [:h2.subtitle.column.is-8.is-offset-2.has-text-centered
        [:a {:href (string/replace
-                   (:base-url config/config)
+                   (:base-url config/woof)
                    #"([^/])/*$" "$1/feed/updates")}
         "Subscribe"]
        " / "
-       [:a {:href (:project-url config/config)}
-        (:project-name config/config)]]]]
+       [:a {:href (:project-url config/woof)}
+        (:project-name config/woof)]]]]
     [:div.container.is-8
      [:div.columns
       [:div.column
        (when-let [bugs (->> (core/get-unfixed-bugs @core/db)
-                            intern-id
+                            core/intern-id
                             (sort-by #(count (:refs %)))
                             reverse)]
          [:section.section
@@ -79,19 +48,19 @@
            [:h1.title "Confirmed bugs"]
            [:div.content
             (for [bug bugs]
-              (format-link-fn bug :bug))]]])]
+              (core/format-link-fn bug :bug))]]])]
       [:div.column
        (when-let [changes (->> (core/get-unreleased-changes @core/db)
-                               intern-id
+                               core/intern-id
                                (sort-by :date))]
          [:section.section
           [:div.container
            [:h1.title "Future changes"]
            [:div.content
             (for [change changes]
-              (format-link-fn change :change))]]])
+              (core/format-link-fn change :change))]]])
        (when-let [releases (->> (core/get-releases @core/db)
-                                intern-id
+                                core/intern-id
                                 (sort-by :date)
                                 reverse)]
          [:section.section
@@ -99,7 +68,7 @@
            [:h1.title "Latest releases"]
            [:div.content
             (for [release (take 3 releases)]
-              (format-link-fn release :release))]]])]]]
+              (core/format-link-fn release :release))]]])]]]
     [:footer.footer
      [:div.columns
       [:div.column.is-offset-4.is-4.has-text-centered
@@ -123,19 +92,19 @@
 
 (defn get-updates [_]
   {:status 200
-   :body   (intern-id @core/db)})
+   :body   (core/intern-id @core/db)})
 
 (defn get-bugs [_]
   {:status 200
-   :body   (intern-id (core/get-unfixed-bugs @core/db))})
+   :body   (core/intern-id (core/get-unfixed-bugs @core/db))})
 
 (defn get-releases [_]
   {:status 200
-   :body   (intern-id (core/get-releases @core/db))})
+   :body   (core/intern-id (core/get-releases @core/db))})
 
 (defn get-changes [_]
   {:status 200
-   :body   (intern-id (core/get-unreleased-changes @core/db))})
+   :body   (core/intern-id (core/get-unreleased-changes @core/db))})
 
 (def handler
   (ring/ring-handler

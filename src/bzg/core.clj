@@ -9,7 +9,10 @@
             [mount.core :as mount]
             [bzg.config :as config]))
 
+;; Use a dynamic var here to use another value when testing
 (def ^:dynamic db-file-name "db.edn")
+
+;;; Core atoms and related functions
 
 (def db
   (atom (or (try (edn/read-string (slurp db-file-name))
@@ -27,6 +30,41 @@
    (reset! db-bug-refs (all-bug-refs newdb))
    (spit db-file-name (pr-str newdb))))
 
+;;; Utility functions
+
+(defn intern-id [m]
+  (map (fn [[k v]] (assoc v :id k)) m))
+
+(defn format-link-fn
+  [{:keys [from subject date id commit]} type]
+  (let [shortcommit  (if (< (count commit) 8) commit (subs commit 0 8))
+        mail-title   (format "Visit email sent by %s on %s" from date)
+        commit-title (format "Visit commit %s made by %s" shortcommit from)]
+    (condp = type
+      :bug
+      [:p [:a {:href   (format (:mail-url-format config/woof) id)
+               :title  mail-title
+               :target "_blank"}
+           subject]]
+      :change
+      [:p
+       [:a {:href   (format (:mail-url-format config/woof) id)
+            :title  mail-title
+            :target "_blank"}
+        subject]
+       " ("
+       [:a {:href   (format (:commit-url-format config/woof) commit)
+            :title  commit-title
+            :target "_blank"}
+        shortcommit] ")"]
+      :release
+      [:p [:a {:href   (format (:mail-url-format config/woof) id)
+               :title  mail-title
+               :target "_blank"}
+           subject]])))
+
+;;; Core functions to return db entries
+
 (defn get-unfixed-bugs [db]
   (filter #(and (= (:type (val %)) "bug")
                 (not (get (val %) :fixed))) db))
@@ -40,6 +78,8 @@
    (filter #(= (:type (val %)) "release") db)
    (take 10)
    (into {})))
+
+;;; Core functions to update the db
 
 (defn- update-bug-refs [id new-refs]
   (loop [refs new-refs
@@ -103,7 +143,7 @@
                (keep not-empty)
                (into #{})))]
     ;; Only process emails if they are sent from the mailing list.
-    (when (= X-Original-To (:mailing-list config/config))
+    (when (= X-Original-To (:mailing-list config/woof))
       ;; If any email with references contains in its references the id
       ;; of a known bug, add the message-id of this mail to the refs of
       ;; this bug.
@@ -130,16 +170,18 @@
         (and X-Woof-Release
              ;; Only the release manager can announce a release.
              (= (:address (first from))
-                (:release-manager config/config)))
+                (:release-manager config/woof)))
         (add-release msg X-Woof-Release)))))
+
+;;; Monitoring functions
 
 (defn- start-inbox-monitor []
   (let [session      (mail/get-session "imaps")
         mystore      (mail/store "imaps" session
-                                 (:server config/config)
-                                 (:user config/config)
-                                 (:password config/config))
-        folder       (mail/open-folder mystore (:folder config/config) :readonly)
+                                 (:server config/woof)
+                                 (:user config/woof)
+                                 (:password config/woof))
+        folder       (mail/open-folder mystore (:folder config/woof) :readonly)
         idle-manager (events/new-idle-manager session)]
     (events/add-message-count-listener
      ;; Process incoming mails

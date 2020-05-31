@@ -1,6 +1,6 @@
 (ns bzg.config)
 
-(def config
+(def woof
   {:user              (System/getenv "WOOF_MAIL_USER")
    :server            (System/getenv "WOOF_MAIL_SERVER")
    :password          (System/getenv "WOOF_MAIL_PASSWORD")

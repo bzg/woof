@@ -3,7 +3,6 @@
             [bzg.config :as config]
             [clojure.spec.alpha :as spec]
             [clojure.test :refer :all]
-            [clojure.string :as s]
             [clojure.java.shell :as sh]))
 
 (spec/def ::user string?)
@@ -39,52 +38,52 @@
 
 (deftest configuration
   (testing "Testing configuration"
-    (is (spec/valid? ::config config/config))))
+    (is (spec/valid? ::config config/woof))))
 
 (def test-data
   {:msg1 {:id        "id1"
           :subject   "[BUG] Confirmed bug"
-          :from      (list {:address (:user config/config)})
+          :from      (list {:address (:user config/woof)})
           :date-sent #inst "2020-05-27T00:13:11.037044Z"
-          :headers   [{"X-Original-To" (:mailing-list config/config)}
+          :headers   [{"X-Original-To" (:mailing-list config/woof)}
                       {"X-Woof-Bug" "confirmed"}]}
    :msg2 {:id        "id2"
           :subject   "[FIXED] Fixed bug"
-          :from      (list {:address (:user config/config)})
+          :from      (list {:address (:user config/woof)})
           :date-sent #inst "2020-05-27T00:13:11.037044Z"
-          :headers   [{"X-Original-To" (:mailing-list config/config)}
+          :headers   [{"X-Original-To" (:mailing-list config/woof)}
                       {"References" "id1"}
                       {"X-Woof-Bug" "fixed"}]}
    :msg3 {:id        "id3"
           :subject   "Incompatible change for 8.3"
-          :from      (list {:address (:user config/config)})
+          :from      (list {:address (:user config/woof)})
           :date-sent #inst "2020-05-27T00:13:11.037044Z"
-          :headers   [{"X-Original-To" (:mailing-list config/config)}
+          :headers   [{"X-Original-To" (:mailing-list config/woof)}
                       {"X-Woof-Change" "commithash 8.3"}]}
    :msg4 {:id        "id4"
           :subject   "Release 8.3"
-          :from      (list {:address (:release-manager config/config)})
+          :from      (list {:address (:release-manager config/woof)})
           :date-sent #inst "2020-05-27T00:13:11.037044Z"
-          :headers   [{"X-Original-To" (:mailing-list config/config)}
+          :headers   [{"X-Original-To" (:mailing-list config/woof)}
                       {"X-Woof-Release" "8.3"}]}
    :msg5 {:id        "id5"
           :subject   "Release 8.4"
-          :from      (list {:address (:release-manager config/config)})
+          :from      (list {:address (:release-manager config/woof)})
           :date-sent #inst "2020-05-28T00:13:11.037044Z"
-          :headers   [{"X-Original-To" (:mailing-list config/config)}
+          :headers   [{"X-Original-To" (:mailing-list config/woof)}
                       {"X-Woof-Release" "8.4"}]}
    :msg6 {:id        "id6"
           :subject   "[BUG] Bug in release 8.3"
-          :from      (list {:address (:user config/config)})
+          :from      (list {:address (:user config/woof)})
           :date-sent #inst "2020-05-28T00:13:11.037044Z"
-          :headers   [{"X-Original-To" (:mailing-list config/config)}
+          :headers   [{"X-Original-To" (:mailing-list config/woof)}
                       {"References" "id4 id0"}
                       {"X-Woof-Bug" "confirmed"}]}
    :msg7 {:id        "id7"
           :subject   "Fix for bug wrt release 8.3"
-          :from      (list {:address (:user config/config)})
+          :from      (list {:address (:user config/woof)})
           :date-sent #inst "2020-05-28T00:13:11.037044Z"
-          :headers   [{"X-Original-To" (:mailing-list config/config)}
+          :headers   [{"X-Original-To" (:mailing-list config/woof)}
                       {"References" "id4"}
                       {"X-Woof-Bug" "fixed"}]}})
 
