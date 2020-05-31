@@ -1,0 +1,83 @@
+#+title: Woof!
+
+Woof monitors a mailbox, stores messages in a database depending on
+their headers and exposes a webpage with information on stored
+messages.
+
+Your mailbox needs to be subscribed to a mailing list and people on
+the mailing list need to manually set the headers corresponding to the
+events they want to store and advertize through the webpage.
+
+* Events
+
+Woof knows three different headers:
+
+- X-Woof-Bug :: For declaring a bug as =confirmed= or =fixed=.
+
+- X-Woof-Change :: For declaring that a =commit= implements a change
+  that users need to be aware of in an upcoming =version=.
+
+- X-Woof-Release :: For announcing a new released =version=.
+
+* Usage
+
+** Make a release
+
+: From: xxx@xxx.xx
+: X-Woof-Release: 7
+: ...
+
+will declare a release.
+
+** Confirm a bug
+
+: From: xxx@xxx.xx
+: X-Woof-Bug: confirmed
+: ...
+
+will mark a bug as =confirmed=.
+
+** Fix a bug
+
+: From: xxx@xxx.xx
+: X-Woof-Bug: fixed
+: ...
+
+will mark a bug as =fixed= if it has been confirmed before.
+
+** Announce a change
+
+: From: xxx@xxx.xx
+: X-Woof-Change: 1234567879 8.4
+: ...
+
+will declare the commit =1234567879= as an upcoming change for the
+future release version =8.4=.
+
+* Configure
+
+You need to set some environment variables to let the application run.
+
+See [[file:src/bzg/config.clj]] for the list of required variables.
+
+Run this to check your configuration:
+
+: ~$ clj -A:test:runner
+
+* Contribute
+
+Woof is alpha software.  It is being tested to advertize updates from
+[[https://updates.orgmode.org][Org-mode]] but you should be able to use it for any project, provided
+that the maintainers on a mailing list agree to use Woof headers.
+
+That said, contributions are welcome!
+
+* Support the Clojure(script) ecosystem
+
+If you like Clojure(script), please consider supporting maintainers by
+donating to [[https://www.clojuriststogether.org][clojuriststogether.org]].
+* License
+
+© Bastien Guerry 2020
+
+Woof is released under [[file:LICENSE][the EPL 2.0 license]].
