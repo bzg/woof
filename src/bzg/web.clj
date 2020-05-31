@@ -103,12 +103,27 @@
     [:footer.footer
      [:div.columns
       [:div.column.is-offset-4.is-4.has-text-centered
+       [:p "Feeds: "
+        [:a {:href "/feed/bugs"} "bugs"] ", "
+        [:a {:href "/feed/changes"} "changes"] ", "
+        [:a {:href "/feed/releases"} "releases"] " or "
+        [:a {:href "/feed/updates"} "all updates"]]
+       [:p "Data: "
+        [:a {:href "/data/bugs"} "bugs"] ", "
+        [:a {:href "/data/changes"} "changes"] ", "
+        [:a {:href "/data/releases"} "releases"] " or "
+        [:a {:href "/data/updates"} "all updates"]]
+       [:br]
        [:p "Made with " ;; FIXME
         [:a {:href ""} "WOOF"]]]]]]))
 
 (defn get-homepage [_]
   {:status 200
    :body   (homepage)})
+
+(defn get-updates [_]
+  {:status 200
+   :body   (intern-id @core/db)})
 
 (defn get-bugs [_]
   {:status 200
@@ -126,14 +141,16 @@
   (ring/ring-handler
    (ring/router
     [["/" {:get get-homepage}]
-     ["/bugs" {:get get-bugs}]
-     ["/releases" {:get get-releases}]
-     ["/changes" {:get get-changes}]
+     ["/data"
+      ["/updates" {:get get-updates}]
+      ["/bugs" {:get get-bugs}]
+      ["/changes" {:get get-changes}]
+      ["/releases" {:get get-releases}]]
      ["/feed"
       ["/updates" {:get feeds/feed-updates}]
       ["/bugs" {:get feeds/feed-bugs}]
-      ["/releases" {:get feeds/feed-releases}]
-      ["/changes" {:get feeds/feed-changes}]]]
+      ["/changes" {:get feeds/feed-changes}]
+      ["/releases" {:get feeds/feed-releases}]]]
     {:data {:muuntaja   m/instance
       	    :middleware [params/wrap-params
                          muuntaja/format-middleware]}})
