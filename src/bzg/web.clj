@@ -39,36 +39,43 @@
     [:div.container.is-8
      [:div.columns
       [:div.column
-       (when-let [bugs (->> (core/get-unfixed-bugs @core/db)
+       [:section.section
+        [:div.container
+         [:h1.title "Confirmed bugs"]
+         (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
                             core/intern-id
                             (sort-by #(count (:refs %)))
-                            reverse)]
-         [:section.section
-          [:div.container
-           [:h1.title "Confirmed bugs"]
+                            reverse
+                            not-empty)]
            [:div.content
             (for [bug bugs]
-              (core/format-link-fn bug :bug))]]])]
+              (core/format-link-fn bug :bug))]
+           [:p "No confirmed bug."])]]]
       [:div.column
-       (when-let [changes (->> (core/get-unreleased-changes @core/db)
+       [:section.section
+        [:div.container
+         [:h1.title "Upcoming changes"]
+         (if-let [changes (->> (core/get-unreleased-changes @core/db)
                                core/intern-id
-                               (sort-by :date))]
-         [:section.section
-          [:div.container
-           [:h1.title "Future changes"]
+                               (sort-by :date)
+                               not-empty)]
+
            [:div.content
             (for [change changes]
-              (core/format-link-fn change :change))]]])
-       (when-let [releases (->> (core/get-releases @core/db)
+              (core/format-link-fn change :change))]
+           [:p "No upcoming change."])]]
+       [:section.section
+        [:div.container
+         [:h1.title "Latest releases"]
+         (if-let [releases (->> (core/get-releases @core/db)
                                 core/intern-id
                                 (sort-by :date)
-                                reverse)]
-         [:section.section
-          [:div.container
-           [:h1.title "Latest releases"]
+                                reverse
+                                not-empty)]
            [:div.content
             (for [release (take 3 releases)]
-              (core/format-link-fn release :release))]]])]]]
+              (core/format-link-fn release :release))]
+           [:p "No release."])]]]]]
     [:footer.footer
      [:div.columns
       [:div.column.is-offset-4.is-4.has-text-centered
@@ -83,8 +90,8 @@
         [:a {:href "/data/releases"} "releases"] " or "
         [:a {:href "/data/updates"} "all updates"]]
        [:br]
-       [:p "Made with " ;; FIXME
-        [:a {:href ""} "WOOF"]]]]]]))
+       [:p "Made with "
+        [:a {:href "https://github.com/bzg/woof"} "WOOF"]]]]]]))
 
 (defn get-homepage [_]
   {:status 200
