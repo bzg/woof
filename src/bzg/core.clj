@@ -94,14 +94,19 @@
              (some @db-bug-refs rest-refs)))))
 
 (defn- add-change [{:keys [id from subject date-sent]} X-Woof-Change]
-  (let [c-specs (string/split X-Woof-Change #"\s")]
-    (swap! db conj {id {:type     "change"
-                        :from     (:address (first from))
-                        :commit   (first c-specs)
-                        :versions (into #{} (next c-specs))
-                        :subject  subject
-                        :date     date-sent}})
-    (println from "added a change via" id)))
+  (let [c-specs  (string/split X-Woof-Change #"\s")
+        commit   (first c-specs)
+        versions (into #{} (next c-specs))]
+    (if (some (into #{} (map :version (vals (get-releases @db)))) versions)
+      (println "%s tried to add a change against a know release, ignoring %s"
+               from id)
+      (do (swap! db conj {id {:type     "change"
+                              :from     (:address (first from))
+                              :commit   commit
+                              :versions versions
+                              :subject  subject
+                              :date     date-sent}})
+          (println from "added a change via" id)))))
 
 (defn- add-confirmed-bug [{:keys [id from subject date-sent]} refs]
   (swap! db conj {id {:type    "bug"
