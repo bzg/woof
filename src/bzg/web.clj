@@ -20,8 +20,8 @@
 (defn format-link-fn
   [{:keys [from subject date id commit]} type]
   (let [shortcommit  (if (< (count commit) 8) commit (subs commit 0 8))
-        mail-title   (format "Visit email by %s on %s" from date)
-        commit-title (format "Visit commit %s by %s" shortcommit from)]
+        mail-title   (format "Visit email sent by %s on %s" from date)
+        commit-title (format "Visit commit %s made by %s" shortcommit from)]
     (condp = type
       :bug
       [:p [:a {:href   (format (:mail-url-format config/config) id)
