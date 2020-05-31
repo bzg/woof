@@ -3,14 +3,14 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>bzg</groupId>
   <artifactId>woof</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
   <name>bzg/woof</name>
-  <description>FIXME: my new application.</description>
+  <description>Watch Over Our Folders</description>
   <url>https://github.com/bzg/woof</url>
   <licenses>
     <license>
-      <name>Eclipse Public License</name>
-      <url>http://www.eclipse.org/legal/epl-v10.html</url>
+      <name>Eclipse Public License v 2.0</name>
+      <url>http://www.eclipse.org/legal/epl-v20.html</url>
     </license>
   </licenses>
   <developers>
