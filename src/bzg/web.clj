@@ -21,29 +21,32 @@
   (map (fn [[k v]] (assoc v :id k)) m))
 
 (defn format-link-fn
-  [{:keys [subject date id version versions commit]} type]
-  (condp = type
-    :bug
-    [:p [:a {:href   (format (:mail-url-format config/config) id)
-             :title  "Find and read the message"
-             :target "_blank"}
-         subject]]
-    :change
-    [:p
-     [:a {:href   (format (:mail-url-format config/config) id)
-          :title  "Find and read the message"
-          :target "_blank"}
-      subject]
-     " ("
-     [:a {:href   (format (:commit-url-format config/config) commit)
-          :title  "Find and read the commit"
-          :target "_blank"}
-      (if (< (count commit) 8) commit (subs commit 0 8))] ")"]
-    :release
-    [:p [:a {:href   (format (:mail-url-format config/config) id)
-             :title  "Find and read the release message"
-             :target "_blank"}
-         subject]]))
+  [{:keys [from subject date id version versions commit]} type]
+  (let [shortcommit  (if (< (count commit) 8) commit (subs commit 0 8))
+        mail-title   (format "Visit email by %s on %s" from date)
+        commit-title (format "Visit commit %s by %s" shortcommit from)]
+    (condp = type
+      :bug
+      [:p [:a {:href   (format (:mail-url-format config/config) id)
+               :title  mail-title
+               :target "_blank"}
+           subject]]
+      :change
+      [:p
+       [:a {:href   (format (:mail-url-format config/config) id)
+            :title  mail-title
+            :target "_blank"}
+        subject]
+       " ("
+       [:a {:href   (format (:commit-url-format config/config) commit)
+            :title  commit-title
+            :target "_blank"}
+        shirtcommit] ")"]
+      :release
+      [:p [:a {:href   (format (:mail-url-format config/config) id)
+               :title  mail-title
+               :target "_blank"}
+           subject]])))
 
 (defn feed [_]
   (letfn [(format-item [{:keys [id subject date from]}]
