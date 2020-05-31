@@ -4,6 +4,8 @@
             [clojure-mail.events :as events]
             [clojure.string :as string]
             [clojure.edn :as edn]
+            [clojure.set]
+            [clojure.walk :as walk]
             [mount.core :as mount]
             [bzg.config :as config]))
 
@@ -44,7 +46,7 @@
          ref  (some @db-bug-refs refs)]
     (when ref
       (doseq [e @db]
-        (if-let [rfs (:refs (val e))]
+        (when-let [rfs (:refs (val e))]
           (when (rfs ref)
             (swap! db assoc-in [(key e) :refs] (conj rfs id))))))
     (when-let [rest-refs (last (next (partition-by #{ref} refs)))]
@@ -69,10 +71,12 @@
                       :date    date-sent}})
   (println from "added a bug via" id))
 
-(defn- add-fixed-bug [{:keys [id from subject date-sent]} refs]
+(defn- add-fixed-bug [{:keys [id from date-sent]} refs]
   (doseq [e (get-unfixed-bugs @db)]
     (when (some (:refs (val e)) refs)
-      (swap! db assoc-in [(key e) :fixed] id)))
+      (swap! db assoc-in [(key e) :fixed] id)
+      (swap! db assoc-in [(key e) :fixed-by] from)
+      (swap! db assoc-in [(key e) :fixed-at] date-sent)))
   (println from "marked bug fixed via" id))
 
 (defn- add-release [{:keys [id from subject date-sent]} X-Woof-Release]
@@ -92,8 +96,7 @@
   [{:keys [id from] :as msg}]
   (let [{:keys [X-Woof-Bug X-Woof-Release X-Woof-Change
                 X-Original-To References]}
-        (clojure.walk/keywordize-keys
-         (apply conj (:headers msg)))
+        (walk/keywordize-keys (apply conj (:headers msg)))
         refs
         (when (not-empty References)
           (->> (string/split References #"\s")

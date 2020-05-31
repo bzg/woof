@@ -1,10 +1,8 @@
 (ns bzg.web
   (:require [org.httpkit.server :as server]
-            [jsonista.core :as j]
             [reitit.ring :as ring]
             [bzg.core :as core]
             [bzg.config :as config]
-            [clojure.walk :as walk]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [ring.middleware.params :as params]
             [muuntaja.core :as m]
@@ -13,7 +11,6 @@
             [mount.core :as mount]
             [hiccup.page :as h]
             [clj-rss.core :as rss]
-            [java-time :as t]
             [clojure.string :as string])
   (:gen-class))
 
@@ -21,7 +18,7 @@
   (map (fn [[k v]] (assoc v :id k)) m))
 
 (defn format-link-fn
-  [{:keys [from subject date id version versions commit]} type]
+  [{:keys [from subject date id commit]} type]
   (let [shortcommit  (if (< (count commit) 8) commit (subs commit 0 8))
         mail-title   (format "Visit email by %s on %s" from date)
         commit-title (format "Visit commit %s by %s" shortcommit from)]
@@ -41,7 +38,7 @@
        [:a {:href   (format (:commit-url-format config/config) commit)
             :title  commit-title
             :target "_blank"}
-        shirtcommit] ")"]
+        shortcommit] ")"]
       :release
       [:p [:a {:href   (format (:mail-url-format config/config) id)
                :title  mail-title
@@ -170,11 +167,11 @@
 (mount/defstate woof-server
   :start (do (println "Woof monitoring started on localhost:3000")
              (server/run-server handler {:port 3000}))
-  :stop (do (when woof-server
-              (println "Woof monitoring stopped")
-              (woof-server :timeout 100))))
+  :stop (when woof-server
+          (println "Woof monitoring stopped")
+          (woof-server :timeout 100)))
 
-(defn -main [& [json]]
+(defn -main []
   (mount/start #'core/woof-manager #'woof-server))
 
 ;; (-main)
