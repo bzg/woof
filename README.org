@@ -62,7 +62,14 @@ See [[file:src/bzg/config.clj]] for the list of required variables.
 
 Run this to check your configuration:
 
+: ~$ cd woof/
 : ~$ clj -A:test:runner
+
+* Deploy
+
+: ~$ cd woof/
+: ~$ clj -A:uberjar
+: ~$ java -jar woof.jar
 
 * Contribute
 
