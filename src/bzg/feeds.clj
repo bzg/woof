@@ -14,6 +14,7 @@
    :link        (format (:mail-url-format config/woof) id)
    :description (feed-description msg type)
    :author      from
+   :guid        id
    :pubDate     date})
 
 (defn feed [path items]
