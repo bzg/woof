@@ -17,7 +17,8 @@
    :pubDate     date})
 
 (defn feed [path items]
-  {:status 200
+  {:status  200
+   :headers {"Content-Type" "application/rss+xml"}
    :body
    (rss/channel-xml
     {:title       (str (:feed-title config/woof) " - " path)

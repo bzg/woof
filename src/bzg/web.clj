@@ -95,8 +95,9 @@
         [:a {:href "https://github.com/bzg/woof"} "WOOF"]]]]]]))
 
 (defn get-homepage [_]
-  {:status 200
-   :body   (homepage)})
+  {:status  200
+   :headers {"Content-Type" "text/html"}
+   :body    (homepage)})
 
 (defn get-updates [_]
   {:status 200
