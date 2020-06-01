@@ -3,11 +3,11 @@
             [bzg.config :as config]
             [bzg.core :as core]
             [clojure.string :as string]
-            [hiccup.page :as h]))
+            [hiccup.core :as h]))
 
 (defn feed-description [msg type]
   (let [cdata "<![CDATA[ %s ]]>"]
-    (format cdata (h/html5 [:body (core/format-link-fn msg type)]))))
+    (format cdata (h/html (core/format-link-fn msg type)))))
 
 (defn feed-item [{:keys [id subject date from] :as msg} type]
   (let [link (format (:mail-url-format config/woof) id)]
