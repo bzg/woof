@@ -161,7 +161,7 @@
 (defn process-incoming-message
   [{:keys [id from] :as msg}]
   (let [{:keys [X-Woof-Bug X-Woof-Release X-Woof-Change
-                X-Original-To References]}
+                X-Original-To X-BeenThere To References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         refs
         (when (not-empty References)
@@ -169,7 +169,8 @@
                (keep not-empty)
                (into #{})))]
     ;; Only process emails if they are sent from the mailing list.
-    (when (= X-Original-To (:mailing-list config/woof))
+    (when (some (into #{} (list X-Original-To X-BeenThere To))
+                (into #{} (list (:mailing-list config/woof))))
       ;; If any email with references contains in its references the id
       ;; of a known bug, add the message-id of this mail to the refs of
       ;; this bug.
