@@ -10,16 +10,17 @@
     (format cdata (h/html5 [:body (core/format-link-fn msg type)]))))
 
 (defn feed-item [{:keys [id subject date from] :as msg} type]
-  {:title       subject
-   :link        (format (:mail-url-format config/woof) id)
-   :description (feed-description msg type)
-   :author      from
-   :guid        id
-   :pubDate     date})
+  (let [link (format (:mail-url-format config/woof) id)]
+    {:title       subject
+     :link        link
+     :description (feed-description msg type)
+     :author      from
+     :guid        link
+     :pubDate     date}))
 
 (defn feed [path items]
   {:status  200
-   :headers {"Content-Type" "application/rss+xml"}
+   :headers {"Content-Type" "application/xml"}
    :body
    (rss/channel-xml
     {:title       (str (:feed-title config/woof) " - " path)
