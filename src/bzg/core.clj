@@ -38,21 +38,23 @@
 (defn get-from [from]
   (:address (first from)))
 
+(defn get-id [^String id]
+  (last (re-find #"^<?(.+[^>])>?$" id)))
+
 (defn format-link-fn
   [{:keys [from subject date id commit]} type]
   (let [shortcommit  (if (< (count commit) 8) commit (subs commit 0 8))
         mail-title   (format "Visit email sent by %s on %s" from date)
-        commit-title (format "Visit commit %s made by %s" shortcommit from)
-        bare-id      (last (re-find #"^<(.+)>$" id))]
+        commit-title (format "Visit commit %s made by %s" shortcommit from)]
     (condp = type
       :bug
-      [:p [:a {:href   (format (:mail-url-format config/woof) bare-id)
+      [:p [:a {:href   (format (:mail-url-format config/woof) id)
                :title  mail-title
                :target "_blank"}
            subject]]
       :change
       [:p
-       [:a {:href   (format (:mail-url-format config/woof) bare-id)
+       [:a {:href   (format (:mail-url-format config/woof) id)
             :title  mail-title
             :target "_blank"}
         subject]
@@ -62,7 +64,7 @@
             :target "_blank"}
         shortcommit] ")"]
       :release
-      [:p [:a {:href   (format (:mail-url-format config/woof) bare-id)
+      [:p [:a {:href   (format (:mail-url-format config/woof) id)
                :title  mail-title
                :target "_blank"}
            subject]])))
@@ -95,7 +97,7 @@
       (doseq [e @db]
         (when-let [rfs (:refs (val e))]
           (when (rfs ref)
-            (swap! db assoc-in [(key e) :refs] (conj rfs id))))))
+            (swap! db assoc-in [(key e) :refs] (conj rfs (get-id id)))))))
     (when-let [rest-refs (last (next (partition-by #{ref} refs)))]
       (recur rest-refs
              (some @db-bug-refs rest-refs)))))
@@ -105,59 +107,63 @@
         commit    (first c-specs)
         versions  (into #{} (next c-specs))
         released  (get-released-versions @db)
-        true-from (get-from from)]
+        true-from (get-from from)
+        true-id   (get-id id)]
     (cond
       (and released (some released versions))
       (format "%s tried to add a change against a know release, ignoring %s"
-              true-from id)
+              true-from true-id)
       (empty? versions)
       (format "%s tried to add a change with a wrong header format, ignoring %s"
-              true-from id)
+              true-from true-id)
       :else
-      (do (swap! db conj {id {:type     "change"
-                              :from     true-from
-                              :commit   commit
-                              :versions versions
-                              :subject  subject
-                              :date     date-sent}})
+      (do (swap! db conj {true-id {:type     "change"
+                                   :from     true-from
+                                   :commit   commit
+                                   :versions versions
+                                   :subject  subject
+                                   :date     date-sent}})
           (format "%s added a change for version %s via %s"
-                  true-from (first versions) id)))))
+                  true-from (first versions) true-id)))))
 
 (defn- add-confirmed-bug [{:keys [id from subject date-sent]} refs]
-  (let [true-from (get-from from)]
-    (swap! db conj {id {:type    "bug"
-                        :from    true-from
-                        :refs    (into #{} (conj refs id))
-                        :subject subject
-                        :date    date-sent}})
-    (format "%s added a bug via %s" true-from id)))
+  (let [true-from (get-from from)
+        true-id   (get-id id)]
+    (swap! db conj {true-id {:type    "bug"
+                             :from    true-from
+                             :refs    (into #{} (conj refs true-id))
+                             :subject subject
+                             :date    date-sent}})
+    (format "%s added a bug via %s" true-from true-id)))
 
 (defn- add-fixed-bug [{:keys [id from date-sent]} refs]
-  (let [true-from (get-from from)]
+  (let [true-from (get-from from)
+        true-id   (get-id id)]
     (doseq [e (get-unfixed-bugs @db)]
       (when (some (:refs (val e)) refs)
-        (swap! db assoc-in [(key e) :fixed] id)
+        (swap! db assoc-in [(key e) :fixed] true-id)
         (swap! db assoc-in [(key e) :fixed-by] true-from)
         (swap! db assoc-in [(key e) :fixed-at] date-sent)))
-    (format "%s marked bug fixed via %s" true-from id)))
+    (format "%s marked bug fixed via %s" true-from true-id)))
 
 (defn- add-release [{:keys [id from subject date-sent]} X-Woof-Release]
   (let [released  (get-released-versions @db)
-        true-from (get-from from)]
+        true-from (get-from from)
+        true-id   (get-id id)]
     (if (and released (some released #{X-Woof-Release}))
       (format "%s tried to release with a known version number via %s"
-              true-from id)
+              true-from true-id)
       ;; Add the release to the db
-      (do (swap! db conj {id {:type    "release"
-                              :from    true-from
-                              :version X-Woof-Release
-                              :subject subject
-                              :date    date-sent}})
+      (do (swap! db conj {true-id {:type    "release"
+                                   :from    true-from
+                                   :version X-Woof-Release
+                                   :subject subject
+                                   :date    date-sent}})
           ;; Mark related changes as released
           (doseq [[k v] (get-unreleased-changes @db)]
             (when ((:versions v) X-Woof-Release)
               (swap! db assoc-in [k :released] X-Woof-Release)))
-          (format "%s released %s via %s" true-from X-Woof-Release id)))))
+          (format "%s released %s via %s" true-from X-Woof-Release true-id)))))
 
 (defn process-incoming-message
   [{:keys [id from] :as msg}]
@@ -175,7 +181,7 @@
       ;; If any email with references contains in its references the id
       ;; of a known bug, add the message-id of this mail to the refs of
       ;; this bug.
-      (when refs (update-bug-refs id refs))
+      (when refs (update-bug-refs (get-id id) refs))
       (cond
         ;; Announce a breaking change in the current development
         ;; branches and associate it with future version(s).  Anyone
