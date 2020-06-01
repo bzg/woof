@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>bzg</groupId>
   <artifactId>woof</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <name>bzg/woof</name>
   <description>Watch Over Our Folders</description>
   <url>https://github.com/bzg/woof</url>
