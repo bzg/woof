@@ -42,16 +42,17 @@
   [{:keys [from subject date id commit]} type]
   (let [shortcommit  (if (< (count commit) 8) commit (subs commit 0 8))
         mail-title   (format "Visit email sent by %s on %s" from date)
-        commit-title (format "Visit commit %s made by %s" shortcommit from)]
+        commit-title (format "Visit commit %s made by %s" shortcommit from)
+        bare-id      (last (re-find #"^<(.+)>$" id))]
     (condp = type
       :bug
-      [:p [:a {:href   (format (:mail-url-format config/woof) id)
+      [:p [:a {:href   (format (:mail-url-format config/woof) bare-id)
                :title  mail-title
                :target "_blank"}
            subject]]
       :change
       [:p
-       [:a {:href   (format (:mail-url-format config/woof) id)
+       [:a {:href   (format (:mail-url-format config/woof) bare-id)
             :title  mail-title
             :target "_blank"}
         subject]
@@ -61,7 +62,7 @@
             :target "_blank"}
         shortcommit] ")"]
       :release
-      [:p [:a {:href   (format (:mail-url-format config/woof) id)
+      [:p [:a {:href   (format (:mail-url-format config/woof) bare-id)
                :title  mail-title
                :target "_blank"}
            subject]])))
