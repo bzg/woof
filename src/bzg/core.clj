@@ -82,7 +82,6 @@
 (defn get-releases [db]
   (->>
    (filter #(= (:type (val %)) "release") db)
-   (take 10)
    (into {})))
 
 (defn get-released-versions [db]
