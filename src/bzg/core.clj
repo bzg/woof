@@ -149,10 +149,17 @@
   (let [released  (get-released-versions @db)
         true-from (get-from from)
         true-id   (get-id id)]
-    (if (and released (some released #{X-Woof-Release}))
+    (cond
+      ;; Prevent release when not from the release manager
+      (not (= true-from (:release-manager config/woof)))
+      (format "%s tried to release via %s while not being release manager"
+              true-from true-id)
+      ;; Prevent duplicate release
+      (and released (some released #{X-Woof-Release}))
       (format "%s tried to release with a known version number via %s"
               true-from true-id)
       ;; Add the release to the db
+      :else
       (do (swap! db conj {true-id {:type    "release"
                                    :from    true-from
                                    :version X-Woof-Release
@@ -201,10 +208,8 @@
              (some @db-bug-refs refs))
         (add-fixed-bug msg refs)
         ;; Or make a release.
-        (and X-Woof-Release
-             ;; Only the release manager can announce a release.
-             (= (get-from from)
-                (:release-manager config/woof)))
+        X-Woof-Release
+        ;; Only the release manager can announce a release.
         (add-release msg X-Woof-Release)))))
 
 ;;; Monitoring functions
