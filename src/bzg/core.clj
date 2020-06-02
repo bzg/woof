@@ -183,7 +183,8 @@
                (into #{})))]
     ;; Only process emails if they are sent from the mailing list.
     (when (some (into #{} (list X-Original-To X-BeenThere
-                                (last (re-find #"^.*<(.*[^>])>.*$" To))))
+                                (when (string? To)
+                                  (last (re-find #"^.*<(.*[^>])>.*$" To)))))
                 (into #{} (list (:mailing-list config/woof))))
       ;; If any email with references contains in its references the id
       ;; of a known bug, add the message-id of this mail to the refs of
