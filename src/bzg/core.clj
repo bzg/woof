@@ -182,11 +182,13 @@
           (->> (string/split References #"\s")
                (keep not-empty)
                (into #{})))]
-    ;; Only process emails if they are sent from the mailing list.
-    (when (some (into #{} (list X-Original-To X-BeenThere
-                                (when (string? To)
-                                  (last (re-find #"^.*<(.*[^>])>.*$" To)))))
-                (into #{} (list (:mailing-list config/woof))))
+    ;; Only process emails if they are sent directly from the release
+    ;; manager or from the mailing list.
+    (when (or (= from (:release-manager config/woof))
+              (some (into #{} (list X-Original-To X-BeenThere
+                                    (when (string? To)
+                                      (last (re-find #"^.*<(.*[^>])>.*$" To)))))
+                    (into #{} (list (:mailing-list config/woof)))))
       ;; If any email with references contains in its references the id
       ;; of a known bug, add the message-id of this mail to the refs of
       ;; this bug.
