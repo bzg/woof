@@ -238,7 +238,7 @@
               (remove nil?
                       (->> e :messages
                            (map message/read-message)
-                           (map process-incoming-message2))))))
+                           (map process-incoming-message))))))
       ;; Don't process deleted mails
       nil
       folder
