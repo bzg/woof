@@ -7,7 +7,8 @@
             [clojure.set]
             [clojure.walk :as walk]
             [mount.core :as mount]
-            [bzg.config :as config]))
+            [bzg.config :as config]
+            [tea-time.core :as tt]))
 
 ;; Use a dynamic var here to use another value when testing
 (def ^:dynamic db-file-name "db.edn")
@@ -215,33 +216,44 @@
 
 ;;; Monitoring functions
 
-(defn- start-inbox-monitor []
-  (let [session      (mail/get-session "imaps")
-        mystore      (mail/store "imaps" session
-                                 (:server config/woof)
-                                 (:user config/woof)
-                                 (:password config/woof))
-        folder       (mail/open-folder mystore (:folder config/woof) :readonly)
-        idle-manager (events/new-idle-manager session)]
-    (events/add-message-count-listener
-     ;; Process incoming mails
-     (fn [e]
-       (doall
-        (map #(do (println %)
-                  (spit "logs.txt" (str % "\n") :append true))
-             (remove nil?
-                     (->> e :messages
-                          (map message/read-message)
-                          (map process-incoming-message))))))
-     ;; Don't process deleted mails
-     nil
-     folder
-     idle-manager)
-    idle-manager))
+(def woof-monitor (atom nil))
+(defn- start-inbox-monitor! []
+  (reset!
+   woof-monitor
+   (let [session      (mail/get-session "imaps")
+         mystore      (mail/store "imaps" session
+                                  (:server config/woof)
+                                  (:user config/woof)
+                                  (:password config/woof))
+         folder       (mail/open-folder mystore (:folder config/woof) :readonly)
+         idle-manager (events/new-idle-manager session)]
+     (events/add-message-count-listener
+      ;; Process incoming mails
+      (fn [e]
+        (doall
+         (map #(do (println %)
+                   (spit "logs.txt" (str % "\n") :append true))
+              (remove nil?
+                      (->> e :messages
+                           (map message/read-message)
+                           (map process-incoming-message2))))))
+      ;; Don't process deleted mails
+      nil
+      folder
+      idle-manager)
+     idle-manager)))
+
+(defn- start-tasks! []
+  (tt/every! 1200 ;; 20 minutes
+             (fn []
+               (try 
+                 (events/stop @woof-monitor)
+                 (catch Exception _ nil))
+               (start-inbox-monitor!))))
 
 (mount/defstate woof-manager
-  :start (do (println "Woof manager started")
-             (start-inbox-monitor))
+  :start (do (start-tasks!)
+             (println "Woof started"))
   :stop (when woof-manager
-          (println "Woof manager stopped")
-          (events/stop woof-manager)))
+          (events/stop woof-monitor)
+          (println "Woof stopped")))

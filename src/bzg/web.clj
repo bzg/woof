@@ -12,7 +12,8 @@
             [mount.core :as mount]
             [hiccup.page :as h]
             [clojure.string :as string]
-            [clojure.edn :as edn])
+            [clojure.edn :as edn]
+            [tea-time.core :as tt])
   (:gen-class))
 
 (defn homepage []
@@ -149,6 +150,7 @@
             (woof-server :timeout 100))))
 
 (defn -main []
+  (tt/start!)
   (mount/start #'core/woof-manager #'woof-server))
 
 ;; (-main)
