@@ -179,7 +179,7 @@
               (swap! db assoc-in [k :released] X-Woof-Release)))
           (format "%s released %s via %s" true-from X-Woof-Release true-id)))))
 
-(defn- process-incoming-message
+(defn process-incoming-message
   [{:keys [id from] :as msg}]
   (let [{:keys [X-Woof-Bug X-Woof-Release X-Woof-Change
                 X-Original-To X-BeenThere To References]}
