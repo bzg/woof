@@ -8,7 +8,8 @@
             [clojure.walk :as walk]
             [mount.core :as mount]
             [bzg.config :as config]
-            [tea-time.core :as tt]))
+            [tea-time.core :as tt]
+            [clojure.string :as s]))
 
 ;; Use a dynamic var here to use another value when testing
 (def ^:dynamic db-file-name "db.edn")
@@ -41,6 +42,12 @@
 
 (defn get-id [^String id]
   (last (re-find #"^<?(.+[^>])>?$" id)))
+
+(defn get-subject [^String s]
+  (-> s
+      (s/replace #"^(R[Ee] ?: ?)+" "")
+      (s/replace #"\([^)]+\)" "")
+      (s/trim)))
 
 (defn format-link-fn
   [{:keys [from subject date id commit]} type]
@@ -121,7 +128,7 @@
                                    :from     true-from
                                    :commit   commit
                                    :versions versions
-                                   :subject  subject
+                                   :subject  (get-subject subject)
                                    :date     date-sent}})
           (format "%s added a change for version %s via %s"
                   true-from (first versions) true-id)))))
@@ -132,7 +139,7 @@
     (swap! db conj {true-id {:type    "bug"
                              :from    true-from
                              :refs    (into #{} (conj refs true-id))
-                             :subject subject
+                             :subject (get-subject subject)
                              :date    date-sent}})
     (format "%s added a bug via %s" true-from true-id)))
 
@@ -164,7 +171,7 @@
       (do (swap! db conj {true-id {:type    "release"
                                    :from    true-from
                                    :version X-Woof-Release
-                                   :subject subject
+                                   :subject (get-subject subject)
                                    :date    date-sent}})
           ;; Mark related changes as released
           (doseq [[k v] (get-unreleased-changes @db)]
@@ -172,7 +179,7 @@
               (swap! db assoc-in [k :released] X-Woof-Release)))
           (format "%s released %s via %s" true-from X-Woof-Release true-id)))))
 
-(defn process-incoming-message
+(defn- process-incoming-message
   [{:keys [id from] :as msg}]
   (let [{:keys [X-Woof-Bug X-Woof-Release X-Woof-Change
                 X-Original-To X-BeenThere To References]}
