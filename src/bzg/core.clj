@@ -46,7 +46,7 @@
 (defn get-subject [^String s]
   (-> s
       (s/replace #"^(R[Ee] ?: ?)+" "")
-      (s/replace #"\([^)]+\)" "")
+      (s/replace #" *\([^)]+\)" "")
       (s/trim)))
 
 (defn format-link-fn
