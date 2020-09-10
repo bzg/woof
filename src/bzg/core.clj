@@ -181,10 +181,11 @@
         (when (not-empty References)
           (->> (string/split References #"\s")
                (keep not-empty)
+               (map get-id)
                (into #{})))]
     ;; Only process emails if they are sent directly from the release
     ;; manager or from the mailing list.
-    (when (or (= from (:release-manager config/woof))
+    (when (or (= (get-from from) (:release-manager config/woof))
               (some (into #{} (list X-Original-To X-BeenThere
                                     (when (string? To)
                                       (last (re-find #"^.*<(.*[^>])>.*$" To)))))
