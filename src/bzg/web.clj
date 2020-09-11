@@ -28,7 +28,7 @@
     (h/include-css "https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css")]
    [:body
     [:section.hero
-     [:div.hero-body  {:style "padding: 1.5rem 1.0rem"}
+     [:div.hero-body  {:style "padding: 2rem 1.5rem"}
       [:h1.title.has-text-centered (:title config/woof)]
       [:h2.subtitle.column.is-8.is-offset-2.has-text-centered
        [:a {:href (string/replace
