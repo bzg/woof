@@ -38,7 +38,7 @@
        " / "
        [:a {:href (:project-url config/woof)}
         (:project-name config/woof)]]]]
-    [:div.container.is-8
+    [:div.container
      [:section.section {:style "padding: 1.5rem 1.0rem"}
       [:div.container
        [:h1.title [:span "Upcoming changes "
