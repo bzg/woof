@@ -41,7 +41,11 @@
     [:div.container.is-8
      [:section.section
       [:div.container
-       [:h1.title "Latest releases"]
+       [:h1.title [:span "Latest releases "
+                   [:span.is-size-7
+                    [:a {:href "/feed/releases"} "RSS"]
+                    " - "
+                    [:a {:href "/data/releases"} "JSON"]]]]
        (if-let [releases (->> (core/get-releases @core/db)
                               core/intern-id
                               (sort-by :date)
@@ -53,19 +57,26 @@
          [:p "No release."])]]
      [:section.section
       [:div.container
-       [:h1.title "Upcoming changes"]
+       [:h1.title [:span "Upcoming changes "
+                   [:span.is-size-7
+                    [:a {:href "/feed/changes"} "RSS"]
+                    " - "
+                    [:a {:href "/data/changes"} "JSON"]]]]
        (if-let [changes (->> (core/get-unreleased-changes @core/db)
                              core/intern-id
                              (sort-by :date)
                              not-empty)]
-
          [:div.content
           (for [change changes]
             (core/format-link-fn change :change))]
          [:p "No upcoming change."])]]
      [:section.section
       [:div.container
-       [:h1.title "Confirmed bugs"]
+       [:h1.title [:span "Confirmed bugs "
+                   [:span.is-size-7
+                    [:a {:href "/feed/bugs"} "RSS"]
+                    " - "
+                    [:a {:href "/data/bugs"} "JSON"]]]]
        (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
                           core/intern-id
                           (sort-by #(count (:refs %)))
