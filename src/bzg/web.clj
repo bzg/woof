@@ -39,45 +39,42 @@
        [:a {:href (:project-url config/woof)}
         (:project-name config/woof)]]]]
     [:div.container.is-8
-     [:div.columns
-      [:div.column
-       [:section.section
-        [:div.container
-         [:h1.title "Confirmed bugs"]
-         (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
-                            core/intern-id
-                            (sort-by #(count (:refs %)))
-                            reverse
-                            not-empty)]
-           [:div.content
-            (for [bug bugs]
-              (core/format-link-fn bug :bug))]
-           [:p "No confirmed bug."])]]]
-      [:div.column
-       [:section.section
-        [:div.container
-         [:h1.title "Upcoming changes"]
-         (if-let [changes (->> (core/get-unreleased-changes @core/db)
-                               core/intern-id
-                               (sort-by :date)
-                               not-empty)]
+     [:section.section
+      [:div.container
+       [:h1.title "Latest releases"]
+       (if-let [releases (->> (core/get-releases @core/db)
+                              core/intern-id
+                              (sort-by :date)
+                              reverse
+                              not-empty)]
+         [:div.content
+          (for [release (take 3 releases)]
+            (core/format-link-fn release :release))]
+         [:p "No release."])]]
+     [:section.section
+      [:div.container
+       [:h1.title "Upcoming changes"]
+       (if-let [changes (->> (core/get-unreleased-changes @core/db)
+                             core/intern-id
+                             (sort-by :date)
+                             not-empty)]
 
-           [:div.content
-            (for [change changes]
-              (core/format-link-fn change :change))]
-           [:p "No upcoming change."])]]
-       [:section.section
-        [:div.container
-         [:h1.title "Latest releases"]
-         (if-let [releases (->> (core/get-releases @core/db)
-                                core/intern-id
-                                (sort-by :date)
-                                reverse
-                                not-empty)]
-           [:div.content
-            (for [release (take 3 releases)]
-              (core/format-link-fn release :release))]
-           [:p "No release."])]]]]]
+         [:div.content
+          (for [change changes]
+            (core/format-link-fn change :change))]
+         [:p "No upcoming change."])]]
+     [:section.section
+      [:div.container
+       [:h1.title "Confirmed bugs"]
+       (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
+                          core/intern-id
+                          (sort-by #(count (:refs %)))
+                          reverse
+                          not-empty)]
+         [:div.content
+          (for [bug bugs]
+            (core/format-link-fn bug :bug))]
+         [:p "No confirmed bug."])]]]
     [:footer.footer
      [:div.columns
       [:div.column.is-offset-4.is-4.has-text-centered
