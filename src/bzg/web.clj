@@ -16,10 +16,6 @@
             [tea-time.core :as tt])
   (:gen-class))
 
-(def bla (clojure.edn/read-string (slurp "db.edn")))
-
-(map :subject (sort-by :subject (vals bla)))
-
 (defn homepage [sortby]
   (h/html5
    {:lang "en"}
@@ -43,22 +39,6 @@
        [:a {:href (:project-url config/woof)}
         (:project-name config/woof)]]]]
     [:div.container.is-8
-     [:section.section {:style "padding: 1.5rem 1.0rem"}
-      [:div.container
-       [:h1.title [:span "Latest releases "
-                   [:span.is-size-7
-                    [:a {:href "/feed/releases"} "RSS"]
-                    " - "
-                    [:a {:href "/data/releases"} "JSON"]]]]
-       (if-let [releases (->> (core/get-releases @core/db)
-                              core/intern-id
-                              (sort-by :date)
-                              reverse
-                              not-empty)]
-         [:div.content
-          (for [release (take 3 releases)]
-            (core/format-link-fn release :release))]
-         [:p "No release."])]]
      [:section.section {:style "padding: 1.5rem 1.0rem"}
       [:div.container
        [:h1.title [:span "Upcoming changes "
@@ -107,7 +87,23 @@
                [:td [:p (str (:date bug))]]
                [:td [:p (str (count (:refs bug)))]]
                [:td (core/format-link-fn bug :bug)]])]]]
-         [:p "No confirmed bug."])]]]
+         [:p "No confirmed bug."])]]
+     [:section.section {:style "padding: 1.5rem 1.0rem"}
+      [:div.container
+       [:h1.title [:span "Latest releases "
+                   [:span.is-size-7
+                    [:a {:href "/feed/releases"} "RSS"]
+                    " - "
+                    [:a {:href "/data/releases"} "JSON"]]]]
+       (if-let [releases (->> (core/get-releases @core/db)
+                              core/intern-id
+                              (sort-by :date)
+                              reverse
+                              not-empty)]
+         [:div.content
+          (for [release (take 3 releases)]
+            (core/format-link-fn release :release))]
+         [:p "No release."])]]]
     [:footer.footer
      [:div.columns
       [:div.column.is-offset-4.is-4.has-text-centered
