@@ -17,19 +17,20 @@ Woof knows three different headers:
 - X-Woof-Bug :: For declaring a bug as =confirmed= or =fixed=.
 
 - X-Woof-Change :: For declaring that a =commit= implements a change
-  that users need to be aware of in an upcoming =version=.
+  that users need to be aware of in an upcoming =version=.  You can also
+  cancel the change.
 
 - X-Woof-Release :: For announcing a new released =version=.
 
 * Usage
 
-** Make a release
+** Announce a release
 
 : From: xxx@xxx.xx
-: X-Woof-Release: 7
+: X-Woof-Release: 10.2
 : ...
 
-will declare a release.
+will declare =10.2= as a new release.
 
 ** Confirm a bug
 
@@ -37,15 +38,15 @@ will declare a release.
 : X-Woof-Bug: confirmed
 : ...
 
-will mark a bug as =confirmed=.
+will mark a bug discussed in a thread as =confirmed=.
 
-** Fix a bug
+** Confirm a bug is fixed
 
 : From: xxx@xxx.xx
 : X-Woof-Bug: fixed
 : ...
 
-will mark a bug as =fixed= if it has been confirmed before.
+will mark the known bug discussed in a thread as =fixed=.
 
 ** Announce a change
 
@@ -53,8 +54,16 @@ will mark a bug as =fixed= if it has been confirmed before.
 : X-Woof-Change: 1234567879 8.4
 : ...
 
-will declare the commit =1234567879= as an upcoming change for the
-future release version =8.4=.
+will declare commit =1234567879= as an upcoming change for the /future/
+release version =8.4=.
+
+** Cancel a change
+
+: From: xxx@xxx.xx
+: X-Woof-Change: cancel
+: ...
+
+will cancel a change that was announced in the same thread.
 
 * Configure
 

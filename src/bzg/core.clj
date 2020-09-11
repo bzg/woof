@@ -85,7 +85,8 @@
 
 (defn get-unreleased-changes [db]
   (filter #(and (= (:type (val %)) "change")
-                (not (get (val %) :released))) db))
+                (not (get (val %) :released))
+                (not (get (val %) :canceled))) db))
 
 (defn get-releases [db]
   (->>
@@ -109,7 +110,7 @@
       (recur rest-refs
              (some @db-refs rest-refs)))))
 
-(defn- add-change [{:keys [id from subject date-sent]} X-Woof-Change]
+(defn- add-change [{:keys [id from subject date-sent]} refs X-Woof-Change]
   (let [c-specs   (string/split X-Woof-Change #"\s")
         commit    (first c-specs)
         versions  (into #{} (next c-specs))
@@ -118,7 +119,7 @@
         true-id   (get-id id)]
     (cond
       (and released (some released versions))
-      (format "%s tried to add a change against a know release, ignoring %s"
+      (format "%s tried to add a change against a past release, ignoring %s"
               true-from true-id)
       (empty? versions)
       (format "%s tried to add a change with a wrong header format, ignoring %s"
@@ -127,13 +128,25 @@
       (do (swap! db conj {true-id {:type     "change"
                                    :from     true-from
                                    :commit   commit
+                                   :refs     (into #{} (conj refs true-id))
                                    :versions versions
                                    :subject  (get-subject subject)
                                    :date     date-sent}})
           (format "%s added a change for version %s via %s"
                   true-from (first versions) true-id)))))
 
-(defn- add-confirmed-bug [{:keys [id from subject date-sent]} refs]
+(defn- cancel-change [{:keys [id from date-sent]} refs]
+  (let [true-from (get-from from)
+        true-id   (get-id id)]
+    ;; Prevent release when not from the release manager
+    (doseq [e (get-unreleased-changes @db)]
+      (when (some (:refs (val e)) refs)
+        (swap! db assoc-in [(key e) :canceled] true-id)
+        (swap! db assoc-in [(key e) :canceled-by] true-from)
+        (swap! db assoc-in [(key e) :canceled-at] date-sent)))
+    (format "%s canceled change via %s" true-from true-id)))
+
+(defn- add-bug [{:keys [id from subject date-sent]} refs]
   (let [true-from (get-from from)
         true-id   (get-id id)]
     (swap! db conj {true-id {:type    "bug"
@@ -143,7 +156,7 @@
                              :date    date-sent}})
     (format "%s added a bug via %s" true-from true-id)))
 
-(defn- add-fixed-bug [{:keys [id from date-sent]} refs]
+(defn- fix-bug [{:keys [id from date-sent]} refs]
   (let [true-from (get-from from)
         true-id   (get-id id)]
     (doseq [e (get-unfixed-bugs @db)]
@@ -202,31 +215,38 @@
       ;; this bug.
       (when refs (update-refs (get-id id) refs))
       (cond
+        ;; Confirm a bug and add it to the registry.  Anyone can
+        ;; confirm a bug.
+        (and X-Woof-Bug (re-find #"(?i)confirmed" X-Woof-Bug))
+        (add-bug msg refs)
+        ;; Mark a bug as fixed.  Anyone can mark a bug as fixed.  If
+        ;; an email contains X-Woof-Bug: fixed, we scan all refs from
+        ;; this email and see if we can find a matching ref in those
+        ;; of a bug, and if yes, then we mark the bug as :fixed by the
+        ;; message id.
+        (and X-Woof-Bug refs
+             (re-find #"(?i)fixed" X-Woof-Bug)
+             (some @db-refs refs))
+        (fix-bug msg refs)
+        ;; Mark a change as canceled.  Anyone can mark a change as
+        ;; canceled.
+        (and X-Woof-Change refs
+             (re-find #"(?i)canceled" X-Woof-Change)
+             (some @db-refs refs))
+        (cancel-change msg refs)
         ;; Announce a breaking change in the current development
         ;; branches and associate it with future version(s).  Anyone
         ;; can announce a breaking change.
         X-Woof-Change
-        (add-change msg X-Woof-Change)
-        ;; Or confirm a bug and add it to the registry.  Anyone can
-        ;; confirm a bug.
-        (and X-Woof-Bug (re-find #"(?i)confirmed" X-Woof-Bug))
-        (add-confirmed-bug msg refs)
-        ;; Or mark a bug as fixed.  Anyone can mark a bug as fixed.  If an
-        ;; email contains X-Woof-Bug: fixed, we scan all refs from this
-        ;; email and see if we can find a matching ref in those of a bug,
-        ;; and if yes, then we mark the bug as :fixed by the message id.
-        (and X-Woof-Bug refs
-             (re-find #"(?i)fixed" X-Woof-Bug)
-             (some @db-refs refs))
-        (add-fixed-bug msg refs)
-        ;; Or make a release.
+        (add-change msg refs X-Woof-Change)
+        ;; Make a release.  Only the release manager can make a
+        ;; release.
         X-Woof-Release
-        ;; Only the release manager can announce a release.
         (add-release msg X-Woof-Release)))))
 
-;;; Monitoring functions
-
+;;; Monitoring
 (def woof-monitor (atom nil))
+
 (defn- start-inbox-monitor! []
   (reset!
    woof-monitor
