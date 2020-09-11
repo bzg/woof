@@ -82,9 +82,17 @@
                           (sort-by #(count (:refs %)))
                           reverse
                           not-empty)]
-         [:div.content
-          (for [bug bugs]
-            (core/format-link-fn bug :bug))]
+         [:div.table-container
+          [:table.table.is-hoverable.is-fullwidth.is-striped
+           [:thead [:tr [:th {:width "25%"} "Date"]
+                    [:th {:width "10%"} "References"]
+                    [:th "Subject"]]]
+           [:tbody
+            (for [bug bugs]
+              [:tr
+               [:td [:p (str (:date bug))]]
+               [:td [:p (str (count (:refs bug)))]]
+               [:td (core/format-link-fn bug :bug)]])]]]
          [:p "No confirmed bug."])]]]
     [:footer.footer
      [:div.columns
