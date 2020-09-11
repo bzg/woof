@@ -16,7 +16,11 @@
             [tea-time.core :as tt])
   (:gen-class))
 
-(defn homepage []
+(def bla (clojure.edn/read-string (slurp "db.edn")))
+
+(map :subject (sort-by :subject (vals bla)))
+
+(defn homepage [sortby]
   (h/html5
    {:lang "en"}
    [:head
@@ -79,14 +83,24 @@
                     [:a {:href "/data/bugs"} "JSON"]]]]
        (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
                           core/intern-id
-                          (sort-by #(count (:refs %)))
+                          (sort-by
+                           (condp = sortby
+                             "date"    :date
+                             "subject" :subject
+                             #(count (:refs %))))
                           reverse
                           not-empty)]
          [:div.table-container
           [:table.table.is-hoverable.is-fullwidth.is-striped
-           [:thead [:tr [:th {:width "25%"} "Date"]
-                    [:th {:width "10%"} "References"]
-                    [:th "Subject"]]]
+           [:thead
+            [:tr
+             [:th {:width "25%"}
+              [:a {:href "/?sortby=date" :title "Sort by date"}
+               "Date"]]
+             [:th {:width "10%"}
+              [:a {:href "/?sortby=refs" :title "Sort by number of references"}
+               "References"]]
+             [:th "Subject"]]]
            [:tbody
             (for [bug bugs]
               [:tr
@@ -111,10 +125,10 @@
        [:p "Made with "
         [:a {:href "https://github.com/bzg/woof"} "WOOF"]]]]]]))
 
-(defn get-homepage [_]
+(defn get-homepage [{:keys [query-params]}]
   {:status  200
    :headers {"Content-Type" "text/html"}
-   :body    (homepage)})
+   :body    (homepage (get query-params "sortby"))})
 
 (defn get-updates [_]
   {:status 200
@@ -135,7 +149,7 @@
 (def handler
   (ring/ring-handler
    (ring/router
-    [["/" {:get get-homepage}]
+    [["/" {:get (fn [params] (get-homepage params))}]
      ["/data"
       ["/updates" {:get get-updates}]
       ["/bugs" {:get get-bugs}]
