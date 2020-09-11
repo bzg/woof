@@ -21,15 +21,15 @@
                  (catch Exception _ nil))
             {})))
 
-(def db-bug-refs (atom #{}))
+(def db-refs (atom #{}))
 
-(defn- all-bug-refs [db]
+(defn- all-refs [db]
   (into #{} (apply clojure.set/union (map :refs (vals db)))))
 
 (add-watch
- db :serialize-bug-refs
+ db :serialize-refs
  (fn [_ _ _ newdb]
-   (reset! db-bug-refs (all-bug-refs newdb))
+   (reset! db-refs (all-refs newdb))
    (spit db-file-name (pr-str newdb))))
 
 ;;; Utility functions
@@ -97,9 +97,9 @@
 
 ;;; Core functions to update the db
 
-(defn- update-bug-refs [id new-refs]
+(defn- update-refs [id new-refs]
   (loop [refs new-refs
-         ref  (some @db-bug-refs refs)]
+         ref  (some @db-refs refs)]
     (when ref
       (doseq [e @db]
         (when-let [rfs (:refs (val e))]
@@ -107,7 +107,7 @@
             (swap! db assoc-in [(key e) :refs] (conj rfs (get-id id)))))))
     (when-let [rest-refs (last (next (partition-by #{ref} refs)))]
       (recur rest-refs
-             (some @db-bug-refs rest-refs)))))
+             (some @db-refs rest-refs)))))
 
 (defn- add-change [{:keys [id from subject date-sent]} X-Woof-Change]
   (let [c-specs   (string/split X-Woof-Change #"\s")
@@ -200,7 +200,7 @@
       ;; If any email with references contains in its references the id
       ;; of a known bug, add the message-id of this mail to the refs of
       ;; this bug.
-      (when refs (update-bug-refs (get-id id) refs))
+      (when refs (update-refs (get-id id) refs))
       (cond
         ;; Announce a breaking change in the current development
         ;; branches and associate it with future version(s).  Anyone
@@ -217,7 +217,7 @@
         ;; and if yes, then we mark the bug as :fixed by the message id.
         (and X-Woof-Bug refs
              (re-find #"(?i)fixed" X-Woof-Bug)
-             (some @db-bug-refs refs))
+             (some @db-refs refs))
         (add-fixed-bug msg refs)
         ;; Or make a release.
         X-Woof-Release
