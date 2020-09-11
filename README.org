@@ -8,6 +8,8 @@ Your mailbox needs to be subscribed to a mailing list and people on
 the mailing list need to manually set the headers corresponding to the
 events they want to store and advertize through the webpage.
 
+[[file:woof.png]]
+
 * Events
 
 Woof knows three different headers:
