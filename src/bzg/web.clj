@@ -25,10 +25,10 @@
     [:meta {:name "keywords" :content "Woof - Watch Over Our Folders"}]
     [:meta {:name "description" :content "Woof - Watch Over Our Folders"}]
     [:meta {:name "viewport" :content "width=device-width, initial-scale=1, shrink-to-fit=yes"}]
-    (h/include-css "https://cdn.jsdelivr.net/npm/bulma@0.8.2/css/bulma.min.css")]
+    (h/include-css "https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css")]
    [:body
     [:section.hero
-     [:div.hero-body
+     [:div.hero-body  {:style "padding: 1.5rem 1.0rem"}
       [:h1.title.has-text-centered (:title config/woof)]
       [:h2.subtitle.column.is-8.is-offset-2.has-text-centered
        [:a {:href (string/replace
@@ -39,7 +39,7 @@
        [:a {:href (:project-url config/woof)}
         (:project-name config/woof)]]]]
     [:div.container.is-8
-     [:section.section
+     [:section.section {:style "padding: 1.5rem 1.0rem"}
       [:div.container
        [:h1.title [:span "Latest releases "
                    [:span.is-size-7
@@ -55,7 +55,7 @@
           (for [release (take 3 releases)]
             (core/format-link-fn release :release))]
          [:p "No release."])]]
-     [:section.section
+     [:section.section {:style "padding: 1.5rem 1.0rem"}
       [:div.container
        [:h1.title [:span "Upcoming changes "
                    [:span.is-size-7
@@ -70,7 +70,7 @@
           (for [change changes]
             (core/format-link-fn change :change))]
          [:p "No upcoming change."])]]
-     [:section.section
+     [:section.section {:style "padding: 1.5rem 1.0rem"}
       [:div.container
        [:h1.title [:span "Confirmed bugs "
                    [:span.is-size-7
