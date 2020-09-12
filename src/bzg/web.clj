@@ -64,9 +64,8 @@
        (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
                           core/intern-id
                           (sort-by
-                           (condp = (:sort-bugs-by sortby)
-                             "date"    :date
-                             "subject" :subject
+                           (if (= (:sort-bugs-by sortby) "date")
+                             :date
                              #(count (:refs %))))
                           reverse
                           not-empty)]
@@ -80,7 +79,7 @@
              [:th {:width "10%"}
               [:a {:href "/?sort-bugs-by=refs" :title "Sort bugs by number of references"}
                "References"]]
-             [:th "Subject"]]]
+             [:th "Summary"]]]
            [:tbody
             (for [bug bugs]
               [:tr
@@ -98,9 +97,8 @@
        (if-let [helps (->> (core/get-pending-help @core/db)
                            core/intern-id
                            (sort-by
-                            (condp = (:sort-help-by sortby)
-                              "date"    :date
-                              "subject" :subject
+                            (if (= (:sort-help-by sortby) "date")
+                              :date
                               #(count (:refs %))))
                            reverse
                            not-empty)]
@@ -114,7 +112,7 @@
              [:th {:width "10%"}
               [:a {:href "/?sort-help-by=refs" :title "Sort help requests by number of references"}
                "References"]]
-             [:th "Subject"]]]
+             [:th "Summary"]]]
            [:tbody
             (for [help helps]
               [:tr

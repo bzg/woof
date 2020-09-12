@@ -54,20 +54,20 @@
       (string/trim)))
 
 (defn format-link-fn
-  [{:keys [from subject date id commit]} what]
+  [{:keys [from summary date id commit]} what]
   (let [shortcommit  (cond (and (string? commit)
                                 (< (count commit) 8))
                            commit
                            (string? commit) (subs commit 0 8))
         mail-title   (format "Visit email sent by %s on %s" from date)
         commit-title (when shortcommit
-                       (format "Visit commit %s" shortcommit from))]
+                       (format "Visit commit %s from %s" shortcommit from))]
     (if (= what :change)
       [:p
        [:a {:href   (format (:mail-url-format config/woof) id)
             :title  mail-title
             :target "_blank"}
-        subject]
+        summary]
        (when shortcommit
          [:span
           " ("
@@ -79,7 +79,7 @@
       [:p [:a {:href   (format (:mail-url-format config/woof) id)
                :title  mail-title
                :target "_blank"}
-           subject]])))
+           summary]])))
 
 ;;; Core functions to return db entries
 
@@ -103,6 +103,19 @@
 
 (defn get-released-versions [db]
   (into #{} (map :version (vals (get-releases db)))))
+
+(defn- confirmed? [^String header-value]
+  (and (seq header-value)
+       (not (re-matches (:closed config/actions-regexps)
+                        (string/trim header-value)))
+       (if (re-matches (:confirmed config/actions-regexps)
+                       (string/trim header-value))
+         true
+         (mime-decode header-value))))
+
+(defn- closed? [^String header-value]
+  (re-matches (:closed config/actions-regexps)
+              (string/trim header-value)))
 
 ;;; Core functions to update the db
 
@@ -136,7 +149,7 @@
                                    :commit   commit
                                    :refs     (into #{} (conj refs true-id))
                                    :versions versions
-                                   :subject  (get-subject subject)
+                                   :summary  (get-subject subject)
                                    :date     date-sent}})
           (format "%s added a change for version %s via %s"
                   true-from (first versions) true-id)))))
@@ -153,20 +166,23 @@
     (format "%s canceled a change announcement via %s" true-from true-id)))
 
 (defn- add-entry [{:keys [id from subject date-sent] :as msg} refs what]
-  (let [{:keys [X-Woof-Help]}
+  (let [{:keys [X-Woof-Help X-Woof-Bug]}
         (walk/keywordize-keys (apply conj (:headers msg)))
-        X-Woof-Help  (mime-decode X-Woof-Help)
-        what-type    (name what)
-        what-msg     (condp = what :bug "%s added a bug via %s"
-                            "%s added a call for help via %s")
-        what-subject (condp = what :bug (get-subject subject)
-                            X-Woof-Help)
-        true-from    (get-from from)
-        true-id      (get-id id)]
+        X-Woof-Help (mime-decode X-Woof-Help)
+        X-Woof-Bug  (mime-decode X-Woof-Bug)
+        what-type   (name what)
+        what-msg    (condp = what :bug "%s added a bug via %s"
+                           "%s added a call for help via %s")
+        note        (condp = what
+                      :bug (when (string? (confirmed? X-Woof-Bug)) X-Woof-Bug)
+                      (when (string? (confirmed? X-Woof-Help)) X-Woof-Help))
+        summary     (or note (get-subject subject))
+        true-from   (get-from from)
+        true-id     (get-id id)]
     (swap! db conj {true-id {:type    what-type
                              :from    true-from
                              :refs    (into #{} (conj refs true-id))
-                             :subject what-subject
+                             :summary summary
                              :date    date-sent}})
     (format what-msg true-from true-id)))
 
@@ -214,7 +230,7 @@
       (do (swap! db conj {true-id {:type    "release"
                                    :from    true-from
                                    :version X-Woof-Release
-                                   :subject (get-subject subject)
+                                   :summary (get-subject subject)
                                    :date    date-sent}})
           ;; Mark related changes as released
           (doseq [[k v] (get-unreleased-changes @db)]
@@ -248,9 +264,7 @@
       (cond
         ;; Confirm a bug and add it to the registry.  Anyone can
         ;; confirm a bug.
-        (and X-Woof-Bug
-             (re-matches (:confirmed config/actions-regexps)
-                         (string/trim X-Woof-Bug)))
+        (and X-Woof-Bug (confirmed? X-Woof-Bug))
         (add-bug msg refs)
         ;; Mark a bug as fixed.  Anyone can mark a bug as fixed.  If
         ;; an email contains X-Woof-Bug: fixed, we scan all refs from
@@ -258,26 +272,21 @@
         ;; of a bug, and if yes, then we mark the bug as :fixed by the
         ;; message id.
         (and X-Woof-Bug refs
-             (re-matches (:closed config/actions-regexps)
-                         (string/trim X-Woof-Bug))
+             (closed? X-Woof-Bug)
              (some-db-refs? refs))
         (fix-bug msg refs)
         ;; Call for help.  Anyone can call for help.
-        (and X-Woof-Help
-             (not (re-matches (:closed config/actions-regexps)
-                              (string/trim X-Woof-Help))))
+        (and X-Woof-Help (confirmed? X-Woof-Help))
         (add-help msg refs)
         ;; Cancel a call for help.  Anyone can call for help.
         (and X-Woof-Help
-             (re-matches (:closed config/actions-regexps)
-                         (string/trim X-Woof-Help))
+             (closed? X-Woof-Help)
              (some-db-refs? refs))
         (cancel-help msg refs)
         ;; Mark a change as canceled.  Anyone can mark a change as
         ;; canceled.
         (and X-Woof-Change refs
-             (re-matches (:closed config/actions-regexps)
-                         (string/trim X-Woof-Change))
+             (closed? X-Woof-Change)
              (some-db-refs? refs))
         (cancel-change msg refs)
         ;; Announce a breaking change in the current development

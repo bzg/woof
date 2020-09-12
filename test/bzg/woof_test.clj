@@ -94,7 +94,7 @@
            :date-sent #inst "2020-05-28T00:13:11.037044Z"
            :headers   [{"X-Original-To" (:mailing-list config/woof)}
                        {"References" "id7"}
-                       {"X-Woof-Help" "This is a call for help."}]}
+                       {"X-Woof-Help" "true"}]}
    :msg9  {:id        "id9"
            :subject   "Resolved (was: A call for help)"
            :from      (list {:address (:user config/woof)})
@@ -108,6 +108,19 @@
            :date-sent #inst "2020-06-27T00:13:11.037044Z"
            :headers   [{"X-Original-To" (:mailing-list config/woof)}
                        {"X-Woof-Change" "8.4"}]}
+   :msg11 {:id        "id11"
+           :subject   "A call for help, with an annotation from the header"
+           :from      (list {:address (:user config/woof)})
+           :date-sent #inst "2020-05-28T00:13:11.037044Z"
+           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+                       {"References" "id7"}
+                       {"X-Woof-Help" "This is a call for help."}]}
+   :msg12 {:id        "id12"
+           :subject   "[BUG] Confirmed bug"
+           :from      (list {:address (:user config/woof)})
+           :date-sent #inst "2020-05-27T00:13:11.037044Z"
+           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+                       {"X-Woof-Bug" "This is the annotation for this bug."}]}
    })
 
 (deftest message-processing
@@ -116,6 +129,11 @@
       (core/process-incoming-message (:msg1 test-data))
       (is (= 1 (count @core/db)))
       (is (not-empty (get @core/db "id1")))
+      (reset! core/db {}))
+    (testing "Add a bug, annotating from the header"
+      (core/process-incoming-message (:msg12 test-data))
+      (is (= 1 (count @core/db)))
+      (is (not-empty (get @core/db "id12")))
       (reset! core/db {}))
     (testing "Add a bug and fix it"
       (core/process-incoming-message (:msg1 test-data))
@@ -153,6 +171,10 @@
       (reset! core/db {}))
     (testing "Add a call for help"
       (core/process-incoming-message (:msg8 test-data))
+      (is (= 1 (count (core/get-pending-help @core/db))))
+      (reset! core/db {}))
+    (testing "Add a call for help, annotating from the header"
+      (core/process-incoming-message (:msg11 test-data))
       (is (= 1 (count (core/get-pending-help @core/db))))
       (reset! core/db {}))
     (testing "Cancal a call for help"

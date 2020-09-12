@@ -40,7 +40,7 @@ will declare =10.2= as a new release.
 : X-Woof-Bug: confirmed
 : ...
 
-will mark a bug discussed in a thread as =confirmed=.
+will mark a bug discussed in a thread as =confirmed= (see synonyms below.)
 
 ** Confirm a fix
 
@@ -48,12 +48,12 @@ will mark a bug discussed in a thread as =confirmed=.
 : X-Woof-Bug: fixed
 : ...
 
-will mark the known bug discussed in a thread as =fixed=.
+will mark the known bug discussed in a thread as =fixed= (see synonyms below.)
 
 ** Request help
 
 : From: xxx@xxx.xx
-: X-Woof-Help: This is a summary of the help request.
+: X-Woof-Help: confirmed
 : ...
 
 will add a request for help from within a thread.
@@ -64,7 +64,7 @@ will add a request for help from within a thread.
 : X-Woof-Help: canceled
 : ...
 
-will mark the help request as canceled, done or closed.
+will mark the help request as canceled.
 
 ** Announce a change
 
@@ -81,18 +81,17 @@ not be advertized anymore.
 : ...
 
 will declare commit =1234567879= as an upcoming change for the /future/
-release version =8.4= or =8.5=: if, for any reason, version =8.4.2= is not
-released and version =8.5= is released instead, the change will not be
-advertized anymore.
+release versions =8.4= /or/ =8.5=.  (If, for any reason, version =8.4.2= is
+not released and version =8.5= is released instead, the change will not
+be advertized anymore.)
 
-You can also omit the commit like this:
+You can also omit the commit:
 
 : From: xxx@xxx.xx
 : X-Woof-Change: 8.4
 : ...
 
-In this case, only one version is allowed.  If this version will not
-be done for any reason, you can also cancel the change announcement.
+Note that in this case, only one version is allowed.
 
 ** Cancel a change
 
@@ -101,6 +100,24 @@ be done for any reason, you can also cancel the change announcement.
 : ...
 
 will cancel a change that was announced in the same thread.
+
+** Annotations for bugs and help requests
+
+By default, the summary for bugs and help requests is the subject of
+the email with the =X-Woof-Bug= or =X-Woof-Help= header.
+
+Sometimes, the subject of the email is not specific enough and you
+don't want to change the subject and start a subthread.  
+
+Instead, you can simply use the =X-Woof-Bug= or =X-Woof-Help= header to
+add your summary.  For example:
+
+: From: xxx@xxx.xx
+: X-Woof-Bug: X does Y instead of doing Z, as expected.
+: ...
+
+will mark the bug discussed in a thread as =confirmed= and use ~X does Y
+instead of doing Z, as expected.~ as the summary for this bug.
 
 ** Synonyms
 
