@@ -64,7 +64,7 @@
        (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
                           core/intern-id
                           (sort-by
-                           (condp = sortby
+                           (condp = (:sort-bugs-by sortby)
                              "date"    :date
                              "subject" :subject
                              #(count (:refs %))))
@@ -75,10 +75,10 @@
            [:thead
             [:tr
              [:th {:width "25%"}
-              [:a {:href "/?sortby=date" :title "Sort by date"}
+              [:a {:href "/?sort-bugs-by=date" :title "Sort bugs by date"}
                "Date"]]
              [:th {:width "10%"}
-              [:a {:href "/?sortby=refs" :title "Sort by number of references"}
+              [:a {:href "/?sort-bugs-by=refs" :title "Sort bugs by number of references"}
                "References"]]
              [:th "Subject"]]]
            [:tbody
@@ -98,7 +98,7 @@
        (if-let [helps (->> (core/get-pending-help @core/db)
                            core/intern-id
                            (sort-by
-                            (condp = sortby
+                            (condp = (:sort-help-by sortby)
                               "date"    :date
                               "subject" :subject
                               #(count (:refs %))))
@@ -109,10 +109,10 @@
            [:thead
             [:tr
              [:th {:width "25%"}
-              [:a {:href "/?sortby=date" :title "Sort by date"}
+              [:a {:href "/?sort-help-by=date" :title "Sort help requests by date"}
                "Date"]]
              [:th {:width "10%"}
-              [:a {:href "/?sortby=refs" :title "Sort by number of references"}
+              [:a {:href "/?sort-help-by=refs" :title "Sort help requests by number of references"}
                "References"]]
              [:th "Subject"]]]
            [:tbody
@@ -158,27 +158,25 @@
 (defn get-homepage [{:keys [query-params]}]
   {:status  200
    :headers {"Content-Type" "text/html"}
-   :body    (homepage (get query-params "sortby"))})
+   :body    (homepage {:sort-bugs-by (get query-params "sort-bugs-by")
+                       :sort-help-by (get query-params "sort-help-by")})})
 
-(defn get-updates [_]
+(defn- get-data [what]
   {:status 200
-   :body   (core/intern-id @core/db)})
+   :body   (core/intern-id
+            (apply (condp = what
+                     :updates  identity
+                     :bugs     core/get-unfixed-bugs
+                     :helps    core/get-pending-help
+                     :releases core/get-releases
+                     :changes  core/get-unreleased-changes)
+                   [@core/db]))})
 
-(defn get-bugs [_]
-  {:status 200
-   :body   (core/intern-id (core/get-unfixed-bugs @core/db))})
-
-(defn get-helps [_]
-  {:status 200
-   :body   (core/intern-id (core/get-pending-help @core/db))})
-
-(defn get-releases [_]
-  {:status 200
-   :body   (core/intern-id (core/get-releases @core/db))})
-
-(defn get-changes [_]
-  {:status 200
-   :body   (core/intern-id (core/get-unreleased-changes @core/db))})
+(defn get-updates [_] (get-data :updates))
+(defn get-bugs [_] (get-data :bugs))
+(defn get-helps [_] (get-data :helps))
+(defn get-releases [_] (get-data :releases))
+(defn get-changes [_] (get-data :changes))
 
 (def handler
   (ring/ring-handler
