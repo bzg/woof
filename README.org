@@ -66,13 +66,6 @@ will add a request for help from within a thread.
 
 will mark the help request as canceled, done or closed.
 
-You can use one of these headers:
-
-: X-Woof-Help: canceled
-: X-Woof-Help: done
-: X-Woof-Help: close
-: X-Woof-Help: closed
-
 ** Announce a change
 
 : From: xxx@xxx.xx
@@ -89,6 +82,11 @@ release version =8.4=.
 : ...
 
 will cancel a change that was announced in the same thread.
+
+** Synonyms
+
+- =confirmed=, =true=, =t=
+- =canceled=, =cancel=, =closed=, =close=, =done=, =fixed=, =nil=.
 
 * Configure
 

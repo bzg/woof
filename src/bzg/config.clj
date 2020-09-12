@@ -18,5 +18,5 @@
    :base-url          (or (System/getenv "WOOF_BASE_URL") "https://localhost:3000")})
 
 (def actions-regexps
-  {:confirmed #"(?i)confirm(ed)?"
-   :closed    #"(?i)^(cancel(ed)?|done|closed?|fix(ed)?)"})
+  {:confirmed #"(?i)^confirm(ed)?|t(rue)?"
+   :closed    #"(?i)^(cancel(ed)?|done|closed?|fix(ed)?|nil)"})

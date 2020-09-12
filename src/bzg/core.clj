@@ -45,7 +45,7 @@
   (:address (first from)))
 
 (defn get-id [^String id]
-  (last (re-find #"^<?(.+[^>])>?$" id)))
+  (peek (re-matches #"^<?(.+[^>])>?$" id)))
 
 (defn get-subject [^String s]
   (-> s
@@ -118,8 +118,8 @@
 
 (defn- add-change [{:keys [id from subject date-sent]} refs X-Woof-Change]
   (let [c-specs   (string/split X-Woof-Change #"\s")
-        commit    (first c-specs)
-        versions  (into #{} (next c-specs))
+        commit    (first c-specs)           ;; (when (> 1 (count c-specs)) (first c-specs))
+        versions  (into #{} (next c-specs)) ;; (when commit (into #{} (next c-specs)) (first c-specs))
         released  (get-released-versions @db)
         true-from (get-from from)
         true-id   (get-id id)]
@@ -239,7 +239,7 @@
     (when (or (= (get-from from) (:release-manager config/woof))
               (some (into #{} (list X-Original-To X-BeenThere
                                     (when (string? To)
-                                      (last (re-find #"^.*<(.*[^>])>.*$" To)))))
+                                      (peek (re-matches #"^.*<(.*[^>])>.*$" To)))))
                     (into #{} (list (:mailing-list config/woof)))))
       ;; If any email with references contains in its references the id
       ;; of a known bug, add the message-id of this mail to the refs of
@@ -249,8 +249,8 @@
         ;; Confirm a bug and add it to the registry.  Anyone can
         ;; confirm a bug.
         (and X-Woof-Bug
-             (re-find (:confirmed config/actions-regexps)
-                      (string/trim X-Woof-Bug)))
+             (re-matches (:confirmed config/actions-regexps)
+                         (string/trim X-Woof-Bug)))
         (add-bug msg refs)
         ;; Mark a bug as fixed.  Anyone can mark a bug as fixed.  If
         ;; an email contains X-Woof-Bug: fixed, we scan all refs from
@@ -258,26 +258,26 @@
         ;; of a bug, and if yes, then we mark the bug as :fixed by the
         ;; message id.
         (and X-Woof-Bug refs
-             (re-find (:closed config/actions-regexps)
-                      (string/trim X-Woof-Bug))
+             (re-matches (:closed config/actions-regexps)
+                         (string/trim X-Woof-Bug))
              (some-db-refs? refs))
         (fix-bug msg refs)
         ;; Call for help.  Anyone can call for help.
         (and X-Woof-Help
-             (not (re-find (:closed config/actions-regexps)
-                           (string/trim X-Woof-Help))))
+             (not (re-matches (:closed config/actions-regexps)
+                              (string/trim X-Woof-Help))))
         (add-help msg refs)
         ;; Cancel a call for help.  Anyone can call for help.
         (and X-Woof-Help
-             (re-find (:closed config/actions-regexps)
-                      (string/trim X-Woof-Help))
+             (re-matches (:closed config/actions-regexps)
+                         (string/trim X-Woof-Help))
              (some-db-refs? refs))
         (cancel-help msg refs)
         ;; Mark a change as canceled.  Anyone can mark a change as
         ;; canceled.
         (and X-Woof-Change refs
-             (re-find (:closed config/actions-regexps)
-                      (string/trim X-Woof-Change))
+             (re-matches (:closed config/actions-regexps)
+                         (string/trim X-Woof-Change))
              (some-db-refs? refs))
         (cancel-change msg refs)
         ;; Announce a breaking change in the current development
