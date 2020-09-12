@@ -38,6 +38,9 @@
 (defn intern-id [m]
   (map (fn [[k v]] (assoc v :id k)) m))
 
+(defn- mime-decode [^String s]
+  (when (string? s) (MimeUtility/decodeText s)))
+
 (defn get-from [from]
   (:address (first from)))
 
@@ -152,7 +155,7 @@
 (defn- add-entry [{:keys [id from subject date-sent] :as msg} refs what]
   (let [{:keys [X-Woof-Help]}
         (walk/keywordize-keys (apply conj (:headers msg)))
-        X-Woof-Help  (if X-Woof-Help (MimeUtility/decodeText X-Woof-Help))
+        X-Woof-Help  (mime-decode X-Woof-Help)
         what-type    (name what)
         what-msg     (condp = what :bug "%s added a bug via %s"
                             "%s added a call for help via %s")
@@ -224,7 +227,7 @@
   (let [{:keys [X-Woof-Bug X-Woof-Release X-Woof-Change X-Woof-Help
                 X-Original-To X-BeenThere To References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
-        X-Woof-Help (if X-Woof-Help (MimeUtility/decodeText X-Woof-Help))
+        X-Woof-Help (mime-decode X-Woof-Help)
         refs
         (when (not-empty References)
           (->> (string/split References #"\s")
