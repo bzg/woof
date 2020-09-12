@@ -16,6 +16,9 @@
             [tea-time.core :as tt])
   (:gen-class))
 
+(defn- format-date [d]
+  (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:MM") d))
+
 (defn homepage [sortby]
   (h/html5
    {:lang "en"}
@@ -73,19 +76,19 @@
           [:table.table.is-hoverable.is-fullwidth.is-striped
            [:thead
             [:tr
-             [:th {:width "25%"}
+             [:th "Summary"]
+             [:th {:width "15%"}
               [:a {:href "/?sort-bugs-by=date" :title "Sort bugs by date"}
                "Date"]]
-             [:th {:width "10%"}
+             [:th {:width "5%"}
               [:a {:href "/?sort-bugs-by=refs" :title "Sort bugs by number of references"}
-               "Refs"]]
-             [:th "Summary"]]]
+               "Refs"]]]]
            [:tbody
             (for [bug bugs]
               [:tr
-               [:td [:p (str (:date bug))]]
-               [:td [:p (str (count (:refs bug)))]]
-               [:td (core/format-link-fn bug :bug)]])]]]
+               [:td (core/format-link-fn bug :bug)]
+               [:td [:p (format-date (:date bug))]]
+               [:td [:p (str (count (:refs bug)))]]])]]]
          [:p "No confirmed bug."])]]
      [:section.section {:style "padding: 1.5rem 1.0rem"}
       [:div.container
@@ -106,19 +109,19 @@
           [:table.table.is-hoverable.is-fullwidth.is-striped
            [:thead
             [:tr
-             [:th {:width "25%"}
+             [:th "Summary"]
+             [:th {:width "15%"}
               [:a {:href "/?sort-help-by=date" :title "Sort help requests by date"}
                "Date"]]
-             [:th {:width "10%"}
+             [:th {:width "5%"}
               [:a {:href "/?sort-help-by=refs" :title "Sort help requests by number of references"}
-               "Refs"]]
-             [:th "Summary"]]]
+               "Refs"]]]]
            [:tbody
             (for [help helps]
               [:tr
-               [:td [:p (str (:date help))]]
-               [:td [:p (str (count (:refs help)))]]
-               [:td (core/format-link-fn help :bug)]])]]]
+               [:td (core/format-link-fn help :bug)]
+               [:td [:p (format-date (:date help))]]
+               [:td [:p (str (count (:refs help)))]]])]]]
          [:p "No help has been requested so far."])]]
      [:section.section {:style "padding: 1.5rem 1.0rem"}
       [:div.container
