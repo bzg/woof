@@ -89,7 +89,7 @@
          [:p "No confirmed bug."])]]
      [:section.section {:style "padding: 1.5rem 1.0rem"}
       [:div.container
-       [:h1.title [:span "Help is welcome "
+       [:h1.title [:span "Help requested "
                    [:span.is-size-7
                     [:a {:href "/feed/help"} "RSS"]
                     " - "
