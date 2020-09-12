@@ -90,6 +90,40 @@
          [:p "No confirmed bug."])]]
      [:section.section {:style "padding: 1.5rem 1.0rem"}
       [:div.container
+       [:h1.title [:span "Help is welcome "
+                   [:span.is-size-7
+                    [:a {:href "/feed/help"} "RSS"]
+                    " - "
+                    [:a {:href "/data/help"} "JSON"]]]]
+       (if-let [helps (->> (core/get-pending-help @core/db)
+                           core/intern-id
+                           (sort-by
+                            (condp = sortby
+                              "date"    :date
+                              "subject" :subject
+                              #(count (:refs %))))
+                           reverse
+                           not-empty)]
+         [:div.table-container
+          [:table.table.is-hoverable.is-fullwidth.is-striped
+           [:thead
+            [:tr
+             [:th {:width "25%"}
+              [:a {:href "/?sortby=date" :title "Sort by date"}
+               "Date"]]
+             [:th {:width "10%"}
+              [:a {:href "/?sortby=refs" :title "Sort by number of references"}
+               "References"]]
+             [:th "Subject"]]]
+           [:tbody
+            (for [help helps]
+              [:tr
+               [:td [:p (str (:date help))]]
+               [:td [:p (str (count (:refs help)))]]
+               [:td (core/format-link-fn help :bug)]])]]]
+         [:p "No help has been requested so far."])]]
+     [:section.section {:style "padding: 1.5rem 1.0rem"}
+      [:div.container
        [:h1.title [:span "Latest releases "
                    [:span.is-size-7
                     [:a {:href "/feed/releases"} "RSS"]
@@ -134,6 +168,10 @@
   {:status 200
    :body   (core/intern-id (core/get-unfixed-bugs @core/db))})
 
+(defn get-helps [_]
+  {:status 200
+   :body   (core/intern-id (core/get-pending-help @core/db))})
+
 (defn get-releases [_]
   {:status 200
    :body   (core/intern-id (core/get-releases @core/db))})
@@ -149,11 +187,13 @@
      ["/data"
       ["/updates" {:get get-updates}]
       ["/bugs" {:get get-bugs}]
+      ["/help" {:get get-helps}]
       ["/changes" {:get get-changes}]
       ["/releases" {:get get-releases}]]
      ["/feed"
       ["/updates" {:get feeds/feed-updates}]
       ["/bugs" {:get feeds/feed-bugs}]
+      ["/help" {:get feeds/feed-help}]
       ["/changes" {:get feeds/feed-changes}]
       ["/releases" {:get feeds/feed-releases}]]]
     {:data {:muuntaja   m/instance

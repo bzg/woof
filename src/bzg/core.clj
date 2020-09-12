@@ -8,10 +8,11 @@
             [clojure.walk :as walk]
             [mount.core :as mount]
             [bzg.config :as config]
-            [tea-time.core :as tt]
-            [clojure.string :as s]))
+            [tea-time.core :as tt])
+  (:import [javax.mail.internet MimeUtility]))
 
 ;; Use a dynamic var here to use another value when testing
+
 (def ^:dynamic db-file-name "db.edn")
 
 ;;; Core atoms and related functions
@@ -45,21 +46,16 @@
 
 (defn get-subject [^String s]
   (-> s
-      (s/replace #"^(R[Ee] ?: ?)+" "")
-      (s/replace #" *\([^)]+\)" "")
-      (s/trim)))
+      (string/replace #"^(R[Ee] ?: ?)+" "")
+      (string/replace #" *\([^)]+\)" "")
+      (string/trim)))
 
 (defn format-link-fn
-  [{:keys [from subject date id commit]} type]
+  [{:keys [from subject date id commit]} what]
   (let [shortcommit  (if (< (count commit) 8) commit (subs commit 0 8))
         mail-title   (format "Visit email sent by %s on %s" from date)
         commit-title (format "Visit commit %s made by %s" shortcommit from)]
-    (condp = type
-      :bug
-      [:p [:a {:href   (format (:mail-url-format config/woof) id)
-               :title  mail-title
-               :target "_blank"}
-           subject]]
+    (condp = what
       :change
       [:p
        [:a {:href   (format (:mail-url-format config/woof) id)
@@ -71,7 +67,7 @@
             :title  commit-title
             :target "_blank"}
         shortcommit] ")"]
-      :release
+      ;; Otherwise use the default for :bug :help :release:
       [:p [:a {:href   (format (:mail-url-format config/woof) id)
                :title  mail-title
                :target "_blank"}
@@ -81,6 +77,10 @@
 
 (defn get-unfixed-bugs [db]
   (filter #(and (= (:type (val %)) "bug")
+                (not (get (val %) :fixed))) db))
+
+(defn get-pending-help [db]
+  (filter #(and (= (:type (val %)) "help")
                 (not (get (val %) :fixed))) db))
 
 (defn get-unreleased-changes [db]
@@ -109,6 +109,9 @@
     (when-let [rest-refs (last (next (partition-by #{ref} refs)))]
       (recur rest-refs
              (some @db-refs rest-refs)))))
+
+(defn- some-db-refs? [refs]
+  (some @db-refs refs))
 
 (defn- add-change [{:keys [id from subject date-sent]} refs X-Woof-Change]
   (let [c-specs   (string/split X-Woof-Change #"\s")
@@ -144,27 +147,51 @@
         (swap! db assoc-in [(key e) :canceled] true-id)
         (swap! db assoc-in [(key e) :canceled-by] true-from)
         (swap! db assoc-in [(key e) :canceled-at] date-sent)))
-    (format "%s canceled change via %s" true-from true-id)))
+    (format "%s canceled a change announcement via %s" true-from true-id)))
 
-(defn- add-bug [{:keys [id from subject date-sent]} refs]
-  (let [true-from (get-from from)
-        true-id   (get-id id)]
-    (swap! db conj {true-id {:type    "bug"
+(defn- add-entry [{:keys [id from subject date-sent] :as msg} refs what]
+  (let [{:keys [X-Woof-Help]}
+        (walk/keywordize-keys (apply conj (:headers msg)))
+        X-Woof-Help  (if X-Woof-Help (MimeUtility/decodeText X-Woof-Help))
+        what-type    (name what)
+        what-msg     (condp = what :bug "%s added a bug via %s"
+                            "%s added a call for help via %s")
+        what-subject (condp = what :bug (get-subject subject)
+                            X-Woof-Help)
+        true-from    (get-from from)
+        true-id      (get-id id)]
+    (swap! db conj {true-id {:type    what-type
                              :from    true-from
                              :refs    (into #{} (conj refs true-id))
-                             :subject (get-subject subject)
+                             :subject what-subject
                              :date    date-sent}})
-    (format "%s added a bug via %s" true-from true-id)))
+    (format what-msg true-from true-id)))
 
-(defn- fix-bug [{:keys [id from date-sent]} refs]
-  (let [true-from (get-from from)
+(defn- add-bug [msg refs]
+  (add-entry msg refs :bug))
+
+(defn- add-help [msg refs]
+  (add-entry msg refs :help))
+
+(defn- fix-entry [{:keys [id from date-sent]} refs what]
+  (let [msg       (condp = what :bug "%s marked bug fixed via %s"
+                         "%s marked help fixed via %s")
+        get-what  (condp = what :bug get-unfixed-bugs 
+                         get-pending-help)
+        true-from (get-from from)
         true-id   (get-id id)]
-    (doseq [e (get-unfixed-bugs @db)]
+    (doseq [e (get-what @db)]
       (when (some (:refs (val e)) refs)
         (swap! db assoc-in [(key e) :fixed] true-id)
         (swap! db assoc-in [(key e) :fixed-by] true-from)
         (swap! db assoc-in [(key e) :fixed-at] date-sent)))
-    (format "%s marked bug fixed via %s" true-from true-id)))
+    (format msg true-from true-id)))
+
+(defn- fix-bug [msg refs]
+  (fix-entry msg refs :bug))
+
+(defn- cancel-help [msg refs]
+  (fix-entry msg refs :help))
 
 (defn- add-release [{:keys [id from subject date-sent]} X-Woof-Release]
   (let [released  (get-released-versions @db)
@@ -194,9 +221,10 @@
 
 (defn process-incoming-message
   [{:keys [id from] :as msg}]
-  (let [{:keys [X-Woof-Bug X-Woof-Release X-Woof-Change
+  (let [{:keys [X-Woof-Bug X-Woof-Release X-Woof-Change X-Woof-Help
                 X-Original-To X-BeenThere To References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
+        X-Woof-Help (if X-Woof-Help (MimeUtility/decodeText X-Woof-Help))
         refs
         (when (not-empty References)
           (->> (string/split References #"\s")
@@ -217,7 +245,9 @@
       (cond
         ;; Confirm a bug and add it to the registry.  Anyone can
         ;; confirm a bug.
-        (and X-Woof-Bug (re-find #"(?i)confirmed" X-Woof-Bug))
+        (and X-Woof-Bug
+             (re-find (:confirmed config/actions-regexps)
+                      (string/trim X-Woof-Bug)))
         (add-bug msg refs)
         ;; Mark a bug as fixed.  Anyone can mark a bug as fixed.  If
         ;; an email contains X-Woof-Bug: fixed, we scan all refs from
@@ -225,14 +255,27 @@
         ;; of a bug, and if yes, then we mark the bug as :fixed by the
         ;; message id.
         (and X-Woof-Bug refs
-             (re-find #"(?i)fixed" X-Woof-Bug)
-             (some @db-refs refs))
+             (re-find (:closed config/actions-regexps)
+                      (string/trim X-Woof-Bug))
+             (some-db-refs? refs))
         (fix-bug msg refs)
+        ;; Call for help.  Anyone can call for help.
+        (and X-Woof-Help
+             (not (re-find (:closed config/actions-regexps)
+                           (string/trim X-Woof-Help))))
+        (add-help msg refs)
+        ;; Cancel a call for help.  Anyone can call for help.
+        (and X-Woof-Help
+             (re-find (:closed config/actions-regexps)
+                      (string/trim X-Woof-Help))
+             (some-db-refs? refs))
+        (cancel-help msg refs)
         ;; Mark a change as canceled.  Anyone can mark a change as
         ;; canceled.
         (and X-Woof-Change refs
-             (re-find #"(?i)canceled" X-Woof-Change)
-             (some @db-refs refs))
+             (re-find (:closed config/actions-regexps)
+                      (string/trim X-Woof-Change))
+             (some-db-refs? refs))
         (cancel-change msg refs)
         ;; Announce a breaking change in the current development
         ;; branches and associate it with future version(s).  Anyone

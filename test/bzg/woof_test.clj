@@ -87,7 +87,22 @@
           :date-sent #inst "2020-05-28T00:13:11.037044Z"
           :headers   [{"X-Original-To" (:mailing-list config/woof)}
                       {"References" "id4"}
-                      {"X-Woof-Bug" "fixed"}]}})
+                      {"X-Woof-Bug" "fixed"}]}
+   :msg8 {:id        "id8"
+          :subject   "A call for help"
+          :from      (list {:address (:user config/woof)})
+          :date-sent #inst "2020-05-28T00:13:11.037044Z"
+          :headers   [{"X-Original-To" (:mailing-list config/woof)}
+                      {"References" "id7"}
+                      {"X-Woof-Help" "This is a call for help."}]}
+   :msg9 {:id        "id9"
+          :subject   "Resolved (was: A call for help)"
+          :from      (list {:address (:user config/woof)})
+          :date-sent #inst "2020-05-28T00:14:11.037044Z"
+          :headers   [{"X-Original-To" (:mailing-list config/woof)}
+                      {"References" "id8"}
+                      {"X-Woof-Help" "done"}]}
+   })
 
 (deftest message-processing
   (binding [core/db-file-name "db-test.edn"]
@@ -125,5 +140,15 @@
       (is (= 1 (count (core/get-unfixed-bugs @core/db))))
       (core/process-incoming-message (:msg7 test-data))
       (is (= 0 (count (core/get-unfixed-bugs @core/db))))
+      (reset! core/db {}))
+    (testing "Add a call for help"
+      (core/process-incoming-message (:msg8 test-data))
+      (is (= 1 (count (core/get-pending-help @core/db))))
+      (reset! core/db {}))
+    (testing "Cancal a call for help"
+      (core/process-incoming-message (:msg8 test-data))
+      (is (= 1 (count (core/get-pending-help @core/db))))
+      (core/process-incoming-message (:msg9 test-data))
+      (is (= 0 (count (core/get-pending-help @core/db))))
       (reset! core/db {}))
     (sh/sh "rm" "db-test.edn")))

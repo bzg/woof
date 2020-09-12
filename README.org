@@ -12,12 +12,14 @@ events they want to store and advertize through the webpage.
 
 * Events
 
-Woof knows three different headers:
+Woof uses these headers:
 
 - X-Woof-Bug :: For declaring a bug as =confirmed= or =fixed=.
 
+- X-Woof-Help :: For requesting help or canceling a help request.
+
 - X-Woof-Change :: For declaring that a =commit= implements a change
-  that users need to be aware of in an upcoming =version=.  You can also
+  users need to be aware of in an upcoming =version=.  You can also
   cancel the change.
 
 - X-Woof-Release :: For announcing a new released =version=.
@@ -40,13 +42,36 @@ will declare =10.2= as a new release.
 
 will mark a bug discussed in a thread as =confirmed=.
 
-** Confirm a bug is fixed
+** Confirm a fix
 
 : From: xxx@xxx.xx
 : X-Woof-Bug: fixed
 : ...
 
 will mark the known bug discussed in a thread as =fixed=.
+
+** Request help
+
+: From: xxx@xxx.xx
+: X-Woof-Help: This is a summary of the help request.
+: ...
+
+will add a request for help from within a thread.
+
+** Cancel a help request
+
+: From: xxx@xxx.xx
+: X-Woof-Help: canceled
+: ...
+
+will mark the help request as canceled, done or closed.
+
+You can use one of these headers:
+
+: X-Woof-Help: canceled
+: X-Woof-Help: done
+: X-Woof-Help: close
+: X-Woof-Help: closed
 
 ** Announce a change
 

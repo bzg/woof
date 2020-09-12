@@ -5,15 +5,15 @@
             [clojure.string :as string]
             [hiccup.core :as h]))
 
-(defn feed-description [msg type]
+(defn feed-description [msg what]
   (let [cdata "<![CDATA[ %s ]]>"]
-    (format cdata (h/html (core/format-link-fn msg type)))))
+    (format cdata (h/html (core/format-link-fn msg what)))))
 
-(defn feed-item [{:keys [id subject date from] :as msg} type]
+(defn feed-item [{:keys [id subject date from] :as msg} what]
   (let [link (format (:mail-url-format config/woof) id)]
     {:title       subject
      :link        link
-     :description (feed-description msg type)
+     :description (feed-description msg what)
      :author      from
      :guid        link
      :pubDate     date}))
@@ -37,32 +37,31 @@
          (concat
           (map #(feed-item % :bug)
                (core/intern-id (core/get-unfixed-bugs @core/db)))
+          (map #(feed-item % :bug)
+               (core/intern-id (core/get-pending-help @core/db)))
           (map #(feed-item % :change)
                (core/intern-id (core/get-unreleased-changes @core/db)))
           (map #(feed-item % :release)
                (core/intern-id (core/get-releases @core/db)))))))
 
-(defn feed-bugs [_]
-  (feed "/feed/bugs"
-        (sort-by
-         :pubDate
-         (concat
-          (map #(feed-item % :bug)
-               (core/intern-id (core/get-unfixed-bugs @core/db)))))))
+(defn- make-feed [{:keys [path what]}]
+  (let [get-type (condp = what
+                   :bug     core/get-unfixed-bugs
+                   :help    core/get-pending-help
+                   :change  core/get-unreleased-changes
+                   :release core/get-releases)]
+    (feed path
+          (sort-by
+           :pubDate
+           (concat
+            (map #(feed-item % what)
+                 (core/intern-id (get-type @core/db))))))))
 
-(defn feed-changes [_]
-  (feed "/feed/changes"
-        (sort-by
-         :pubDate
-         (concat
-          (map #(feed-item % :change)
-               (core/intern-id (core/get-unreleased-changes @core/db)))))))
+(defn feed-bugs [_] (make-feed {:path "/feed/bugs" :what :bug}))
 
-(defn feed-releases [_]
-  (feed "/feed/releases"
-        (sort-by
-         :pubDate
-         (concat
-          (map #(feed-item % :release)
-               (core/intern-id (core/get-releases @core/db)))))))
+(defn feed-help [_] (make-feed {:path "/feed/help" :what :help}))
+
+(defn feed-changes [_] (make-feed {:path "/feed/changes" :what :change}))
+
+(defn feed-releases [_] (make-feed {:path "/feed/releases" :what :release}))
 

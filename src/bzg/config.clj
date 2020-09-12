@@ -16,3 +16,7 @@
    :commit-url-format (System/getenv "WOOF_COMMIT_URL_FORMAT")
    :port              (or (System/getenv "WOOF_PORT") "3000")
    :base-url          (or (System/getenv "WOOF_BASE_URL") "https://localhost:3000")})
+
+(def actions-regexps
+  {:confirmed #"(?i)confirm(ed)?"
+   :closed    #"(?i)^(cancel(ed)?|done|closed?|fix(ed)?)"})
