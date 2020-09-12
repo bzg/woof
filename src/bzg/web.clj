@@ -78,7 +78,7 @@
                "Date"]]
              [:th {:width "10%"}
               [:a {:href "/?sort-bugs-by=refs" :title "Sort bugs by number of references"}
-               "References"]]
+               "Refs"]]
              [:th "Summary"]]]
            [:tbody
             (for [bug bugs]
@@ -111,7 +111,7 @@
                "Date"]]
              [:th {:width "10%"}
               [:a {:href "/?sort-help-by=refs" :title "Sort help requests by number of references"}
-               "References"]]
+               "Refs"]]
              [:th "Summary"]]]
            [:tbody
             (for [help helps]
