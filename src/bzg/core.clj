@@ -55,21 +55,26 @@
 
 (defn format-link-fn
   [{:keys [from subject date id commit]} what]
-  (let [shortcommit  (if (< (count commit) 8) commit (subs commit 0 8))
+  (let [shortcommit  (cond (and (string? commit)
+                                (< (count commit) 8))
+                           commit
+                           (string? commit) (subs commit 0 8))
         mail-title   (format "Visit email sent by %s on %s" from date)
-        commit-title (format "Visit commit %s made by %s" shortcommit from)]
-    (condp = what
-      :change
+        commit-title (when shortcommit
+                       (format "Visit commit %s" shortcommit from))]
+    (if (= what :change)
       [:p
        [:a {:href   (format (:mail-url-format config/woof) id)
             :title  mail-title
             :target "_blank"}
         subject]
-       " ("
-       [:a {:href   (format (:commit-url-format config/woof) commit)
-            :title  commit-title
-            :target "_blank"}
-        shortcommit] ")"]
+       (when shortcommit
+         [:span
+          " ("
+          [:a {:href   (format (:commit-url-format config/woof) commit)
+               :title  commit-title
+               :target "_blank"}
+           shortcommit] ")"])]
       ;; Otherwise use the default for :bug :help :release:
       [:p [:a {:href   (format (:mail-url-format config/woof) id)
                :title  mail-title
@@ -118,19 +123,14 @@
 
 (defn- add-change [{:keys [id from subject date-sent]} refs X-Woof-Change]
   (let [c-specs   (string/split X-Woof-Change #"\s")
-        commit    (first c-specs)           ;; (when (> 1 (count c-specs)) (first c-specs))
-        versions  (into #{} (next c-specs)) ;; (when commit (into #{} (next c-specs)) (first c-specs))
+        commit    (when (< 1 (count c-specs)) (first c-specs))
+        versions  (into #{} (if commit (next c-specs) (first c-specs)))
         released  (get-released-versions @db)
         true-from (get-from from)
         true-id   (get-id id)]
-    (cond
-      (and released (some released versions))
+    (if (and released (some released versions))
       (format "%s tried to add a change against a past release, ignoring %s"
               true-from true-id)
-      (empty? versions)
-      (format "%s tried to add a change with a wrong header format, ignoring %s"
-              true-from true-id)
-      :else
       (do (swap! db conj {true-id {:type     "change"
                                    :from     true-from
                                    :commit   commit

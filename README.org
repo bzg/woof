@@ -73,7 +73,26 @@ will mark the help request as canceled, done or closed.
 : ...
 
 will declare commit =1234567879= as an upcoming change for the /future/
-release version =8.4=.
+release version =8.4=.  When the =8.4= release is done, the change will
+not be advertized anymore.
+
+: From: xxx@xxx.xx
+: X-Woof-Change: 1234567879 8.4.2 8.5
+: ...
+
+will declare commit =1234567879= as an upcoming change for the /future/
+release version =8.4= or =8.5=: if, for any reason, version =8.4.2= is not
+released and version =8.5= is released instead, the change will not be
+advertized anymore.
+
+You can also omit the commit like this:
+
+: From: xxx@xxx.xx
+: X-Woof-Change: 8.4
+: ...
+
+In this case, only one version is allowed.  If this version will not
+be done for any reason, you can also cancel the change announcement.
 
 ** Cancel a change
 
