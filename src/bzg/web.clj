@@ -19,7 +19,7 @@
 (defn- format-date [d]
   (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:MM") d))
 
-(defn homepage [sortby]
+(defn default [link content]
   (h/html5
    {:lang "en"}
    [:head
@@ -37,108 +37,13 @@
        [:a {:href (string/replace
                    (:base-url config/woof)
                    #"([^/])/*$" "$1/feed/updates")}
-        "Subscribe"]
-       " / "
+        "Subscribe (RSS)"]
+       " — "
        [:a {:href (:project-url config/woof)}
-        (:project-name config/woof)]]]]
-    [:div.container
-     [:section.section {:style "padding: 1.5rem 1.0rem"}
-      [:div.container
-       [:h1.title [:span "Upcoming changes "
-                   [:span.is-size-7
-                    [:a {:href "/feed/changes"} "RSS"]
-                    " - "
-                    [:a {:href "/data/changes"} "JSON"]]]]
-       (if-let [changes (->> (core/get-unreleased-changes @core/db)
-                             core/intern-id
-                             (sort-by :date)
-                             not-empty)]
-         [:div.content
-          (for [change changes]
-            (core/format-link-fn change :change))]
-         [:p "No upcoming change."])]]
-     [:section.section {:style "padding: 1.5rem 1.0rem"}
-      [:div.container
-       [:h1.title [:span "Confirmed bugs "
-                   [:span.is-size-7
-                    [:a {:href "/feed/bugs"} "RSS"]
-                    " - "
-                    [:a {:href "/data/bugs"} "JSON"]]]]
-       (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
-                          core/intern-id
-                          (sort-by
-                           (if (= (:sort-bugs-by sortby) "date")
-                             :date
-                             #(count (:refs %))))
-                          reverse
-                          not-empty)]
-         [:div.table-container
-          [:table.table.is-hoverable.is-fullwidth.is-striped
-           [:thead
-            [:tr
-             [:th "Summary"]
-             [:th {:width "15%"}
-              [:a {:href "/?sort-bugs-by=date" :title "Sort bugs by date"}
-               "Date"]]
-             [:th {:width "5%"}
-              [:a {:href "/?sort-bugs-by=refs" :title "Sort bugs by number of references"}
-               "Refs"]]]]
-           [:tbody
-            (for [bug bugs]
-              [:tr
-               [:td (core/format-link-fn bug :bug)]
-               [:td [:p (format-date (:date bug))]]
-               [:td [:p (str (count (:refs bug)))]]])]]]
-         [:p "No confirmed bug."])]]
-     [:section.section {:style "padding: 1.5rem 1.0rem"}
-      [:div.container
-       [:h1.title [:span "Help requested "
-                   [:span.is-size-7
-                    [:a {:href "/feed/help"} "RSS"]
-                    " - "
-                    [:a {:href "/data/help"} "JSON"]]]]
-       (if-let [helps (->> (core/get-pending-help @core/db)
-                           core/intern-id
-                           (sort-by
-                            (if (= (:sort-help-by sortby) "date")
-                              :date
-                              #(count (:refs %))))
-                           reverse
-                           not-empty)]
-         [:div.table-container
-          [:table.table.is-hoverable.is-fullwidth.is-striped
-           [:thead
-            [:tr
-             [:th "Summary"]
-             [:th {:width "15%"}
-              [:a {:href "/?sort-help-by=date" :title "Sort help requests by date"}
-               "Date"]]
-             [:th {:width "5%"}
-              [:a {:href "/?sort-help-by=refs" :title "Sort help requests by number of references"}
-               "Refs"]]]]
-           [:tbody
-            (for [help helps]
-              [:tr
-               [:td (core/format-link-fn help :bug)]
-               [:td [:p (format-date (:date help))]]
-               [:td [:p (str (count (:refs help)))]]])]]]
-         [:p "No help has been requested so far."])]]
-     [:section.section {:style "padding: 1.5rem 1.0rem"}
-      [:div.container
-       [:h1.title [:span "Latest releases "
-                   [:span.is-size-7
-                    [:a {:href "/feed/releases"} "RSS"]
-                    " - "
-                    [:a {:href "/data/releases"} "JSON"]]]]
-       (if-let [releases (->> (core/get-releases @core/db)
-                              core/intern-id
-                              (sort-by :date)
-                              reverse
-                              not-empty)]
-         [:div.content
-          (for [release (take 3 releases)]
-            (core/format-link-fn release :release))]
-         [:p "No release."])]]]
+        (:project-name config/woof)]
+       " — "
+       link]]]
+    content
     [:footer.footer
      [:div.columns
       [:div.column.is-offset-4.is-4.has-text-centered
@@ -155,6 +60,108 @@
        [:br]
        [:p "Made with "
         [:a {:href "https://github.com/bzg/woof"} "WOOF"]]]]]]))
+
+(defn homepage [sortby]
+  (default
+   [:a {:href "https://github.com/bzg/woof#usage"} "Howto"]
+   [:div.container
+    [:section.section {:style "padding: 1.5rem 1.0rem"}
+     [:div.container
+      [:h1.title [:span "Upcoming changes "
+                  [:span.is-size-7
+                   [:a {:href "/feed/changes"} "RSS"]
+                   " — "
+                   [:a {:href "/data/changes"} "JSON"]]]]
+      (if-let [changes (->> (core/get-unreleased-changes @core/db)
+                            core/intern-id
+                            (sort-by :date)
+                            not-empty)]
+        [:div.content
+         (for [change changes]
+           (core/format-link-fn change :change))]
+        [:p "No upcoming change."])]]
+    [:section.section {:style "padding: 1.5rem 1.0rem"}
+     [:div.container
+      [:h1.title [:span "Confirmed bugs "
+                  [:span.is-size-7
+                   [:a {:href "/feed/bugs"} "RSS"]
+                   " — "
+                   [:a {:href "/data/bugs"} "JSON"]]]]
+      (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
+                         core/intern-id
+                         (sort-by
+                          (if (= (:sort-bugs-by sortby) "date")
+                            :date
+                            #(count (:refs %))))
+                         reverse
+                         not-empty)]
+        [:div.table-container
+         [:table.table.is-hoverable.is-fullwidth.is-striped
+          [:thead
+           [:tr
+            [:th "Summary"]
+            [:th {:width "15%"}
+             [:a {:href "/?sort-bugs-by=date" :title "Sort bugs by date"}
+              "Date"]]
+            [:th {:width "5%"}
+             [:a {:href "/?sort-bugs-by=refs" :title "Sort bugs by number of references"}
+              "Refs"]]]]
+          [:tbody
+           (for [bug bugs]
+             [:tr
+              [:td (core/format-link-fn bug :bug)]
+              [:td [:p (format-date (:date bug))]]
+              [:td [:p (str (count (:refs bug)))]]])]]]
+        [:p "No confirmed bug."])]]
+    [:section.section {:style "padding: 1.5rem 1.0rem"}
+     [:div.container
+      [:h1.title [:span "Help requested "
+                  [:span.is-size-7
+                   [:a {:href "/feed/help"} "RSS"]
+                   " — "
+                   [:a {:href "/data/help"} "JSON"]]]]
+      (if-let [helps (->> (core/get-pending-help @core/db)
+                          core/intern-id
+                          (sort-by
+                           (if (= (:sort-help-by sortby) "date")
+                             :date
+                             #(count (:refs %))))
+                          reverse
+                          not-empty)]
+        [:div.table-container
+         [:table.table.is-hoverable.is-fullwidth.is-striped
+          [:thead
+           [:tr
+            [:th "Summary"]
+            [:th {:width "15%"}
+             [:a {:href "/?sort-help-by=date" :title "Sort help requests by date"}
+              "Date"]]
+            [:th {:width "5%"}
+             [:a {:href "/?sort-help-by=refs" :title "Sort help requests by number of references"}
+              "Refs"]]]]
+          [:tbody
+           (for [help helps]
+             [:tr
+              [:td (core/format-link-fn help :bug)]
+              [:td [:p (format-date (:date help))]]
+              [:td [:p (str (count (:refs help)))]]])]]]
+        [:p "No help has been requested so far."])]]
+    [:section.section {:style "padding: 1.5rem 1.0rem"}
+     [:div.container
+      [:h1.title [:span "Latest releases "
+                  [:span.is-size-7
+                   [:a {:href "/feed/releases"} "RSS"]
+                   " — "
+                   [:a {:href "/data/releases"} "JSON"]]]]
+      (if-let [releases (->> (core/get-releases @core/db)
+                             core/intern-id
+                             (sort-by :date)
+                             reverse
+                             not-empty)]
+        [:div.content
+         (for [release (take 3 releases)]
+           (core/format-link-fn release :release))]
+        [:p "No release."])]]]))
 
 (defn get-homepage [{:keys [query-params]}]
   {:status  200

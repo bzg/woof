@@ -1,30 +1,22 @@
 #+title: Woof!
 
-Woof monitors a mailbox, stores messages in a database depending on
-their headers and exposes a webpage with information on stored
-messages.
+Woof monitors a mailbox and tracks updates sent to this mailbox.
 
-Your mailbox needs to be subscribed to a mailing list and people on
-the mailing list need to manually set the headers corresponding to the
-events they want to store and advertize through the webpage.
+An update can be /a new release/, a user-significant /change/, a /bug
+confirmation/ or a /help request/.
+
+You trigger updates while sending emails with =X-Woof-*= headers.
 
 [[file:woof.png]]
 
-* Events
-
-Woof uses these headers:
-
-- X-Woof-Bug :: For declaring a bug as =confirmed= or =fixed=.
-
-- X-Woof-Help :: For requesting help or canceling a help request.
-
-- X-Woof-Change :: For declaring that a =commit= implements a change
-  users need to be aware of in an upcoming =version=.  You can also
-  cancel the change.
-
-- X-Woof-Release :: For announcing a new released =version=.
-
 * Usage
+
+** Headers
+
+- X-Woof-Bug :: To confirm a bug.
+- X-Woof-Help :: To request help.
+- X-Woof-Change :: To declare that a user-significant change.
+- X-Woof-Release :: To announce a new release.
 
 ** Announce a release
 
@@ -48,7 +40,7 @@ will mark a bug discussed in a thread as =confirmed= (see synonyms below.)
 : X-Woof-Bug: fixed
 : ...
 
-will mark the known bug discussed in a thread as =fixed= (see synonyms below.)
+will mark the bug discussed in a thread as =fixed= (see synonyms below.)
 
 ** Request help
 
@@ -56,7 +48,7 @@ will mark the known bug discussed in a thread as =fixed= (see synonyms below.)
 : X-Woof-Help: confirmed
 : ...
 
-will add a request for help from within a thread.
+will add a request for help.
 
 ** Cancel a help request
 
@@ -64,7 +56,7 @@ will add a request for help from within a thread.
 : X-Woof-Help: canceled
 : ...
 
-will mark the help request as canceled.
+will cancel the help request from within this thread.
 
 ** Announce a change
 
@@ -81,9 +73,9 @@ not be advertized anymore.
 : ...
 
 will declare commit =1234567879= as an upcoming change for the /future/
-release versions =8.4= /or/ =8.5=.  (If, for any reason, version =8.4.2= is
-not released and version =8.5= is released instead, the change will not
-be advertized anymore.)
+release versions =8.4= /or/ =8.5=.  If, for any reason, version =8.4.2= is not
+released and version =8.5= is released instead, the change will not be
+advertized anymore.
 
 You can also omit the commit:
 
@@ -99,7 +91,7 @@ Note that in this case, only one version is allowed.
 : X-Woof-Change: cancel
 : ...
 
-will cancel a change that was announced in the same thread.
+will cancel the change that was announced within this thread.
 
 ** Annotations for bugs and help requests
 
@@ -107,9 +99,10 @@ By default, the summary for bugs and help requests is the subject of
 the email with the =X-Woof-Bug= or =X-Woof-Help= header.
 
 Sometimes, the subject of the email is not specific enough and you
-don't want to change the subject and start a subthread.  
+don't want to start a subthread by changing the subject while replying
+to a list.
 
-Instead, you can simply use the =X-Woof-Bug= or =X-Woof-Help= header to
+Instead, you can simply use the =X-Woof-Bug= or =X-Woof-Help= headers to
 add your summary.  For example:
 
 : From: xxx@xxx.xx
