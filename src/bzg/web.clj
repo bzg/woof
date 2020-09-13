@@ -19,11 +19,12 @@
 (defn- format-date [d]
   (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:MM") d))
 
-(defn- filter-summary [query-params what]
+(defn- filter-summary [query-params db]
   (if (seq (:filter query-params))
-    (filter #(re-find (re-pattern (:filter query-params)) (:summary %))
-            what)
-    what))
+    (filter #(re-find (re-pattern (str "(?i)" (:filter query-params)))
+                      (:summary %))
+            db)
+    db))
 
 (defn default [query-params link content]
   (h/html5
