@@ -9,9 +9,9 @@
   (let [cdata "<![CDATA[ %s ]]>"]
     (format cdata (h/html (core/format-link-fn msg what)))))
 
-(defn feed-item [{:keys [id subject date from] :as msg} what]
+(defn feed-item [{:keys [id summary date from] :as msg} what]
   (let [link (format (:mail-url-format config/woof) id)]
-    {:title       subject
+    {:title       summary
      :link        link
      :description (feed-description msg what)
      :author      from
@@ -64,4 +64,3 @@
 (defn feed-changes [_] (make-feed {:path "/feed/changes" :what :change}))
 
 (defn feed-releases [_] (make-feed {:path "/feed/releases" :what :release}))
-
