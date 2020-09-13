@@ -31,9 +31,12 @@
     (h/include-css "https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css")]
    [:body
     [:section.hero
-     [:div.hero-body  {:style "padding: 2rem 1.5rem"}
-      [:h1.title.has-text-centered (:title config/woof)]
+     [:div.hero-body {:style "padding: 2rem 1.5rem"}
+      [:h1.title.has-text-centered
+       {:style "margin-bottom: 1em;"}
+       (:title config/woof)]
       [:h2.subtitle.column.is-8.is-offset-2.has-text-centered
+       {:style "margin-bottom: 0;"}
        [:a {:href  (string/replace
                     (:base-url config/woof)
                     #"([^/])/*$" "$1/feed/updates")
@@ -43,7 +46,12 @@
        [:a {:href (:project-url config/woof)}
         (:project-name config/woof)]
        " — "
-       link]]]
+       link]
+      [:h3.column.is-8.is-offset-2.has-text-centered
+       [:a {:href "#changes"} "Changes"] " — "
+       [:a {:href "#help"} "Help"] " — "
+       [:a {:href "#bugs"} "Bugs"] " — "
+       [:a {:href "#releases"} "Releases"]]]]
     content
     [:footer.footer
      [:div.columns
@@ -69,11 +77,10 @@
    [:div.container
     [:section.section {:style "padding: 1.5rem 1.0rem"}
      [:div.container
-      [:h1.title [:span "Upcoming changes "
-                  [:span.is-size-7
-                   [:a {:href "/feed/changes"} "RSS"]
-                   " — "
-                   [:a {:href "/data/changes"} "JSON"]]]]
+      [:h1#changes.title
+       [:span "Upcoming changes "
+        [:a.tag.is-info.is-light {:href "/feed/changes"} "RSS"] " "
+        [:a.tag.is-success.is-light {:href "/data/changes"} "JSON"]]]
       (if-let [changes (->> (core/get-unreleased-changes @core/db)
                             core/intern-id
                             (sort-by :date)
@@ -84,44 +91,10 @@
         [:p "No upcoming change."])]]
     [:section.section {:style "padding: 1.5rem 1.0rem"}
      [:div.container
-      [:h1.title [:span "Confirmed bugs "
-                  [:span.is-size-7
-                   [:a {:href "/feed/bugs"} "RSS"]
-                   " — "
-                   [:a {:href "/data/bugs"} "JSON"]]]]
-      (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
-                         core/intern-id
-                         (sort-by
-                          (if (= (:sort-bugs-by sortby) "date")
-                            :date
-                            #(count (:refs %))))
-                         reverse
-                         not-empty)]
-        [:div.table-container
-         [:table.table.is-hoverable.is-fullwidth.is-striped
-          [:thead
-           [:tr
-            [:th "Summary"]
-            [:th {:width "15%"}
-             [:a {:href "/?sort-bugs-by=date" :title "Sort bugs by date"}
-              "Date"]]
-            [:th {:width "5%"}
-             [:a {:href "/?sort-bugs-by=refs" :title "Sort bugs by number of references"}
-              "Refs"]]]]
-          [:tbody
-           (for [bug bugs]
-             [:tr
-              [:td (core/format-link-fn bug :bug)]
-              [:td [:p (format-date (:date bug))]]
-              [:td [:p (str (count (:refs bug)))]]])]]]
-        [:p "No confirmed bug."])]]
-    [:section.section {:style "padding: 1.5rem 1.0rem"}
-     [:div.container
-      [:h1.title [:span "Help requests "
-                  [:span.is-size-7
-                   [:a {:href "/feed/help"} "RSS"]
-                   " — "
-                   [:a {:href "/data/help"} "JSON"]]]]
+      [:h1#help.title
+       [:span "Help requests "
+        [:a.tag.is-info.is-light {:href "/feed/help"} "RSS"] " "
+        [:a.tag.is-success.is-light {:href "/data/help"} "JSON"]]]
       (if-let [helps (->> (core/get-pending-help @core/db)
                           core/intern-id
                           (sort-by
@@ -150,11 +123,42 @@
         [:p "No help has been requested so far."])]]
     [:section.section {:style "padding: 1.5rem 1.0rem"}
      [:div.container
-      [:h1.title [:span "Latest releases "
-                  [:span.is-size-7
-                   [:a {:href "/feed/releases"} "RSS"]
-                   " — "
-                   [:a {:href "/data/releases"} "JSON"]]]]
+      [:h1#bugs.title
+       [:span "Confirmed bugs "
+        [:a.tag.is-info.is-light {:href "/feed/bugs"} "RSS"] " "
+        [:a.tag.is-success.is-light {:href "/data/bugs"} "JSON"]]]
+      (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
+                         core/intern-id
+                         (sort-by
+                          (if (= (:sort-bugs-by sortby) "date")
+                            :date
+                            #(count (:refs %))))
+                         reverse
+                         not-empty)]
+        [:div.table-container
+         [:table.table.is-hoverable.is-fullwidth.is-striped
+          [:thead
+           [:tr
+            [:th "Summary"]
+            [:th {:width "15%"}
+             [:a {:href "/?sort-bugs-by=date" :title "Sort bugs by date"}
+              "Date"]]
+            [:th {:width "5%"}
+             [:a {:href "/?sort-bugs-by=refs" :title "Sort bugs by number of references"}
+              "Refs"]]]]
+          [:tbody
+           (for [bug bugs]
+             [:tr
+              [:td (core/format-link-fn bug :bug)]
+              [:td [:p (format-date (:date bug))]]
+              [:td [:p (str (count (:refs bug)))]]])]]]
+        [:p "No confirmed bug."])]]
+    [:section.section {:style "padding: 1.5rem 1.0rem"}
+     [:div.container
+      [:h1#releases.title
+       [:span "Latest releases "
+        [:a.tag.is-info.is-light {:href "/feed/releases"} "RSS"] " "
+        [:a.tag.is-success.is-light {:href "/data/releases"} "JSON"]]]
       (if-let [releases (->> (core/get-releases @core/db)
                              core/intern-id
                              (sort-by :date)
