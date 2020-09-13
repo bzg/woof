@@ -23,10 +23,10 @@
   (h/html5
    {:lang "en"}
    [:head
-    [:title "Woof - Watch Over Our Folders"]
+    [:title "Woof! Watch Over Our Folders"]
     [:meta {:charset "utf-8"}]
-    [:meta {:name "keywords" :content "Woof - Watch Over Our Folders"}]
-    [:meta {:name "description" :content "Woof - Watch Over Our Folders"}]
+    [:meta {:name "keywords" :content "Woof! Watch Over Our Folders"}]
+    [:meta {:name "description" :content "Woof! Watch Over Our Folders"}]
     [:meta {:name "viewport" :content "width=device-width, initial-scale=1, shrink-to-fit=yes"}]
     (h/include-css "https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css")]
    [:body
@@ -34,9 +34,10 @@
      [:div.hero-body  {:style "padding: 2rem 1.5rem"}
       [:h1.title.has-text-centered (:title config/woof)]
       [:h2.subtitle.column.is-8.is-offset-2.has-text-centered
-       [:a {:href (string/replace
-                   (:base-url config/woof)
-                   #"([^/])/*$" "$1/feed/updates")}
+       [:a {:href  (string/replace
+                    (:base-url config/woof)
+                    #"([^/])/*$" "$1/feed/updates")
+            :title "Subscribe to a RSS feed with all updates"}
         "Subscribe (RSS)"]
        " — "
        [:a {:href (:project-url config/woof)}
@@ -59,11 +60,12 @@
         [:a {:href "/data/updates"} "all updates"]]
        [:br]
        [:p "Made with "
-        [:a {:href "https://github.com/bzg/woof"} "WOOF"]]]]]]))
+        [:a {:href "https://github.com/bzg/woof"} "Woof!"]]]]]]))
 
 (defn homepage [sortby]
   (default
-   [:a {:href "https://github.com/bzg/woof#usage"} "Howto"]
+   [:a {:href  "https://github.com/bzg/woof#usage"
+        :title "How to use Woof! to update this page?"} "Howto"]
    [:div.container
     [:section.section {:style "padding: 1.5rem 1.0rem"}
      [:div.container
@@ -115,7 +117,7 @@
         [:p "No confirmed bug."])]]
     [:section.section {:style "padding: 1.5rem 1.0rem"}
      [:div.container
-      [:h1.title [:span "Help requested "
+      [:h1.title [:span "Help requests "
                   [:span.is-size-7
                    [:a {:href "/feed/help"} "RSS"]
                    " — "
@@ -215,10 +217,10 @@
 
 (let [port (edn/read-string (:port config/woof))]
   (mount/defstate woof-server
-    :start (do (println (format "Woof monitoring on localhost:%s started" port))
+    :start (do (println (format "Woof! monitoring on localhost:%s started" port))
                (server/run-server handler {:port port}))
     :stop (when woof-server
-            (println (format "Woof monitoring on localhost:%s stopped" port))
+            (println (format "Woof! monitoring on localhost:%s stopped" port))
             (woof-server :timeout 100))))
 
 (defn -main []

@@ -1,6 +1,6 @@
 #+title: Woof!
 
-Woof monitors a mailbox and tracks updates sent to this mailbox.
+Woof! monitors a mailbox and tracks updates sent to this mailbox.
 
 An update can be /a new release/, a user-significant /change/, a /bug
 confirmation/ or a /help request/.
