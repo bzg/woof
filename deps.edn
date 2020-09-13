@@ -1,4 +1,4 @@
-{:version     "0.1.6"
+{:version     "0.1.7"
  :description "Watch Over Our Folders"
  :url         "https://github.com/bzg/woof"
  :license     {:name "Eclipse Public License - v 2.0"
