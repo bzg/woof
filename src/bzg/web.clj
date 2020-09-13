@@ -19,7 +19,13 @@
 (defn- format-date [d]
   (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:MM") d))
 
-(defn default [link content]
+(defn- filter-summary [query-params what]
+  (if (seq (:filter query-params))
+    (filter #(re-find (re-pattern (:filter query-params)) (:summary %))
+            what)
+    what))
+
+(defn default [query-params link content]
   (h/html5
    {:lang "en"}
    [:head
@@ -48,10 +54,17 @@
        " — "
        link]
       [:h3.column.is-8.is-offset-2.has-text-centered
-       [:a {:href "#changes"} "Changes"] " — "
-       [:a {:href "#help"} "Help"] " — "
-       [:a {:href "#bugs"} "Bugs"] " — "
-       [:a {:href "#releases"} "Releases"]]]]
+       [:a {:href "/#changes"} "Changes"] " — "
+       [:a {:href "/#help"} "Help"] " — "
+       [:a {:href "/#bugs"} "Bugs"] " — "
+       [:a {:href "/#releases"} "Releases"]]
+      [:div.column.is-4.is-offset-4
+       [:form.columns {:action "/"}
+        [:input.input {:type        "text"
+                       :name        "s"
+                       :value       (:filter query-params)
+                       :placeHolder "Leave empty to remove filters" }]
+        [:button.button.is-info {:type "submit"} "Filter"]]]]]
     content
     [:footer.footer
      [:div.columns
@@ -70,8 +83,9 @@
        [:p "Made with "
         [:a {:href "https://github.com/bzg/woof"} "Woof!"]]]]]]))
 
-(defn homepage [sortby]
+(defn homepage [query-params]
   (default
+   query-params
    [:a {:href  "https://github.com/bzg/woof#usage"
         :title "How to use Woof! to update this page?"} "Howto"]
    [:div.container
@@ -84,6 +98,7 @@
       (if-let [changes (->> (core/get-unreleased-changes @core/db)
                             core/intern-id
                             (sort-by :date)
+                            (filter-summary query-params)
                             not-empty)]
         [:div.content
          (for [change changes]
@@ -98,9 +113,10 @@
       (if-let [helps (->> (core/get-pending-help @core/db)
                           core/intern-id
                           (sort-by
-                           (if (= (:sort-help-by sortby) "date")
+                           (if (= (:sort-help-by query-params) "date")
                              :date
                              #(count (:refs %))))
+                          (filter-summary query-params)
                           reverse
                           not-empty)]
         [:div.table-container
@@ -130,10 +146,11 @@
       (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
                          core/intern-id
                          (sort-by
-                          (if (= (:sort-bugs-by sortby) "date")
+                          (if (= (:sort-bugs-by query-params) "date")
                             :date
                             #(count (:refs %))))
                          reverse
+                         (filter-summary query-params)
                          not-empty)]
         [:div.table-container
          [:table.table.is-hoverable.is-fullwidth.is-striped
@@ -173,7 +190,8 @@
   {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (homepage {:sort-bugs-by (get query-params "sort-bugs-by")
-                       :sort-help-by (get query-params "sort-help-by")})})
+                       :sort-help-by (get query-params "sort-help-by")
+                       :filter       (get query-params "s")})})
 
 (defn- get-data [what]
   {:status 200
