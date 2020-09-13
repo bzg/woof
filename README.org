@@ -13,10 +13,10 @@ You trigger updates while sending emails with =X-Woof-*= headers.
 
 ** Headers
 
-- X-Woof-Bug :: To confirm a bug.
-- X-Woof-Help :: To request help.
-- X-Woof-Change :: To declare that a user-significant change.
-- X-Woof-Release :: To announce a new release.
+- X-Woof-Bug :: Confirm a bug.
+- X-Woof-Help :: Request help.
+- X-Woof-Change :: Announce a change.
+- X-Woof-Release :: Announce a release.
 
 ** Announce a release
 
