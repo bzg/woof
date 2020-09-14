@@ -60,12 +60,17 @@
        [:a {:href "/#bugs"} "Bugs"] " — "
        [:a {:href "/#releases"} "Releases"]]
       [:div.column.is-4.is-offset-4
-       [:form.columns {:action "/"}
-        [:input.input {:type        "text"
-                       :name        "s"
-                       :value       (:filter query-params)
-                       :placeHolder "Leave empty to remove filters" }]
-        [:button.button.is-info {:type "submit"} "Filter"]]]]]
+       [:div.level
+        [:form.level-item {:action "/"}
+         [:input.input {:type        "text"
+                        :name        "s"
+                        :value       (:filter query-params)
+                        :placeHolder "Leave empty to remove filters" }]
+         [:button.button.is-info {:type "submit"} "Filter"]]
+        [:form
+         {:action "/"}
+         [:input {:type "hidden" :name "s" :value ""}]
+         [:button.button.is-danger.is-light {:type "submit"} "❌"]]]]]]
     content
     [:footer.footer
      [:div.columns
