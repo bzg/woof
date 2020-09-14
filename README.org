@@ -11,7 +11,10 @@ You trigger updates while sending emails with =X-Woof-*= headers.
 
 * Usage
 
-** Headers
+Managing the Woof database is entirely done by adding headers in your
+replies to a mailing list.
+
+** Woof headers
 
 - X-Woof-Bug :: Confirm a bug.
 - X-Woof-Help :: Request help.
