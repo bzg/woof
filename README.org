@@ -27,7 +27,7 @@ be triggered by using specific =X-Woof-*= mail headers.
 line in a *plain-text email*.  Beware that the match is case-sensitive,
 so "applied", "CONFIRMED" and "FiXeD" won't work.
 
-Series of patch with a subject containing e.g. [PATCH 1/3] are not
+Series of patch with a subject containing e.g. =[PATCH 1/3]= are not
 handled right now.
 
 * Advanced usage
