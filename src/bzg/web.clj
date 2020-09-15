@@ -67,7 +67,7 @@
                         :name        "s"
                         :value       (:filter query-params)
                         :placeHolder "Leave empty to remove filters" }]
-         [:button.button.is-info.is-light {:type "submit"} "Filter"]]
+         [:button.button.is-success.is-light {:type "submit"} "Filter"]]
         [:form
          {:action "/"}
          [:input {:type "hidden" :name "s" :value ""}]
