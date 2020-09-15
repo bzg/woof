@@ -1,26 +1,32 @@
 #+title: Woof!
 
-Woof! monitors a mailbox and tracks updates sent to this mailbox.
+Woof! monitors updates sent to a mailing list.
 
-An update can be /a new release/, a user-significant /change/, a /bug
-confirmation/ or a /help request/.
+Plug Woof! to a mailbox subscribed to a mailing list, and Woof! will
+monitor updates about user-significant /changes/, /help requests/, /bugs
+/patches/ and /new releases/.
 
-You trigger updates while sending emails with =X-Woof-*= headers.
+Some Updates can be triggered by subscribers by using some specific
+words either in the subject (for patches) or in the body (for bugs).
+
+All updates (for bugs, patches, help requests and new releases) can 
+be triggered by using specific =X-Woof-*= mail headers.
 
 [[file:woof.png]]
 
 * Basic usage
 
-4 triggers allows to deal with bugs and patches:
+4 triggers allows to manage bugs and patches:
 
 - =Confirmed= in the body of the email registers a new bug.
-- =Fixed= in the body of the email marks a bug as fixed and un-registers it.
-- =[PATCH= in the email subject registers a new patch.
-- =Applied= in the body of the email marks a patch as applied and un-registers it.
+- =Fixed= in the body of an email marks the bug in the same thread as fixed.
 
-=Applied=, =Confirmed= and =Fixed= should be placed at the very beginning of
-a line in a *plain-text email*.  Beware that the match is
-case-sensitive, so "applied", "CONFIRMED" and "FiXeD" won't work.
+- =[PATCH= in the subject of a new email registers a new patch.
+- =Applied= in the body of an email marks the patch in the same thread as applied.
+
+=Applied=, =Confirmed= and =Fixed= should be placed at the beginning of a
+line in a *plain-text email*.  Beware that the match is case-sensitive,
+so "applied", "CONFIRMED" and "FiXeD" won't work.
 
 * Advanced usage
 
