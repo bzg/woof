@@ -118,21 +118,42 @@
 (defn get-released-versions [db]
   (into #{} (map :version (vals (get-releases db)))))
 
-(defn- confirmed? [^String header-value]
-  (and (seq header-value)
-       (not (re-matches (:closed config/actions-regexps)
-                        (string/trim header-value)))
-       (if (re-matches (:confirmed config/actions-regexps)
-                       (string/trim header-value))
-         true
-         (mime-decode header-value))))
+(defn- confirmed? [{:keys [msg header what]}]
+  (let [header-confirmation
+        (and (seq header)
+             (not (re-matches (:closed config/actions-regexps)
+                              (string/trim header)))
+             (if (re-matches (:confirmed config/actions-regexps)
+                             (string/trim header))
+               true
+               (mime-decode header)))
+        body (:body (:body msg))]
+    (if (and body (what #{:bug}))
+      (or (not (empty? (->> (map #(re-matches #"^Confirmed.*" %)
+                                 (string/split-lines body))
+                            (remove nil?))))
+          header-confirmation)
+      header-confirmation)))
 
 (defn- patch? [msg]
   (re-matches #"(?i)^.*\[PATCH.*$" (:subject msg)))
 
-(defn- closed? [^String header-value]
-  (re-matches (:closed config/actions-regexps)
-              (string/trim header-value)))
+(defn- closed? [{:keys [msg header what]}]
+  (let [header-confirmation
+        (and header
+             (re-matches (:closed config/actions-regexps)
+                         (string/trim header)))
+        body (:body (:body msg))]
+    (if (and body (what #{:patch :bug}))
+      (or (not (empty? (->> (map #(re-matches
+                                   (condp = what
+                                     :patch #"^Applied.*"
+                                     :bug   #"^Fixed.*")
+                                   %)
+                                 (string/split-lines body))
+                            (remove nil?))))
+          header-confirmation)
+      header-confirmation)))
 
 ;;; Core functions to update the db
 
@@ -194,8 +215,10 @@
                       :help  "%s added a call for help via %s"
                       "")
         note        (condp = what
-                      :bug  (when (string? (confirmed? X-Woof-Bug)) X-Woof-Bug)
-                      :help (when (string? (confirmed? X-Woof-Help)) X-Woof-Help)
+                      :bug  (when (string? (confirmed? {:header X-Woof-Bug}))
+                              X-Woof-Bug)
+                      :help (when (string? (confirmed? {:header X-Woof-Help}))
+                              X-Woof-Help)
                       nil)
         summary     (or note (get-subject subject))
         true-from   (get-from from)
@@ -295,37 +318,37 @@
       (when refs (update-refs (get-id id) refs))
       (cond
         ;; Detect and add a patch.
-        (and (patch? msg) (or (not X-Woof-Patch) (not (closed? X-Woof-Patch))))
+        (and (patch? msg)
+             (not (closed? {:msg msg :header X-Woof-Patch :what :patch})))
         (add-patch msg refs)
         ;; Detect applied patch.
-        (and (patch? msg) (and X-Woof-Patch (closed? X-Woof-Patch)))
+        (and (patch? msg)
+             (some-db-refs? refs)
+             (closed? {:msg msg :header X-Woof-Patch :what :patch}))
         (fix-entry msg refs :patch)
         ;; Confirm a bug and add it to the registry.  Anyone can
         ;; confirm a bug.
-        (and X-Woof-Bug (confirmed? X-Woof-Bug))
+        (confirmed? {:msg msg :header X-Woof-Bug :what :bug})
         (add-bug msg refs)
         ;; Mark a bug as fixed.  Anyone can mark a bug as fixed.  If
         ;; an email contains X-Woof-Bug: fixed, we scan all refs from
         ;; this email and see if we can find a matching ref in those
         ;; of a bug, and if yes, then we mark the bug as :fixed by the
         ;; message id.
-        (and X-Woof-Bug refs
-             (closed? X-Woof-Bug)
-             (some-db-refs? refs))
+        (and (some-db-refs? refs)
+             (closed? {:msg msg :header X-Woof-Bug :what :bug}))
         (fix-bug msg refs)
         ;; Call for help.  Anyone can call for help.
-        (and X-Woof-Help (confirmed? X-Woof-Help))
+        (confirmed? {:header X-Woof-Help})
         (add-help msg refs)
         ;; Cancel a call for help.  Anyone can call for help.
-        (and X-Woof-Help
-             (closed? X-Woof-Help)
-             (some-db-refs? refs))
+        (and (some-db-refs? refs)
+             (closed? {:header X-Woof-Help}))
         (cancel-help msg refs)
         ;; Mark a change as canceled.  Anyone can mark a change as
         ;; canceled.
-        (and X-Woof-Change refs
-             (closed? X-Woof-Change)
-             (some-db-refs? refs))
+        (and (some-db-refs? refs)
+             (closed? {:header X-Woof-Change}))
         (cancel-change msg refs)
         ;; Announce a breaking change in the current development
         ;; branches and associate it with future version(s).  Anyone
