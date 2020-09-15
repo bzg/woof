@@ -66,40 +66,54 @@
       [:p
        [:a {:href   (format (:mail-url-format config/woof) id)
             :title  mail-title
-            :target "_blank"}
+            :target "_blank" }
         summary]
        (when shortcommit
          [:span
           " ("
           [:a {:href   (format (:commit-url-format config/woof) commit)
                :title  commit-title
-               :target "_blank"}
+               :target "_blank" }
            shortcommit] ")"])]
-      ;; Otherwise use the default for :bug :help :release:
+      ;; Otherwise use the default for :patch, :bug, :help, or :release:
       [:p [:a {:href   (format (:mail-url-format config/woof) id)
                :title  mail-title
-               :target "_blank"}
+               :target "_blank" }
            summary]])))
 
 ;;; Core functions to return db entries
 
+(defn get-bugs [db]
+  (filter #(= (:type (val %)) "bug") db))
+
 (defn get-unfixed-bugs [db]
-  (filter #(and (= (:type (val %)) "bug")
-                (not (get (val %) :fixed))) db))
+  (filter #(not (get (val %) :fixed))
+          (get-bugs db)))
+
+(defn get-patches [db]
+  (filter #(= (:type (val %)) "patch") db))
+
+(defn get-unapplied-patches [db]
+  (filter #(not (get (val %) :fixed))
+          (get-patches db)))
+
+(defn get-help [db]
+  (filter #(= (:type (val %)) "help") db))
 
 (defn get-pending-help [db]
-  (filter #(and (= (:type (val %)) "help")
-                (not (get (val %) :fixed))) db))
+  (filter #(not (get (val %) :fixed))
+          (get-help db)))
+
+(defn get-changes [db]
+  (filter #(= (:type (val %)) "change") db))
 
 (defn get-unreleased-changes [db]
-  (filter #(and (= (:type (val %)) "change")
-                (not (get (val %) :released))
-                (not (get (val %) :canceled))) db))
+  (filter #(and (not (get (val %) :released))
+                (not (get (val %) :canceled)))
+          (get-changes db)))
 
 (defn get-releases [db]
-  (->>
-   (filter #(= (:type (val %)) "release") db)
-   (into {})))
+  (filter #(= (:type (val %)) "release") db))
 
 (defn get-released-versions [db]
   (into #{} (map :version (vals (get-releases db)))))
@@ -112,6 +126,9 @@
                        (string/trim header-value))
          true
          (mime-decode header-value))))
+
+(defn- patch? [msg]
+  (re-matches #"(?i)^.*\[PATCH.*$" (:subject msg)))
 
 (defn- closed? [^String header-value]
   (re-matches (:closed config/actions-regexps)
@@ -134,7 +151,7 @@
 (defn- some-db-refs? [refs]
   (some @db-refs refs))
 
-(defn- add-change [{:keys [id from subject date-sent]} refs X-Woof-Change]
+(defn- add-change [{:keys [id from subject date-sent] } refs X-Woof-Change]
   (let [c-specs   (string/split X-Woof-Change #"\s")
         commit    (when (< 1 (count c-specs)) (first c-specs))
         versions  (into #{} (if commit (next c-specs) (first c-specs)))
@@ -144,17 +161,17 @@
     (if (and released (some released versions))
       (format "%s tried to add a change against a past release, ignoring %s"
               true-from true-id)
-      (do (swap! db conj {true-id {:type     "change"
-                                   :from     true-from
-                                   :commit   commit
-                                   :refs     (into #{} (conj refs true-id))
-                                   :versions versions
-                                   :summary  (get-subject subject)
-                                   :date     date-sent}})
+      (do (swap! db conj {true-id {:type "change"
+                 :from                   true-from
+                 :commit                 commit
+                 :refs                   (into #{} (conj refs true-id))
+                 :versions               versions
+                 :summary                (get-subject subject)
+                 :date                   date-sent}})
           (format "%s added a change for version %s via %s"
                   true-from (first versions) true-id)))))
 
-(defn- cancel-change [{:keys [id from date-sent]} refs]
+(defn- cancel-change [{:keys [id from date-sent] } refs]
   (let [true-from (get-from from)
         true-id   (get-id id)]
     ;; Prevent release when not from the release manager
@@ -166,16 +183,20 @@
     (format "%s canceled a change announcement via %s" true-from true-id)))
 
 (defn- add-entry [{:keys [id from subject date-sent] :as msg} refs what]
-  (let [{:keys [X-Woof-Help X-Woof-Bug]}
+  (let [{:keys [X-Woof-Help X-Woof-Bug] }
         (walk/keywordize-keys (apply conj (:headers msg)))
         X-Woof-Help (mime-decode X-Woof-Help)
         X-Woof-Bug  (mime-decode X-Woof-Bug)
         what-type   (name what)
-        what-msg    (condp = what :bug "%s added a bug via %s"
-                           "%s added a call for help via %s")
+        what-msg    (condp = what
+                      :bug   "%s added a bug via %s"
+                      :patch "%s sent a patch via %s"
+                      :help  "%s added a call for help via %s"
+                      "")
         note        (condp = what
-                      :bug (when (string? (confirmed? X-Woof-Bug)) X-Woof-Bug)
-                      (when (string? (confirmed? X-Woof-Help)) X-Woof-Help))
+                      :bug  (when (string? (confirmed? X-Woof-Bug)) X-Woof-Bug)
+                      :help (when (string? (confirmed? X-Woof-Help)) X-Woof-Help)
+                      nil)
         summary     (or note (get-subject subject))
         true-from   (get-from from)
         true-id     (get-id id)]
@@ -189,14 +210,23 @@
 (defn- add-bug [msg refs]
   (add-entry msg refs :bug))
 
+(defn- add-patch [msg refs]
+  (add-entry msg refs :patch))
+
 (defn- add-help [msg refs]
   (add-entry msg refs :help))
 
-(defn- fix-entry [{:keys [id from date-sent]} refs what]
-  (let [msg       (condp = what :bug "%s marked bug fixed via %s"
-                         "%s marked help fixed via %s")
-        get-what  (condp = what :bug get-unfixed-bugs 
-                         get-pending-help)
+(defn- fix-entry [{:keys [id from date-sent] } refs what]
+  (let [msg       (condp = what
+                    :bug   "%s marked bug fixed via %s"
+                    :patch "%s marked patch applied via %s"
+                    :help  "%s marked help fixed via %s"
+                    "")
+        get-what  (condp = what
+                    :bug   get-unfixed-bugs
+                    :patch get-unapplied-patches
+                    :help  get-pending-help
+                    nil)
         true-from (get-from from)
         true-id   (get-id id)]
     (doseq [e (get-what @db)]
@@ -212,7 +242,7 @@
 (defn- cancel-help [msg refs]
   (fix-entry msg refs :help))
 
-(defn- add-release [{:keys [id from subject date-sent]} X-Woof-Release]
+(defn- add-release [{:keys [id from subject date-sent] } X-Woof-Release]
   (let [released  (get-released-versions @db)
         true-from (get-from from)
         true-id   (get-id id)]
@@ -227,11 +257,11 @@
               true-from true-id)
       ;; Add the release to the db
       :else
-      (do (swap! db conj {true-id {:type    "release"
-                                   :from    true-from
-                                   :version X-Woof-Release
-                                   :summary (get-subject subject)
-                                   :date    date-sent}})
+      (do (swap! db conj {true-id {:type "release"
+                 :from                   true-from
+                 :version                X-Woof-Release
+                 :summary                (get-subject subject)
+                 :date                   date-sent}})
           ;; Mark related changes as released
           (doseq [[k v] (get-unreleased-changes @db)]
             (when ((:versions v) X-Woof-Release)
@@ -240,10 +270,12 @@
 
 (defn process-incoming-message
   [{:keys [id from] :as msg}]
-  (let [{:keys [X-Woof-Bug X-Woof-Release X-Woof-Change X-Woof-Help
-                X-Original-To X-BeenThere To References]}
+  (let [{:keys [X-Woof-Bug X-Woof-Release X-Woof-Change
+                X-Woof-Help X-Woof-Patch
+                X-Original-To X-BeenThere To References] }
         (walk/keywordize-keys (apply conj (:headers msg)))
         X-Woof-Help (mime-decode X-Woof-Help)
+        X-Woof-Bug  (mime-decode X-Woof-Bug)
         refs
         (when (not-empty References)
           (->> (string/split References #"\s")
@@ -262,6 +294,12 @@
       ;; this bug.
       (when refs (update-refs (get-id id) refs))
       (cond
+        ;; Detect and add a patch.
+        (and (patch? msg) (or (not X-Woof-Patch) (not (closed? X-Woof-Patch))))
+        (add-patch msg refs)
+        ;; Detect applied patch.
+        (and (patch? msg) (and X-Woof-Patch (closed? X-Woof-Patch)))
+        (fix-entry msg refs :patch)
         ;; Confirm a bug and add it to the registry.  Anyone can
         ;; confirm a bug.
         (and X-Woof-Bug (confirmed? X-Woof-Bug))

@@ -56,8 +56,9 @@
        link]
       [:h3.column.is-8.is-offset-2.has-text-centered
        [:a {:href "/#changes"} "Changes"] " — "
-       [:a {:href "/#help"} "Help"] " — "
+       [:a {:href "/#help"} "Help requests"] " — "
        [:a {:href "/#bugs"} "Bugs"] " — "
+       [:a {:href "/#patches"} "Patches"] " — "
        [:a {:href "/#releases"} "Releases"]]
       [:div.column.is-4.is-offset-4
        [:div.level
@@ -77,11 +78,13 @@
       [:div.column.is-offset-4.is-4.has-text-centered
        [:p "Feeds: "
         [:a {:href "/feed/bugs"} "bugs"] ", "
+        [:a {:href "/feed/patches"} "patches"] ", "
         [:a {:href "/feed/changes"} "changes"] ", "
         [:a {:href "/feed/releases"} "releases"] " or "
         [:a {:href "/feed/updates"} "all updates"]]
        [:p "Data: "
         [:a {:href "/data/bugs"} "bugs"] ", "
+        [:a {:href "/data/patches"} "patches"] ", "
         [:a {:href "/data/changes"} "changes"] ", "
         [:a {:href "/data/releases"} "releases"] " or "
         [:a {:href "/data/updates"} "all updates"]]
@@ -98,7 +101,7 @@
     [:section.section {:style "padding: 1.5rem 1.0rem"}
      [:div.container
       [:h1#changes.title
-       [:span "Upcoming changes "
+       [:span [:a {:href "/#" :title "Back to top"} "ꜛ "] "Upcoming changes "
         [:a.tag.is-info.is-light {:href "/feed/changes"} "RSS"] " "
         [:a.tag.is-success.is-light {:href "/data/changes"} "JSON"]]]
       (if-let [changes (->> (core/get-unreleased-changes @core/db)
@@ -113,7 +116,7 @@
     [:section.section {:style "padding: 1.5rem 1.0rem"}
      [:div.container
       [:h1#help.title
-       [:span "Help requests "
+       [:span [:a {:href "/#" :title "Back to top"} "ꜛ "] "Help requests "
         [:a.tag.is-info.is-light {:href "/feed/help"} "RSS"] " "
         [:a.tag.is-success.is-light {:href "/data/help"} "JSON"]]]
       (if-let [helps (->> (core/get-pending-help @core/db)
@@ -131,10 +134,10 @@
            [:tr
             [:th "Summary"]
             [:th {:width "15%"}
-             [:a {:href "/?sort-help-by=date" :title "Sort help requests by date"}
+             [:a {:href "/?sort-help-by=date#help" :title "Sort help requests by date"}
               "Date"]]
             [:th {:width "5%"}
-             [:a {:href "/?sort-help-by=refs" :title "Sort help requests by number of references"}
+             [:a {:href "/?sort-help-by=refs#help" :title "Sort help requests by number of references"}
               "Refs"]]]]
           [:tbody
            (for [help helps]
@@ -146,7 +149,7 @@
     [:section.section {:style "padding: 1.5rem 1.0rem"}
      [:div.container
       [:h1#bugs.title
-       [:span "Confirmed bugs "
+       [:span [:a {:href "/#" :title "Back to top"} "ꜛ "] "Confirmed bugs "
         [:a.tag.is-info.is-light {:href "/feed/bugs"} "RSS"] " "
         [:a.tag.is-success.is-light {:href "/data/bugs"} "JSON"]]]
       (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
@@ -164,10 +167,10 @@
            [:tr
             [:th "Summary"]
             [:th {:width "15%"}
-             [:a {:href "/?sort-bugs-by=date" :title "Sort bugs by date"}
+             [:a {:href "/?sort-bugs-by=date#bugs" :title "Sort bugs by date"}
               "Date"]]
             [:th {:width "5%"}
-             [:a {:href "/?sort-bugs-by=refs" :title "Sort bugs by number of references"}
+             [:a {:href "/?sort-bugs-by=refs#bugs" :title "Sort bugs by number of references"}
               "Refs"]]]]
           [:tbody
            (for [bug bugs]
@@ -178,8 +181,41 @@
         [:p "No confirmed bug."])]]
     [:section.section {:style "padding: 1.5rem 1.0rem"}
      [:div.container
+      [:h1#patches.title
+       [:span [:a {:href "/#" :title "Back to top"} "ꜛ "] "Patches "
+        [:a.tag.is-info.is-light {:href "/feed/patches"} "RSS"] " "
+        [:a.tag.is-success.is-light {:href "/data/patches"} "JSON"]]]
+      (if-let [patches (->> (core/get-unapplied-patches @core/db)
+                            core/intern-id
+                            (sort-by
+                             (if (= (:sort-patches-by query-params) "date")
+                               :date
+                               #(count (:refs %))))
+                            (filter-summary query-params)
+                            reverse
+                            not-empty)]
+        [:div.table-container
+         [:table.table.is-hoverable.is-fullwidth.is-striped
+          [:thead
+           [:tr
+            [:th "Summary"]
+            [:th {:width "15%"}
+             [:a {:href "/?sort-patches-by=date#patches" :title "Sort patches by date"}
+              "Date"]]
+            [:th {:width "5%"}
+             [:a {:href "/?sort-patches-by=refs#patches" :title "Sort patches by number of references"}
+              "Refs"]]]]
+          [:tbody
+           (for [patch patches]
+             [:tr
+              [:td (core/format-link-fn patch :bug)]
+              [:td [:p (format-date (:date patch))]]
+              [:td [:p (str (count (:refs patch)))]]])]]]
+        [:p "No new patch has been sent so far."])]]
+    [:section.section {:style "padding: 1.5rem 1.0rem"}
+     [:div.container
       [:h1#releases.title
-       [:span "Latest releases "
+       [:span [:a {:href "/#" :title "Back to top"} "ꜛ "] "Latest releases "
         [:a.tag.is-info.is-light {:href "/feed/releases"} "RSS"] " "
         [:a.tag.is-success.is-light {:href "/data/releases"} "JSON"]]]
       (if-let [releases (->> (core/get-releases @core/db)
@@ -192,43 +228,48 @@
            (core/format-link-fn release :release))]
         [:p "No release."])]]]))
 
-(defn get-homepage [{:keys [query-params]}]
+(defn get-homepage [{:keys [query-params path-params] :as params}]
   {:status  200
    :headers {"Content-Type" "text/html"}
-   :body    (homepage {:sort-bugs-by (get query-params "sort-bugs-by")
-                       :sort-help-by (get query-params "sort-help-by")
-                       :filter       (get query-params "s")})})
+   :body    (homepage {:sort-bugs-by    (get query-params "sort-bugs-by")
+                       :sort-help-by    (get query-params "sort-help-by")
+                       :sort-patches-by (get query-params "sort-patches-by")
+                       :filter          (get query-params "s")})})
 
 (defn- get-data [what]
   {:status 200
    :body   (core/intern-id
             (apply (condp = what
                      :updates  identity
-                     :bugs     core/get-unfixed-bugs
-                     :helps    core/get-pending-help
+                     :bugs     core/get-bugs
+                     :patches  core/get-patches
+                     :helps    core/get-help
                      :releases core/get-releases
-                     :changes  core/get-unreleased-changes)
+                     :changes  core/get-changes)
                    [@core/db]))})
 
-(defn get-updates [_] (get-data :updates))
-(defn get-bugs [_] (get-data :bugs))
-(defn get-helps [_] (get-data :helps))
-(defn get-releases [_] (get-data :releases))
-(defn get-changes [_] (get-data :changes))
+(defn get-data-updates [_] (get-data :updates))
+(defn get-data-bugs [_] (get-data :bugs))
+(defn get-data-patches [_] (get-data :patches))
+(defn get-data-helps [_] (get-data :helps))
+(defn get-data-releases [_] (get-data :releases))
+(defn get-data-changes [_] (get-data :changes))
 
 (def handler
   (ring/ring-handler
    (ring/router
     [["/" {:get (fn [params] (get-homepage params))}]
      ["/data"
-      ["/updates" {:get get-updates}]
-      ["/bugs" {:get get-bugs}]
-      ["/help" {:get get-helps}]
-      ["/changes" {:get get-changes}]
-      ["/releases" {:get get-releases}]]
+      ["/updates" {:get get-data-updates}]
+      ["/bugs" {:get get-data-bugs}]
+      ["/patches" {:get get-data-patches}]
+      ["/help" {:get get-data-helps}]
+      ["/changes" {:get get-data-changes}]
+      ["/releases" {:get get-data-releases}]]
      ["/feed"
       ["/updates" {:get feeds/feed-updates}]
       ["/bugs" {:get feeds/feed-bugs}]
+      ["/patches" {:get feeds/feed-patches}]
       ["/help" {:get feeds/feed-help}]
       ["/changes" {:get feeds/feed-changes}]
       ["/releases" {:get feeds/feed-releases}]]]

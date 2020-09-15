@@ -37,6 +37,8 @@
          (concat
           (map #(feed-item % :bug)
                (core/intern-id (core/get-unfixed-bugs @core/db)))
+          (map #(feed-item % :patch)
+               (core/intern-id (core/get-unapplied-patches @core/db)))
           (map #(feed-item % :bug)
                (core/intern-id (core/get-pending-help @core/db)))
           (map #(feed-item % :change)
@@ -48,6 +50,7 @@
   (let [get-type (condp = what
                    :bug     core/get-unfixed-bugs
                    :help    core/get-pending-help
+                   :patch   core/get-unapplied-patches
                    :change  core/get-unreleased-changes
                    :release core/get-releases)]
     (feed path
@@ -58,6 +61,8 @@
                  (core/intern-id (get-type @core/db))))))))
 
 (defn feed-bugs [_] (make-feed {:path "/feed/bugs" :what :bug}))
+
+(defn feed-patches [_] (make-feed {:path "/feed/patches" :what :patch}))
 
 (defn feed-help [_] (make-feed {:path "/feed/help" :what :help}))
 

@@ -20,6 +20,7 @@ replies to a mailing list.
 - X-Woof-Help :: Request help.
 - X-Woof-Change :: Announce a change.
 - X-Woof-Release :: Announce a release.
+- X-Woof-Patch :: Mark a patch as applied.
 
 ** Announce a release
 
@@ -37,13 +38,24 @@ will declare =10.2= as a new release.
 
 will mark a bug discussed in a thread as =confirmed= (see synonyms below.)
 
-** Confirm a fix
+** Confirm a bugfix
 
 : From: xxx@xxx.xx
 : X-Woof-Bug: fixed
 : ...
 
 will mark the bug discussed in a thread as =fixed= (see synonyms below.)
+
+** Mark a patch as applied
+
+Any email with a subject containing a substring like =[PATCH= will be
+referenced as proposing a new patch.
+
+: From: xxx@xxx.xx
+: X-Woof-Patch: applied
+: ...
+
+will mark a patch as applied.
 
 ** Request help
 
