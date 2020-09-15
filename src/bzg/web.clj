@@ -228,7 +228,7 @@
            (core/format-link-fn release :release))]
         [:p "No release."])]]]))
 
-(defn get-homepage [{:keys [query-params path-params] :as params}]
+(defn get-homepage [{:keys [query-params]}]
   {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (homepage {:sort-bugs-by    (get query-params "sort-bugs-by")
