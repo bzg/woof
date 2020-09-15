@@ -81,6 +81,23 @@
                :target "_blank" }
            summary]])))
 
+;;; Handle refs
+
+(defn- update-refs [id new-refs]
+  (loop [refs new-refs
+         ref  (some @db-refs refs)]
+    (when ref
+      (doseq [e @db]
+        (when-let [rfs (:refs (val e))]
+          (when (rfs ref)
+            (swap! db assoc-in [(key e) :refs] (conj rfs (get-id id)))))))
+    (when-let [rest-refs (last (next (partition-by #{ref} refs)))]
+      (recur rest-refs
+             (some @db-refs rest-refs)))))
+
+(defn- some-db-refs? [refs]
+  (some @db-refs refs))
+
 ;;; Core functions to return db entries
 
 (defn get-bugs [db]
@@ -129,14 +146,14 @@
                (mime-decode header)))
         body (:body (:body msg))]
     (if (and body (what #{:bug}))
-      (or (not (empty? (->> (map #(re-matches #"^Confirmed.*" %)
-                                 (string/split-lines body))
-                            (remove nil?))))
+      (or (seq (->> (map #(re-matches #"^Confirmed.*" %)
+                         (string/split-lines body))
+                    (remove nil?)))
           header-confirmation)
       header-confirmation)))
 
 (defn- patch? [msg]
-  (re-matches #"(?i)^.*\[PATCH.*$" (:subject msg)))
+  (re-matches #"(?i)^.*\[PATCH].*$" (:subject msg)))
 
 (defn- closed? [{:keys [msg header what]}]
   (let [header-confirmation
@@ -145,32 +162,17 @@
                          (string/trim header)))
         body (:body (:body msg))]
     (if (and body (what #{:patch :bug}))
-      (or (not (empty? (->> (map #(re-matches
-                                   (condp = what
-                                     :patch #"^Applied.*"
-                                     :bug   #"^Fixed.*")
-                                   %)
-                                 (string/split-lines body))
-                            (remove nil?))))
+      (or (seq (->> (map #(re-matches
+                           (condp = what
+                             :patch #"^Applied.*"
+                             :bug   #"^Fixed.*")
+                           %)
+                         (string/split-lines body))
+                    (remove nil?)))
           header-confirmation)
       header-confirmation)))
 
 ;;; Core functions to update the db
-
-(defn- update-refs [id new-refs]
-  (loop [refs new-refs
-         ref  (some @db-refs refs)]
-    (when ref
-      (doseq [e @db]
-        (when-let [rfs (:refs (val e))]
-          (when (rfs ref)
-            (swap! db assoc-in [(key e) :refs] (conj rfs (get-id id)))))))
-    (when-let [rest-refs (last (next (partition-by #{ref} refs)))]
-      (recur rest-refs
-             (some @db-refs rest-refs)))))
-
-(defn- some-db-refs? [refs]
-  (some @db-refs refs))
 
 (defn- add-change [{:keys [id from subject date-sent] } refs X-Woof-Change]
   (let [c-specs   (string/split X-Woof-Change #"\s")
@@ -182,13 +184,13 @@
     (if (and released (some released versions))
       (format "%s tried to add a change against a past release, ignoring %s"
               true-from true-id)
-      (do (swap! db conj {true-id {:type "change"
-                 :from                   true-from
-                 :commit                 commit
-                 :refs                   (into #{} (conj refs true-id))
-                 :versions               versions
-                 :summary                (get-subject subject)
-                 :date                   date-sent}})
+      (do (swap! db conj {true-id {:type     "change"
+                                   :from     true-from
+                                   :commit   commit
+                                   :refs     (into #{} (conj refs true-id))
+                                   :versions versions
+                                   :summary  (get-subject subject)
+                                   :date     date-sent}})
           (format "%s added a change for version %s via %s"
                   true-from (first versions) true-id)))))
 
@@ -319,6 +321,7 @@
       (cond
         ;; Detect and add a patch.
         (and (patch? msg)
+             (not refs)
              (not (closed? {:msg msg :header X-Woof-Patch :what :patch})))
         (add-patch msg refs)
         ;; Detect applied patch.

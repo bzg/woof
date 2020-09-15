@@ -20,13 +20,15 @@ be triggered by using specific =X-Woof-*= mail headers.
 
 - =Confirmed= in the body of the email registers a new bug.
 - =Fixed= in the body of an email marks the bug in the same thread as fixed.
-
-- =[PATCH= in the subject of a new email registers a new patch.
+- =[PATCH]= in the subject of a new email registers a new patch.
 - =Applied= in the body of an email marks the patch in the same thread as applied.
 
 =Applied=, =Confirmed= and =Fixed= should be placed at the beginning of a
 line in a *plain-text email*.  Beware that the match is case-sensitive,
 so "applied", "CONFIRMED" and "FiXeD" won't work.
+
+Series of patch with a subject containing e.g. [PATCH 1/3] are not
+handled right now.
 
 * Advanced usage
 
