@@ -95,7 +95,7 @@
 (defn homepage [query-params]
   (default
    query-params
-   [:a {:href  "https://github.com/bzg/woof#usage"
+   [:a {:href  "https://github.com/bzg/woof#basic-usage"
         :title "How to use Woof! to update this page?"} "Howto"]
    [:div.container
     [:section.section {:style "padding: 1.5rem 1.0rem"}
