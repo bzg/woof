@@ -11,18 +11,18 @@ You trigger updates while sending emails with =X-Woof-*= headers.
 
 * Basic usage
 
-There are 4 basic "triggers" for dealing with bugs and patches:
+4 triggers allows to deal with bugs and patches:
 
-- =Confirmed= registers a new bug.
-- =Fixed= marks a registered bug as fixed and un-register it.
+- =Confirmed= in the body of the email registers a new bug.
+- =Fixed= in the body of the email marks a bug as fixed and un-registers it.
 - =[PATCH= in the email subject registers a new patch.
-- =Applied= marks a patch as applied and un-register it.
+- =Applied= in the body of the email marks a patch as applied and un-registers it.
 
 =Applied=, =Confirmed= and =Fixed= should be placed at the very beginning of
 a line in a *plain-text email*.  Beware that the match is
 case-sensitive, so "applied", "CONFIRMED" and "FiXeD" won't work.
 
-* Advanced usage: via mail headers
+* Advanced usage
 
 You can control the Woof database entirely by adding headers in your
 replies to a mailing list.
@@ -145,7 +145,6 @@ instead of doing Z, as expected.~ as the summary for this bug.
 
 - =confirmed=, =true=, =t=
 - =canceled=, =cancel=, =closed=, =close=, =done=, =fixed=, =nil=.
-
 
 * Configure
 
