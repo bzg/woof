@@ -121,7 +121,26 @@
            :date-sent #inst "2020-05-27T00:13:11.037044Z"
            :headers   [{"X-Original-To" (:mailing-list config/woof)}
                        {"X-Woof-Bug" "This is the annotation for this bug."}]}
-   })
+   :msg13 {:id        "id13"
+           :subject   "[PATCH] A patch with a header"
+           :from      (list {:address (:user config/woof)})
+           :date-sent #inst "2020-05-28T00:13:11.037044Z"
+           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+                       {"X-Woof-Patch" "true"}]}
+   :msg14 {:id        "id14"
+           :subject   "Re: [PATCH] A patch with a header"
+           :from      (list {:address (:user config/woof)})
+           :date-sent #inst "2020-05-28T00:13:11.037044Z"
+           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+                       {"References" "id13"}
+                       {"X-Woof-Patch" "applied"}]}
+   :msg15 {:id        "id15"
+           :subject   "Re: [PATCH] A patch with a header"
+           :from      (list {:address (:user config/woof)})
+           :date-sent #inst "2020-05-28T00:13:11.037044Z"
+           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+                       {"References" "id13"}]
+           :body      {:body "Applied"}}})
 
 (deftest message-processing
   (binding [core/db-file-name "db-test.edn"]
@@ -177,10 +196,22 @@
       (core/process-incoming-message (:msg11 test-data))
       (is (= 1 (count (core/get-pending-help @core/db))))
       (reset! core/db {}))
-    (testing "Cancal a call for help"
+    (testing "Cancel a call for help"
       (core/process-incoming-message (:msg8 test-data))
       (is (= 1 (count (core/get-pending-help @core/db))))
       (core/process-incoming-message (:msg9 test-data))
       (is (= 0 (count (core/get-pending-help @core/db))))
+      (reset! core/db {}))
+    (testing "Add a patch and fix it with a header"
+      (core/process-incoming-message (:msg13 test-data))
+      (is (= 1 (count (core/get-unapplied-patches @core/db))))
+      (core/process-incoming-message (:msg14 test-data))
+      (is (= 0 (count (core/get-unapplied-patches @core/db))))
+      (reset! core/db {}))
+    (testing "Add a patch and fix it with \"Applied\""
+      (core/process-incoming-message (:msg13 test-data))
+      (is (= 1 (count (core/get-unapplied-patches @core/db))))
+      (core/process-incoming-message (:msg15 test-data))
+      (is (= 0 (count (core/get-unapplied-patches @core/db))))
       (reset! core/db {}))
     (sh/sh "rm" "db-test.edn")))

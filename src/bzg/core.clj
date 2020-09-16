@@ -152,9 +152,6 @@
           header-confirmation)
       header-confirmation)))
 
-(defn- patch? [msg]
-  (re-matches #"(?i)^.*\[PATCH].*$" (:subject msg)))
-
 (defn- closed? [{:keys [msg header what]}]
   (let [header-confirmation
         (and header
@@ -171,6 +168,24 @@
                     (remove nil?)))
           header-confirmation)
       header-confirmation)))
+
+(defn- msg-subject-patch? [msg]
+  (re-matches #"(?i)^.*\[PATCH(?: ([0-9]+)/[0-9]+)?].*$"
+              (:subject msg)))
+
+(defn- new-patch? [msg refs]
+  (when-let [match (msg-subject-patch? msg)]
+    (let [cnt (peek match)]
+      (or (and (empty? refs) (or (nil? cnt) (= cnt "1")))
+          (and cnt (= (count refs) 1))))))
+
+(defn- applying-patch? [msg refs X-Woof-Patch]
+  (and refs
+       (msg-subject-patch? msg)
+       (or (closed? {:header X-Woof-Patch :what :patch})
+           (when-let [body (:body (:body msg))]
+             (seq (remove nil? (map #(re-matches #"^Applied.*" %)
+                                    (string/split-lines body))))))))
 
 ;;; Core functions to update the db
 
@@ -241,24 +256,29 @@
 (defn- add-help [msg refs]
   (add-entry msg refs :help))
 
-(defn- fix-entry [{:keys [id from date-sent] } refs what]
-  (let [msg       (condp = what
-                    :bug   "%s marked bug fixed via %s"
-                    :patch "%s marked patch applied via %s"
-                    :help  "%s marked help fixed via %s"
-                    "")
-        get-what  (condp = what
-                    :bug   get-unfixed-bugs
-                    :patch get-unapplied-patches
-                    :help  get-pending-help
-                    nil)
-        true-from (get-from from)
-        true-id   (get-id id)]
+(defn- fix-entry [{:keys [id from subject date-sent]} refs what]
+  (let [msg          (condp = what
+                       :bug   "%s marked bug fixed via %s"
+                       :patch "%s marked patch applied via %s"
+                       :help  "%s marked help fixed via %s"
+                       "")
+        get-what     (condp = what
+                       :bug   get-unfixed-bugs
+                       :patch get-unapplied-patches
+                       :help  get-pending-help
+                       nil)
+        true-subject (get-subject subject)
+        true-from    (get-from from)
+        true-id      (get-id id)]
     (doseq [e (get-what @db)]
-      (when (some (:refs (val e)) refs)
-        (swap! db assoc-in [(key e) :fixed] true-id)
-        (swap! db assoc-in [(key e) :fixed-by] true-from)
-        (swap! db assoc-in [(key e) :fixed-at] date-sent)))
+      (let [ve (val e) e-refs (:refs ve)]
+        (when (and (some e-refs refs)
+                   (if (= what :patch)
+                     (= (:summary ve) true-subject)
+                     true))
+          (swap! db assoc-in [(key e) :fixed] true-id)
+          (swap! db assoc-in [(key e) :fixed-by] true-from)
+          (swap! db assoc-in [(key e) :fixed-at] date-sent))))
     (format msg true-from true-id)))
 
 (defn- fix-bug [msg refs]
@@ -320,14 +340,14 @@
       (when refs (update-refs (get-id id) refs))
       (cond
         ;; Detect and add a patch.
-        (and (patch? msg)
-             (not refs)
-             (not (closed? {:msg msg :header X-Woof-Patch :what :patch})))
+        (and (new-patch? msg refs)
+             ;; (not (closed? {:msg msg :header X-Woof-Patch :what :patch}))
+             )
         (add-patch msg refs)
         ;; Detect applied patch.
-        (and (patch? msg)
-             (some-db-refs? refs)
-             (closed? {:msg msg :header X-Woof-Patch :what :patch}))
+        (and (applying-patch? msg refs X-Woof-Patch)
+             ;; (closed? {:msg msg :header X-Woof-Patch :what :patch})
+             )
         (fix-entry msg refs :patch)
         ;; Confirm a bug and add it to the registry.  Anyone can
         ;; confirm a bug.

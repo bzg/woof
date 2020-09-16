@@ -1,6 +1,6 @@
 #+title: Woof!
 
-Woof! monitors updates sent to a mailing list.
+🐕 Woof! monitors updates sent to a mailing list.
 
 Plug Woof! to a mailbox subscribed to a mailing list, and Woof! will
 monitor updates about user-significant /changes/, /help requests/, /bugs
@@ -9,26 +9,23 @@ monitor updates about user-significant /changes/, /help requests/, /bugs
 Some Updates can be triggered by subscribers by using some specific
 words either in the subject (for patches) or in the body (for bugs).
 
-All updates (for bugs, patches, help requests and new releases) can 
-be triggered by using specific =X-Woof-*= mail headers.
+All updates (for bugs, patches, help requests and new releases) can be
+triggered by using specific =X-Woof-*= mail headers.
 
 [[file:woof.png]]
 
 * Basic usage
 
-4 triggers allows to manage bugs and patches:
+Here are the triggers allows to manage bugs and patches:
 
 - =Confirmed= in the body of the email registers a new bug.
 - =Fixed= in the body of an email marks the bug in the same thread as fixed.
-- =[PATCH]= in the subject of a new email registers a new patch.
+- =[PATCH]= or =[PATCH x/x]= in the subject of a new email registers a new patch.
 - =Applied= in the body of an email marks the patch in the same thread as applied.
 
 =Applied=, =Confirmed= and =Fixed= should be placed at the beginning of a
 line in a *plain-text email*.  Beware that the match is case-sensitive,
 so "applied", "CONFIRMED" and "FiXeD" won't work.
-
-Series of patch with a subject containing e.g. =[PATCH 1/3]= are not
-handled right now.
 
 * Advanced usage
 
