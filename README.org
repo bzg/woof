@@ -66,8 +66,9 @@ will mark the bug discussed in a thread as =fixed= (see synonyms below.)
 
 ** Mark a patch as applied
 
-Any email with a subject containing a substring like =[PATCH= will be
-referenced as proposing a new patch.
+Any email with a subject containing a substring like =[PATCH]= or
+=[PATCH x/x]= will be referenced as proposing a new patch, without
+requiring a specific Woof! header.
 
 : From: xxx@xxx.xx
 : X-Woof-Patch: applied
