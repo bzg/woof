@@ -1,6 +1,6 @@
-#+title: Woof!
+#+title: Woof! 🐕
 
-🐕 Woof! monitors updates sent to a mailing list.
+Woof! monitors updates sent to a mailing list.
 
 Plug Woof! to a mailbox subscribed to a mailing list, and Woof! will
 monitor updates about user-significant /changes/, /help requests/, /bugs
