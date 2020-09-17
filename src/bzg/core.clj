@@ -173,11 +173,12 @@
   (re-matches #"(?i)^.*\[PATCH(?: ([0-9]+)/[0-9]+)?].*$"
               (:subject msg)))
 
-(defn- new-patch? [msg refs]
-  (when-let [match (msg-subject-patch? msg)]
-    (let [cnt (peek match)]
-      (or (and (empty? refs) (or (nil? cnt) (= cnt "1")))
-          (and cnt (= (count refs) 1))))))
+(defn- new-patch? [msg refs X-Woof-Patch]
+  (or (confirmed X-Woof-Patch)
+      (when-let [match (msg-subject-patch? msg)]
+        (let [cnt (peek match)]
+          (or (and (empty? refs) (or (nil? cnt) (= cnt "1")))
+              (and cnt (= (count refs) 1)))))))
 
 (defn- applying-patch? [msg refs X-Woof-Patch]
   (and refs
@@ -339,47 +340,38 @@
       ;; this bug.
       (when refs (update-refs (get-id id) refs))
       (cond
-        ;; Detect and add a patch.
-        (and (new-patch? msg refs)
-             ;; (not (closed? {:msg msg :header X-Woof-Patch :what :patch}))
-             )
+        ;; Detect and add a patch (anyone).
+        (new-patch? msg refs X-Woof-Patch)
         (add-patch msg refs)
-        ;; Detect applied patch.
-        (and (applying-patch? msg refs X-Woof-Patch)
-             ;; (closed? {:msg msg :header X-Woof-Patch :what :patch})
-             )
+        ;; Detect applied patch (anyone).
+        (applying-patch? msg refs X-Woof-Patch)
         (fix-entry msg refs :patch)
-        ;; Confirm a bug and add it to the registry.  Anyone can
-        ;; confirm a bug.
+        ;; Confirm a bug and add it to the registry (anyone).
         (confirmed? {:msg msg :header X-Woof-Bug :what :bug})
         (add-bug msg refs)
-        ;; Mark a bug as fixed.  Anyone can mark a bug as fixed.  If
-        ;; an email contains X-Woof-Bug: fixed, we scan all refs from
-        ;; this email and see if we can find a matching ref in those
-        ;; of a bug, and if yes, then we mark the bug as :fixed by the
-        ;; message id.
+        ;; Mark a bug as fixed (anyone).  If an email contains
+        ;; X-Woof-Bug: fixed, we scan all refs from this email and see
+        ;; if we can find a matching ref in those of a bug, and if
+        ;; yes, then we mark the bug as :fixed by the message id.
         (and (some-db-refs? refs)
              (closed? {:msg msg :header X-Woof-Bug :what :bug}))
         (fix-bug msg refs)
-        ;; Call for help.  Anyone can call for help.
+        ;; Call for help (anyone).
         (confirmed? {:header X-Woof-Help})
         (add-help msg refs)
-        ;; Cancel a call for help.  Anyone can call for help.
+        ;; Cancel a call for help (anyone).
         (and (some-db-refs? refs)
              (closed? {:header X-Woof-Help}))
         (cancel-help msg refs)
-        ;; Mark a change as canceled.  Anyone can mark a change as
-        ;; canceled.
+        ;; Mark a change as canceled (anyone).
         (and (some-db-refs? refs)
              (closed? {:header X-Woof-Change}))
         (cancel-change msg refs)
         ;; Announce a breaking change in the current development
-        ;; branches and associate it with future version(s).  Anyone
-        ;; can announce a breaking change.
+        ;; branches and associate it with future version(s) (anyone).
         X-Woof-Change
         (add-change msg refs X-Woof-Change)
-        ;; Make a release.  Only the release manager can make a
-        ;; release.
+        ;; Make a release (only the release manager).
         X-Woof-Release
         (add-release msg X-Woof-Release)))))
 
