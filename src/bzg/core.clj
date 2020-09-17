@@ -174,7 +174,7 @@
               (:subject msg)))
 
 (defn- new-patch? [msg refs X-Woof-Patch]
-  (or (confirmed X-Woof-Patch)
+  (or (confirmed? X-Woof-Patch)
       (when-let [match (msg-subject-patch? msg)]
         (let [cnt (peek match)]
           (or (and (empty? refs) (or (nil? cnt) (= cnt "1")))
