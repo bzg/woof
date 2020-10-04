@@ -6,8 +6,8 @@ Plug Woof! to a mailbox subscribed to a mailing list, and Woof! will
 monitor updates about user-significant /changes/, /help requests/, /bugs/,
 /patches/ and /new releases/.
 
-Some Updates can be triggered by subscribers by using some specific
-words either in the subject (for patches) or in the body (for bugs).
+Subscribers of the list can trigger Woof! by using specific words
+either in the subject (for patches) or in the body (for bugs).
 
 All updates (for bugs, patches, help requests and new releases) can be
 triggered by using specific =X-Woof-*= mail headers.
