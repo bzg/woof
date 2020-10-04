@@ -3,7 +3,7 @@
 Woof! monitors updates sent to a mailing list.
 
 Plug Woof! to a mailbox subscribed to a mailing list, and Woof! will
-monitor updates about user-significant /changes/, /help requests/, /bugs
+monitor updates about user-significant /changes/, /help requests/, /bugs/,
 /patches/ and /new releases/.
 
 Some Updates can be triggered by subscribers by using some specific
