@@ -146,7 +146,6 @@ add your summary.  For example:
 will mark the bug discussed in a thread as =confirmed= and use ~X does Y
 instead of doing Z, as expected.~ as the summary for this bug.
 
-** Allowed triggers from the mail body
 ** Synonyms
 
 - =confirmed=, =true=, =t=
