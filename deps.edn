@@ -1,33 +1,36 @@
-{:version     "0.2.1"
+{:version     "0.2.2"
  :description "Watch Over Our Folders"
  :url         "https://github.com/bzg/woof"
  :license     {:name "Eclipse Public License - v 2.0"
                :url  "http://www.eclipse.org/legal/epl-v20.html"}
  :paths       ["src"]
- :deps        {org.clojure/clojure                 {:mvn/version "1.10.1"}
+ :deps        {org.clojure/clojure                 {:mvn/version "1.10.3"}
                io.forward/clojure-mail             {:mvn/version "1.0.8"}
-               http-kit/http-kit                   {:mvn/version "2.4.0"}
-               clj-rss/clj-rss                     {:mvn/version "0.2.5"}
+               http-kit/http-kit                   {:mvn/version "2.5.3"}
+               clj-rss/clj-rss                     {:mvn/version "0.2.7"}
                hiccup/hiccup                       {:mvn/version "1.0.5"}
-               metosin/reitit                      {:mvn/version "0.5.5"}
-               metosin/reitit-ring                 {:mvn/version "0.5.5"}
-               metosin/reitit-middleware           {:mvn/version "0.5.5"}
-               metosin/jsonista                    {:mvn/version "0.2.7"}
-               metosin/muuntaja                    {:mvn/version "0.6.7"}
+               metosin/reitit                      {:mvn/version "0.5.12"}
+               metosin/reitit-ring                 {:mvn/version "0.5.12"}
+               metosin/reitit-middleware           {:mvn/version "0.5.12"}
+               metosin/jsonista                    {:mvn/version "0.3.1"}
+               metosin/muuntaja                    {:mvn/version "0.6.8"}
                ring-cors/ring-cors                 {:mvn/version "0.1.13"}
                clojure.java-time/clojure.java-time {:mvn/version "0.3.2"}
                mount/mount                         {:mvn/version "0.1.16"}
                tea-time/tea-time                   {:mvn/version "1.0.1"}
                com.sun.mail/javax.mail             {:mvn/version "1.6.2"}}
  :aliases
- {:uberjar {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
-            :main-opts  ["-m" "hf.depstar.uberjar" "woof.jar"
-                         "-C" "-m" "bzg.web"]}
-  :test    {:extra-paths ["test"]
-            :extra-deps  {org.clojure/test.check {:mvn/version "1.1.0"}}}
+ {:run {:main-opts ["-m" "bzg.web"]}
+
+  :uberdeps {:replace-deps  {uberdeps/uberdeps {:mvn/version "RELEASE"}}
+             :replace-paths []
+             :main-opts     ["-m" "uberdeps.uberjar"]}
+
+  :test {:extra-paths ["test"]
+         :extra-deps  {org.clojure/test.check {:mvn/version "1.1.0"}}}
   :runner
   {:extra-deps {com.cognitect/test-runner
                 {:git/url "https://github.com/cognitect-labs/test-runner"
-                 :sha     "6ec7f8eef509cd14d831e8cc16e856b31327a862"}}
+                 :sha     "b6b3193fcc42659d7e46ecd1884a228993441182"}}
    :main-opts  ["-m" "cognitect.test-runner"
                 "-d" "test"]}}}

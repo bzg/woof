@@ -160,13 +160,18 @@ See [[file:src/bzg/config.clj]] for the list of required variables.
 Run this to check your configuration:
 
 : ~$ cd woof/
-: ~$ clj -A:test:runner
+: ~$ clj -M:test:runner
+
+* Run
+
+: ~$ cd woof/
+: ~$ clj -M:run
 
 * Deploy
 
 : ~$ cd woof/
-: ~$ clj -A:uberjar
-: ~$ java -jar woof.jar
+: ~$ clj -M:uberdeps
+: ~$ java -jar target/woof.jar
 
 * Contribute
 
@@ -180,6 +185,7 @@ That said, contributions are welcome!
 
 If you like Clojure(script), please consider supporting maintainers by
 donating to [[https://www.clojuriststogether.org][clojuriststogether.org]].
+
 * License
 
 © Bastien Guerry 2020
