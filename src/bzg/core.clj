@@ -174,11 +174,11 @@
               (:subject msg)))
 
 (defn- new-patch? [msg refs X-Woof-Patch]
-  (or (confirmed? X-Woof-Patch)
-      (when-let [match (msg-subject-patch? msg)]
-        (let [cnt (peek match)]
-          (or (and (empty? refs) (or (nil? cnt) (= cnt "1")))
-              (and cnt (= (count refs) 1)))))))
+  (when-not (closed? {:header X-Woof-Patch :what :patch})
+    (when-let [match (msg-subject-patch? msg)]
+      (let [cnt (peek match)]
+        (or (and (empty? refs) (or (nil? cnt) (= cnt "1")))
+            (and cnt (= (count refs) 1)))))))
 
 (defn- applying-patch? [msg refs X-Woof-Patch]
   (and refs
