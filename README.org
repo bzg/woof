@@ -171,7 +171,7 @@ Run this to check your configuration:
 
 : ~$ cd woof/
 : ~$ clj -M:uberdeps
-: ~$ java -jar target/woof.jar
+: ~$ java -cp target/woof.jar clojure.main -m bzg.web
 
 * Contribute
 
