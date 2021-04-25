@@ -22,7 +22,7 @@
  :aliases
  {:run {:main-opts ["-m" "bzg.web"]}
 
-  :uberdeps {:replace-deps  {uberdeps/uberdeps {:mvn/version "RELEASE"}}
+  :uberdeps {:replace-deps  {uberdeps/uberdeps {:mvn/version "1.0.4"}}
              :replace-paths []
              :main-opts     ["-m" "uberdeps.uberjar"]}
 
