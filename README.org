@@ -34,11 +34,11 @@ replies to a mailing list.
 
 ** Woof headers
 
-- X-Woof-Bug :: Confirm a bug.
-- X-Woof-Help :: Request help.
-- X-Woof-Change :: Announce a change.
-- X-Woof-Release :: Announce a release.
-- X-Woof-Patch :: Mark a patch as applied.
+- X-Woof-Bug :: Confirm a bug or close it.
+- X-Woof-Patch :: Declare a patch or mark it as applied.
+- X-Woof-Help :: Request help or cancel the request.
+- X-Woof-Change :: Announce a change or dismiss it.
+- X-Woof-Release :: Announce a release or dismiss it.
 
 ** Announce a release
 
@@ -56,7 +56,7 @@ will declare =10.2= as a new release.
 
 will mark a bug discussed in a thread as =confirmed= (see synonyms below.)
 
-** Confirm a bugfix
+** Mark a bug as fixed
 
 : From: xxx@xxx.xx
 : X-Woof-Bug: fixed
@@ -75,6 +75,14 @@ requiring a specific Woof! header.
 : ...
 
 will mark a patch as applied.
+
+** Declare a patch
+
+If someone attaches a patch and forget to add =[PATCH]= at the beginning
+of the subject, you can forward the email to the Woof! mailbox and add
+this header:
+
+: X-Woof-Patch: confirmed
 
 ** Request help
 
@@ -119,7 +127,7 @@ You can also omit the commit:
 
 Note that in this case, only one version is allowed.
 
-** Cancel a change
+** Cancel a change announcement
 
 : From: xxx@xxx.xx
 : X-Woof-Change: cancel
