@@ -185,7 +185,6 @@
 
 (defn- applying-patch? [msg refs X-Woof-Patch]
   (and refs
-       (msg-subject-patch? msg)
        (or (closed? {:header X-Woof-Patch :what :patch})
            (when-let [body (:body (:body msg))]
              (seq (remove nil? (map #(re-matches #"^Applied.*" %)
