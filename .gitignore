@@ -11,3 +11,4 @@
 .hg/
 todo.org
 .envrc
+db.edn
