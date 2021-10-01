@@ -173,15 +173,11 @@
   (re-matches #"(?i)^.*\[PATCH(?: ([0-9]+)/[0-9]+)?].*$"
               (:subject msg)))
 
-(defn- new-patch? [msg refs X-Woof-Patch]
-  (let [msg-data {:header X-Woof-Patch :what :patch}]
-    (when-not (closed? msg-data)
-      (or (confirmed? msg-data)
-          (when-let [match (msg-subject-patch? msg)]
-            (let [cnt (peek match)]
-              (and (msg-subject-patch? msg)
-                   (empty? refs)
-                   (or (nil? cnt) (= cnt "1")))))))))
+(defn- new-patch? [msg]
+  (and (:multipart? msg)
+       (not-empty
+        (filter #(re-matches #"^text/x-(diff|patch).*" %)
+                (map :content-type (:body msg))))))
 
 (defn- applying-patch? [msg refs X-Woof-Patch]
   (and refs
@@ -343,7 +339,7 @@
       (when refs (update-refs (get-id id) refs))
       (cond
         ;; Detect and add a patch (anyone).
-        (new-patch? msg refs X-Woof-Patch)
+        (new-patch? msg)
         (add-patch msg refs)
         ;; Detect applied patch (anyone).
         (applying-patch? msg refs X-Woof-Patch)
