@@ -19,4 +19,4 @@
 
 (def actions-regexps
   {:confirmed #"(?i)^confirm(ed)?|t(rue)?"
-   :closed    #"(?i)^(cancel(ed)?|done|closed?|fix(ed)?|nil|applied)"})
+   :closed    #"(?i)^(cancell?(ed)?|done|closed?|fix(ed)?|nil|applied)"})
