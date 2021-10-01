@@ -305,11 +305,11 @@
               true-from true-id)
       ;; Add the release to the db
       :else
-      (do (swap! db conj {true-id {:type "release"
-                 :from                   true-from
-                 :version                X-Woof-Release
-                 :summary                (get-subject subject)
-                 :date                   date-sent}})
+      (do (swap! db conj {true-id {:type    "release"
+                                   :from    true-from
+                                   :version X-Woof-Release
+                                   :summary (get-subject subject)
+                                   :date    date-sent}})
           ;; Mark related changes as released
           (doseq [[k v] (get-unreleased-changes @db)]
             (when ((:versions v) X-Woof-Release)
