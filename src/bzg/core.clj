@@ -4,7 +4,7 @@
             [clojure-mail.events :as events]
             [clojure.string :as string]
             [clojure.edn :as edn]
-            [clojure.set]
+            [clojure.set :as set]
             [clojure.walk :as walk]
             [mount.core :as mount]
             [bzg.config :as config]
@@ -25,7 +25,7 @@
 (def db-refs (atom #{}))
 
 (defn- all-refs [db]
-  (into #{} (apply clojure.set/union (map :refs (vals db)))))
+  (into #{} (apply set/union (map :refs (vals db)))))
 
 (add-watch
  db :serialize-refs
