@@ -286,14 +286,12 @@
 
 (let [port (edn/read-string (:port config/woof))]
   (mount/defstate woof-server
-    :start (do (println (format "Woof! monitoring on localhost:%s started" port))
-               (server/run-server handler {:port port}))
-    :stop (when woof-server
-            (println (format "Woof! monitoring on localhost:%s stopped" port))
-            (woof-server :timeout 100))))
+    :start (server/run-server handler {:port port})
+    :stop (when woof-server (woof-server :timeout 100))))
 
 (defn -main []
   (tt/start!)
+  (core/start-mail-loop!)
   (mount/start #'core/woof-manager #'woof-server))
 
 ;; (-main)

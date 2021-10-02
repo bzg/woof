@@ -9,7 +9,10 @@
 (spec/def ::server string?)
 (spec/def ::password string?)
 (spec/def ::mailing-list string?)
-(spec/def ::release-manager string?)
+(spec/def ::admin string?)
+(spec/def ::smtp-host string?)
+(spec/def ::smtp-login string?)
+(spec/def ::smtp-password string?)
 (spec/def ::mail-url-format string?)
 (spec/def ::commit-url-format string?)
 (spec/def ::folder string?)
@@ -28,7 +31,10 @@
                       ::mailing-list
                       ::mail-url-format
                       ::commit-url-format
-                      ::release-manager
+                      ::admin
+                      ::smtp-host
+                      ::smtp-login
+                      ::smtp-password
                       ::folder
                       ::project-url
                       ::project-name
@@ -64,13 +70,13 @@
                        {"X-Woof-Change" "commithash 8.3"}]}
    :msg4  {:id        "id4"
            :subject   "Release 8.3"
-           :from      (list {:address (:release-manager config/woof)})
+           :from      (list {:address (:admin config/woof)})
            :date-sent #inst "2020-05-27T00:13:11.037044Z"
            :headers   [{"X-Original-To" (:mailing-list config/woof)}
                        {"X-Woof-Release" "8.3"}]}
    :msg5  {:id        "id5"
            :subject   "Release 8.4"
-           :from      (list {:address (:release-manager config/woof)})
+           :from      (list {:address (:admin config/woof)})
            :date-sent #inst "2020-05-28T00:13:11.037044Z"
            :headers   [{"X-Original-To" (:mailing-list config/woof)}
                        {"X-Woof-Release" "8.4"}]}

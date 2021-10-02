@@ -8,8 +8,31 @@
             [clojure.walk :as walk]
             [mount.core :as mount]
             [bzg.config :as config]
-            [tea-time.core :as tt])
+            [tea-time.core :as tt]
+            [postal.core :as postal]
+            [postal.support]
+            [clojure.core.async :as async]
+            [taoensso.timbre :as timbre]
+            [taoensso.timbre.appenders.core :as appenders]
+            [taoensso.timbre.appenders (postal :as postal-appender)])
   (:import [javax.mail.internet MimeUtility]))
+
+;; Setup logging
+
+(timbre/set-config!
+ {:level     :debug
+  :output-fn (partial timbre/default-output-fn {:stacktrace-fonts {}})
+  :appenders
+  {:println (timbre/println-appender {:stream :auto})
+   :spit    (appenders/spit-appender {:fname (:log-file config/woof)})
+   :postal  (merge (postal-appender/postal-appender ;; :min-level :warn
+                    ^{:host (:smtp-host config/woof)
+                      :user (:smtp-login config/woof)
+                      :pass (:smtp-password config/woof)
+                      :tls true}
+                    {:from (:smtp-login config/woof)
+                     :to   (:admin config/woof)})
+                   {:min-level :warn})}})
 
 ;; Use a dynamic var here to use another value when testing
 
@@ -58,7 +81,8 @@
   (let [shortcommit  (cond (and (string? commit)
                                 (< (count commit) 8))
                            commit
-                           (string? commit) (subs commit 0 8))
+                           (string? commit) (subs commit 0 8)
+                           :else nil)
         mail-title   (format "Visit email sent by %s on %s" from date)
         commit-title (when shortcommit
                        (format "Visit commit %s from %s" shortcommit from))]
@@ -66,20 +90,65 @@
       [:p
        [:a {:href   (format (:mail-url-format config/woof) id)
             :title  mail-title
-            :target "_blank" }
+            :target "_blank"}
         summary]
        (when shortcommit
          [:span
           " ("
           [:a {:href   (format (:commit-url-format config/woof) commit)
                :title  commit-title
-               :target "_blank" }
+               :target "_blank"}
            shortcommit] ")"])]
       ;; Otherwise use the default for :patch, :bug, :help, or :release:
       [:p [:a {:href   (format (:mail-url-format config/woof) id)
                :title  mail-title
-               :target "_blank" }
+               :target "_blank"}
            summary]])))
+
+;; Email functions
+
+(defn send-email
+  "Send an email."
+  [{:keys [msg body]}]
+  (let  [{:keys [id from subject]} msg
+         op (get-from from)]
+    (try
+      (when-let
+          [res (postal/send-message
+                {:host (:smtp-host config/woof)
+                 :port 587
+                 :tls true
+                 :user (:smtp-login config/woof)
+                 :pass (:smtp-password config/woof)}
+                {:from        (:smtp-login config/woof)
+                 :message-id  #(postal.support/message-id (:base-url config/woof))
+                 :reply-to    (:admin config/woof)
+                 :In-Reply-To id
+                 :cc "bastien.guerry@data.gouv.fr"
+                 :to          op
+                 :subject     (str "Re: " (get-subject subject))
+                 :body        (str body "\n\n"
+                                   (:email-link config/mails) "\n"
+                                   (format (:mail-url-format config/woof)
+                                           (get-id id)))})]
+        (when (= (:error res) :SUCCESS)
+          (timbre/info (str "Sent email to " op))))
+      (catch Exception e
+        (timbre/error (str "Can't send email: "
+                           (:cause (Throwable->map e) "\n")))))))
+
+;; (try (/ 0 1) "OK" (catch Exception e "Not OK"))
+
+(def mail-chan (async/chan))
+
+(defn mail [msg body]
+  (async/put! mail-chan {:msg msg :body body}))
+
+(defn start-mail-loop! []
+  (async/go
+    (loop [e (async/<! mail-chan)]
+      (send-email e)
+      (recur (async/<! mail-chan)))))
 
 ;;; Handle refs
 
@@ -188,7 +257,7 @@
 
 ;;; Core functions to update the db
 
-(defn- add-change [{:keys [id from subject date-sent] } refs X-Woof-Change]
+(defn- add-change [{:keys [id from subject date-sent] :as msg} refs X-Woof-Change]
   (let [c-specs   (string/split X-Woof-Change #"\s")
         commit    (when (< 1 (count c-specs)) (first c-specs))
         versions  (into #{} (if commit (next c-specs) (first c-specs)))
@@ -196,8 +265,9 @@
         true-from (get-from from)
         true-id   (get-id id)]
     (if (and released (some released versions))
-      (format "%s tried to add a change against a past release, ignoring %s"
-              true-from true-id)
+      (timbre/error
+       (format "%s tried to add a change against a past release, ignoring %s"
+               true-from true-id))
       (do (swap! db conj {true-id {:type     "change"
                                    :from     true-from
                                    :commit   commit
@@ -205,10 +275,11 @@
                                    :versions versions
                                    :summary  (get-subject subject)
                                    :date     date-sent}})
-          (format "%s added a change for version %s via %s"
-                  true-from (first versions) true-id)))))
+          (timbre/info (format "%s added a change for version %s via %s"
+                               true-from (first versions) true-id))
+          (mail msg (:change (:add config/mails)))))))
 
-(defn- cancel-change [{:keys [id from date-sent] } refs]
+(defn- cancel-change [{:keys [id from date-sent] :as msg} refs]
   (let [true-from (get-from from)
         true-id   (get-id id)]
     ;; Prevent release when not from the release manager
@@ -217,7 +288,9 @@
         (swap! db assoc-in [(key e) :canceled] true-id)
         (swap! db assoc-in [(key e) :canceled-by] true-from)
         (swap! db assoc-in [(key e) :canceled-at] date-sent)))
-    (format "%s canceled a change announcement via %s" true-from true-id)))
+    (timbre/info
+     (format "%s canceled a change announcement via %s" true-from true-id))
+    (mail msg (:change (:fix config/woof)))))
 
 (defn- add-entry [{:keys [id from subject date-sent] :as msg} refs what]
   (let [{:keys [X-Woof-Help X-Woof-Bug] }
@@ -244,7 +317,8 @@
                              :refs    (into #{} (conj refs true-id))
                              :summary summary
                              :date    date-sent}})
-    (format what-msg true-from true-id)))
+    (timbre/info (format what-msg true-from true-id))
+    (mail msg (get (:add config/mails) what))))
 
 (defn- add-bug [msg refs]
   (add-entry msg refs :bug))
@@ -278,7 +352,8 @@
           (swap! db assoc-in [(key e) :fixed] true-id)
           (swap! db assoc-in [(key e) :fixed-by] true-from)
           (swap! db assoc-in [(key e) :fixed-at] date-sent))))
-    (format msg true-from true-id)))
+    (format msg true-from true-id)
+    (mail msg (get (:fix config/mails) what))))
 
 (defn- fix-bug [msg refs]
   (fix-entry msg refs :bug))
@@ -286,7 +361,7 @@
 (defn- cancel-help [msg refs]
   (fix-entry msg refs :help))
 
-(defn- add-release [{:keys [id from subject date-sent] } X-Woof-Release]
+(defn- add-release [{:keys [id from subject date-sent] :as msg} X-Woof-Release]
   (let [released  (get-released-versions @db)
         true-from (get-from from)
         true-id   (get-id id)]
@@ -310,7 +385,9 @@
           (doseq [[k v] (get-unreleased-changes @db)]
             (when ((:versions v) X-Woof-Release)
               (swap! db assoc-in [k :released] X-Woof-Release)))
-          (format "%s released %s via %s" true-from X-Woof-Release true-id)))))
+          (timbre/info
+           (format "%s released %s via %s" true-from X-Woof-Release true-id))
+          (mail msg (:release (:add config/mails)))))))
 
 (defn process-incoming-message
   [{:keys [id from] :as msg}]
@@ -328,7 +405,7 @@
                (into #{})))]
     ;; Only process emails if they are sent directly from the release
     ;; manager or from the mailing list.
-    (when (or (= (get-from from) (:release-manager config/woof))
+    (when (or (= (get-from from) (:admin config/woof))
               (some (into #{} (list X-Original-To X-BeenThere
                                     (when (string? To)
                                       (peek (re-matches #"^.*<(.*[^>])>.*$" To)))))
@@ -341,12 +418,15 @@
         ;; Detect and add a patch (anyone).
         (new-patch? msg)
         (add-patch msg refs)
+
         ;; Detect applied patch (anyone).
         (applying-patch? msg refs X-Woof-Patch)
         (fix-entry msg refs :patch)
+
         ;; Confirm a bug and add it to the registry (anyone).
         (confirmed? {:msg msg :header X-Woof-Bug :what :bug})
         (add-bug msg refs)
+
         ;; Mark a bug as fixed (anyone).  If an email contains
         ;; X-Woof-Bug: fixed, we scan all refs from this email and see
         ;; if we can find a matching ref in those of a bug, and if
@@ -354,24 +434,30 @@
         (and (some-db-refs? refs)
              (closed? {:msg msg :header X-Woof-Bug :what :bug}))
         (fix-bug msg refs)
+
         ;; Call for help (anyone).
         (confirmed? {:header X-Woof-Help})
         (add-help msg refs)
+
         ;; Cancel a call for help (anyone).
         (and (some-db-refs? refs)
              (closed? {:header X-Woof-Help}))
         (cancel-help msg refs)
+
         ;; Mark a change as canceled (anyone).
         (and (some-db-refs? refs)
              (closed? {:header X-Woof-Change}))
         (cancel-change msg refs)
+
         ;; Announce a breaking change in the current development
         ;; branches and associate it with future version(s) (anyone).
         X-Woof-Change
         (add-change msg refs X-Woof-Change)
+
         ;; Make a release (only the release manager).
         X-Woof-Release
-        (add-release msg X-Woof-Release)))))
+        (add-release msg X-Woof-Release)
+        :else nil))))
 
 ;;; Monitoring
 (def woof-monitor (atom nil))
@@ -390,12 +476,10 @@
       ;; Process incoming mails
       (fn [e]
         (doall
-         (map #(do (println %)
-                   (spit "logs.txt" (str % "\n") :append true))
-              (remove nil?
-                      (->> e :messages
-                           (map message/read-message)
-                           (map process-incoming-message))))))
+         (remove nil?
+                 (->> e :messages
+                      (map message/read-message)
+                      (map process-incoming-message)))))
       ;; Don't process deleted mails
       nil
       folder
@@ -412,7 +496,7 @@
 
 (mount/defstate woof-manager
   :start (do (start-tasks!)
-             (println "Woof started"))
+             (timbre/info "Woof started"))
   :stop (when woof-manager
           (events/stop woof-monitor)
-          (println "Woof stopped")))
+          (timbre/info "Woof stopped")))
