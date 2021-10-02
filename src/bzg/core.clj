@@ -238,15 +238,19 @@
           header-confirmation)
       header-confirmation)))
 
-(defn- msg-subject-patch? [msg]
-  (re-matches #"(?i)^.*\[PATCH(?: ([0-9]+)/[0-9]+)?].*$"
-              (:subject msg)))
-
 (defn- new-patch? [msg]
-  (and (:multipart? msg)
-       (not-empty
-        (filter #(re-matches #"^text/x-(diff|patch).*" %)
-                (map :content-type (:body msg))))))
+  (or
+   ;; Messages with a subject starting with "[PATCH" and that have no
+   ;; references are patches:
+   (and (re-matches #"(?i)^\[PATCH(?: ([0-9]+)/[0-9]+)?].*$"
+                    (:subject msg))
+        (empty? (:References (walk/keywordize-keys
+                              (apply conj (:headers msg))))))
+   ;; Also messages with a text/x-diff or text/x-patch MIME part:
+   (and (:multipart? msg)
+        (not-empty
+         (filter #(re-matches #"^text/x-(diff|patch).*" %)
+                 (map :content-type (:body msg)))))))
 
 (defn- applying-patch? [msg refs X-Woof-Patch]
   (and refs
