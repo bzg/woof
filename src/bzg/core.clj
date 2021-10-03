@@ -371,7 +371,7 @@
         true-id   (get-id id)]
     (cond
       ;; Prevent release when not from the release manager
-      (not (= true-from (:release-manager config/woof)))
+      (not (= true-from (:admin config/woof)))
       (format "%s tried to release via %s while not being release manager"
               true-from true-id)
       ;; Prevent duplicate release
