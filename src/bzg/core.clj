@@ -23,13 +23,13 @@
  {:level     :debug
   :output-fn (partial timbre/default-output-fn {:stacktrace-fonts {}})
   :appenders
-  {:println (timbre/println-appender {:stream :auto})
+  {:println (appenders/println-appender {:stream :auto})
    :spit    (appenders/spit-appender {:fname (:log-file config/woof)})
    :postal  (merge (postal-appender/postal-appender ;; :min-level :warn
                     ^{:host (:smtp-host config/woof)
                       :user (:smtp-login config/woof)
                       :pass (:smtp-password config/woof)
-                      :tls true}
+                      :tls  true}
                     {:from (:smtp-login config/woof)
                      :to   (:admin config/woof)})
                    {:min-level :warn})}})
@@ -498,6 +498,7 @@
                  (catch Exception _ nil))
                (start-inbox-monitor!))))
 
+(def woof-manager) ;; FIXME: Needed?
 (mount/defstate woof-manager
   :start (do (start-tasks!)
              (timbre/info "Woof started"))
