@@ -24,8 +24,7 @@ Here are the triggers allows to manage bugs and patches:
 - =Applied= in the body of an email marks the patch in the same thread as applied.
 
 =Applied=, =Confirmed= and =Fixed= should be placed at the beginning of a
-line in a *plain-text email*.  Beware that the match is case-sensitive,
-so "applied", "CONFIRMED" and "FiXeD" won't work.
+line in a *plain-text email*.
 
 * Advanced usage
 
@@ -168,7 +167,7 @@ See [[file:src/bzg/config.clj]] for the list of required variables.
 Run this to check your configuration:
 
 : ~$ cd woof/
-: ~$ clj -M:test:runner
+: ~$ clj -M:test
 
 * Run
 
