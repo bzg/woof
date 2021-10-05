@@ -10,231 +10,12 @@
             [reitit.ring.middleware.parameters :as parameters]
             [ring.middleware.cors :refer [wrap-cors]]
             [mount.core :as mount]
-            [hiccup.page :as h]
             [clojure.string :as string]
             [clojure.edn :as edn]
-            [tea-time.core :as tt])
+            [tea-time.core :as tt]
+            [selmer.parser :as html]
+            [clojure.java.io :as io])
   (:gen-class))
-
-(defn- format-date [d]
-  (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:MM") d))
-
-(defn- filter-summary [query-params db]
-  (if (seq (:filter query-params))
-    (filter #(re-find (re-pattern (str "(?i)" (:filter query-params)))
-                      (:summary %))
-            db)
-    db))
-
-(defn default [query-params link content]
-  (h/html5
-   {:lang "en"}
-   [:head
-    [:title "Woof! Watch Over Our Folders"]
-    [:meta {:charset "utf-8"}]
-    [:meta {:name "keywords" :content "Woof! Watch Over Our Folders"}]
-    [:meta {:name "description" :content "Woof! Watch Over Our Folders"}]
-    [:meta {:name "viewport" :content "width=device-width, initial-scale=1, shrink-to-fit=yes"}]
-    (h/include-css "https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css")]
-   [:body
-    [:section.hero
-     [:div.hero-body {:style "padding: 2rem 1.5rem"}
-      [:h1.title.has-text-centered
-       {:style "margin-bottom: 1em;"}
-       (:title config/woof)]
-      [:h2.subtitle.column.is-8.is-offset-2.has-text-centered
-       {:style "margin-bottom: 0;"}
-       [:a {:href  (string/replace
-                    (:base-url config/woof)
-                    #"([^/])/*$" "$1/feed/updates")
-            :title "Subscribe to a RSS feed with all updates"}
-        "Subscribe (RSS)"]
-       " — "
-       [:a {:href (:project-url config/woof)}
-        (:project-name config/woof)]
-       " — "
-       link]
-      [:h3.column.is-8.is-offset-2.has-text-centered
-       [:a {:href "/#changes"} "Changes"] " — "
-       [:a {:href "/#help"} "Help requests"] " — "
-       [:a {:href "/#bugs"} "Bugs"] " — "
-       [:a {:href "/#patches"} "Patches"] " — "
-       [:a {:href "/#releases"} "Releases"]]
-      [:div.column.is-4.is-offset-4
-       [:div.level
-        [:form.level-item {:action "/"}
-         [:input.input {:type        "text"
-                        :name        "s"
-                        :value       (:filter query-params)
-                        :placeHolder "Leave empty to remove filters" }]
-         [:button.button.is-success.is-light {:type "submit"} "Filter"]]
-        [:form
-         {:action "/"}
-         [:input {:type "hidden" :name "s" :value ""}]
-         [:button.button.is-danger.is-light {:type "submit"} "❌"]]]]]]
-    content
-    [:footer.footer
-     [:div.columns
-      [:div.column.is-offset-4.is-4.has-text-centered
-       [:p "Feeds: "
-        [:a {:href "/feed/bugs"} "bugs"] ", "
-        [:a {:href "/feed/patches"} "patches"] ", "
-        [:a {:href "/feed/changes"} "changes"] ", "
-        [:a {:href "/feed/releases"} "releases"] " or "
-        [:a {:href "/feed/updates"} "all updates"]]
-       [:p "Data: "
-        [:a {:href "/data/bugs"} "bugs"] ", "
-        [:a {:href "/data/patches"} "patches"] ", "
-        [:a {:href "/data/changes"} "changes"] ", "
-        [:a {:href "/data/releases"} "releases"] " or "
-        [:a {:href "/data/updates"} "all updates"]]
-       [:br]
-       [:p "Made with "
-        [:a {:href "https://github.com/bzg/woof"} "Woof!"]]]]]]))
-
-(defn homepage [query-params]
-  (default
-   query-params
-   [:a {:href  "https://github.com/bzg/woof#basic-usage"
-        :title "How to use Woof! to update this page?"} "Howto"]
-   [:div.container
-    [:section.section {:style "padding: 1.5rem 1.0rem"}
-     [:div.container
-      [:h1#changes.title
-       [:span [:a {:href "/#" :title "Back to top"} "ꜛ "] "Upcoming changes "
-        [:a.tag.is-info.is-light {:href "/feed/changes"} "RSS"] " "
-        [:a.tag.is-success.is-light {:href "/data/changes"} "JSON"]]]
-      (if-let [changes (->> (core/get-unreleased-changes @core/db)
-                            core/intern-id
-                            (sort-by :date)
-                            (filter-summary query-params)
-                            not-empty)]
-        [:div.content
-         (for [change changes]
-           (core/format-link-fn change :change))]
-        [:p "No upcoming change."])]]
-    [:section.section {:style "padding: 1.5rem 1.0rem"}
-     [:div.container
-      [:h1#help.title
-       [:span [:a {:href "/#" :title "Back to top"} "ꜛ "] "Help requests "
-        [:a.tag.is-info.is-light {:href "/feed/help"} "RSS"] " "
-        [:a.tag.is-success.is-light {:href "/data/help"} "JSON"]]]
-      (if-let [helps (->> (core/get-pending-help @core/db)
-                          core/intern-id
-                          (sort-by
-                           (if (= (:sort-help-by query-params) "date")
-                             :date
-                             #(count (:refs %))))
-                          (filter-summary query-params)
-                          reverse
-                          not-empty)]
-        [:div.table-container
-         [:table.table.is-hoverable.is-fullwidth.is-striped
-          [:thead
-           [:tr
-            [:th "Summary"]
-            [:th {:width "15%"}
-             [:a {:href "/?sort-help-by=date#help" :title "Sort help requests by date"}
-              "Date"]]
-            [:th {:width "5%"}
-             [:a {:href "/?sort-help-by=refs#help" :title "Sort help requests by number of references"}
-              "Refs"]]]]
-          [:tbody
-           (for [help helps]
-             [:tr
-              [:td (core/format-link-fn help :bug)]
-              [:td [:p (format-date (:date help))]]
-              [:td [:p (str (count (:refs help)))]]])]]]
-        [:p "No help has been requested so far."])]]
-    [:section.section {:style "padding: 1.5rem 1.0rem"}
-     [:div.container
-      [:h1#bugs.title
-       [:span [:a {:href "/#" :title "Back to top"} "ꜛ "] "Confirmed bugs "
-        [:a.tag.is-info.is-light {:href "/feed/bugs"} "RSS"] " "
-        [:a.tag.is-success.is-light {:href "/data/bugs"} "JSON"]]]
-      (if-let [bugs (->> (core/get-unfixed-bugs @core/db)
-                         core/intern-id
-                         (sort-by
-                          (if (= (:sort-bugs-by query-params) "date")
-                            :date
-                            #(count (:refs %))))
-                         reverse
-                         (filter-summary query-params)
-                         not-empty)]
-        [:div.table-container
-         [:table.table.is-hoverable.is-fullwidth.is-striped
-          [:thead
-           [:tr
-            [:th "Summary"]
-            [:th {:width "15%"}
-             [:a {:href "/?sort-bugs-by=date#bugs" :title "Sort bugs by date"}
-              "Date"]]
-            [:th {:width "5%"}
-             [:a {:href "/?sort-bugs-by=refs#bugs" :title "Sort bugs by number of references"}
-              "Refs"]]]]
-          [:tbody
-           (for [bug bugs]
-             [:tr
-              [:td (core/format-link-fn bug :bug)]
-              [:td [:p (format-date (:date bug))]]
-              [:td [:p (str (count (:refs bug)))]]])]]]
-        [:p "No confirmed bug."])]]
-    [:section.section {:style "padding: 1.5rem 1.0rem"}
-     [:div.container
-      [:h1#patches.title
-       [:span [:a {:href "/#" :title "Back to top"} "ꜛ "] "Patches "
-        [:a.tag.is-info.is-light {:href "/feed/patches"} "RSS"] " "
-        [:a.tag.is-success.is-light {:href "/data/patches"} "JSON"]]]
-      (if-let [patches (->> (core/get-unapplied-patches @core/db)
-                            core/intern-id
-                            (sort-by
-                             (if (= (:sort-patches-by query-params) "date")
-                               :date
-                               #(count (:refs %))))
-                            (filter-summary query-params)
-                            reverse
-                            not-empty)]
-        [:div.table-container
-         [:table.table.is-hoverable.is-fullwidth.is-striped
-          [:thead
-           [:tr
-            [:th "Summary"]
-            [:th {:width "15%"}
-             [:a {:href "/?sort-patches-by=date#patches" :title "Sort patches by date"}
-              "Date"]]
-            [:th {:width "5%"}
-             [:a {:href "/?sort-patches-by=refs#patches" :title "Sort patches by number of references"}
-              "Refs"]]]]
-          [:tbody
-           (for [patch patches]
-             [:tr
-              [:td (core/format-link-fn patch :bug)]
-              [:td [:p (format-date (:date patch))]]
-              [:td [:p (str (count (:refs patch)))]]])]]]
-        [:p "No new patch has been sent so far."])]]
-    [:section.section {:style "padding: 1.5rem 1.0rem"}
-     [:div.container
-      [:h1#releases.title
-       [:span [:a {:href "/#" :title "Back to top"} "ꜛ "] "Latest releases "
-        [:a.tag.is-info.is-light {:href "/feed/releases"} "RSS"] " "
-        [:a.tag.is-success.is-light {:href "/data/releases"} "JSON"]]]
-      (if-let [releases (->> (core/get-releases @core/db)
-                             core/intern-id
-                             (sort-by :date)
-                             reverse
-                             not-empty)]
-        [:div.content
-         (for [release (take 3 releases)]
-           (core/format-link-fn release :release))]
-        [:p "No release."])]]]))
-
-(defn get-homepage [{:keys [query-params]}]
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    (homepage {:sort-bugs-by    (get query-params "sort-bugs-by")
-                       :sort-help-by    (get query-params "sort-help-by")
-                       :sort-patches-by (get query-params "sort-patches-by")
-                       :filter          (get query-params "s")})})
 
 (defn- get-data [what]
   {:status 200
@@ -247,6 +28,48 @@
                      :releases core/get-releases
                      :changes  core/get-changes)
                    [@core/db]))})
+
+(defn- get-db-data [kvl s srt]
+  (->> kvl
+       (map (fn [[k v]] {:id k :data v}))
+       (sort-by (if (= srt "date") #(:date (:data %)) #(count (:refs (:data %)))))
+       reverse
+       (filter #(re-find (re-pattern (str "(?i)" (or (not-empty s) "")))
+                         (:summary (:data %))))
+       (map #(assoc-in
+              % [:data :link]
+              (format (:mail-url-format config/woof) (:id %))))
+       (map #(assoc-in
+              % [:data :refs-cnt]
+              (count (:refs (:data %)))))))
+
+(defn get-homepage [{:keys [query-params]}]
+  {:status  200
+   :headers {"Content-Type" "text/html"}
+   :body    (html/render-file
+             (io/resource "index.html")
+             {:title            (:title config/woof)
+              :updates-feed     (string/replace
+                                 (:base-url config/woof)
+                                 #"([^/])/*$" "$1/feed/updates")
+              ;; FIXME: still needed?
+              ;; :project-url      (:project-url config/woof)
+              ;; :project-name     (:project-name config/woof)
+              :contributing-url (:contributing-url config/woof)
+              :contributing-cta (:contributing-cta config/woof)
+              :helps            (get-db-data (apply core/get-pending-help [@core/db])
+                                             (get query-params "s")
+                                             (get query-params "sort-help-by"))
+              :bugs             (get-db-data (apply core/get-unfixed-bugs [@core/db])
+                                             (get query-params "s")
+                                             (get query-params "sort-bugs-by"))
+              :patches          (get-db-data (apply core/get-unapplied-patches [@core/db])
+                                             (get query-params "s")
+                                             (get query-params "sort-patches-by"))
+              :releases         (get-db-data (apply core/get-releases [@core/db])
+                                             (get query-params "s") [])
+              :changes          (get-db-data (apply core/get-changes [@core/db])
+                                             (get query-params "s") [])})})
 
 (defn get-data-updates [_] (get-data :updates))
 (defn get-data-bugs [_] (get-data :bugs))
@@ -284,6 +107,7 @@
        :access-control-allow-origin [#"^*$"]
        :access-control-allow-methods [:get])]}))
 
+(def woof-server)
 (let [port (edn/read-string (:port config/woof))]
   (mount/defstate woof-server
     :start (server/run-server handler {:port port})

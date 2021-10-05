@@ -1,0 +1,27 @@
+<section class="hero">
+  <div class="hero-body" style="padding: 2rem 1.5rem">
+    <h1 class="title has-text-centered" style="margin-bottom: 1em;">{{title}}</h1>
+    <h2 class="subtitle column is-8 is-offset-2 has-text-centered" style="margin-bottom:0;">
+      <a href="{{updates-feed}}" title="Subscribe to a RSS feed with all updates">Subscribe (RSS)</a> — <a href="{{contributing-url}}">{{contributing-cta}}</a> — <a href="https://github.com/bzg/woof#basic-usage" title="How to use Woof! to update this page?">Howto</a>
+    </h2>
+    <h3 class="column is-8 is-offset-2 has-text-centered">
+      <a href="/#changes">Changes</a> —
+      <a href="/#help">Help requests</a> —
+      <a href="/#bugs">Bugs</a> —
+      <a href="/#patches">Patches</a> —
+      <a href="/#releases">Releases</a>
+    </h3>
+    <div class="column is-4 is-offset-4">
+      <div class="level">
+	<form action="/" class="level-item">
+	  <input class="input" name="s" placeHolder="Leave empty to remove filters" type="text">
+	  <button class="button is-success is-light" type="submit">Filter</button>
+	</form>
+	<form action="/">
+	  <input name="s" type="hidden" value="">
+	  <button class="button is-danger is-light" type="submit">❌</button>
+	</form>
+      </div>
+    </div>
+  </div>
+</section>

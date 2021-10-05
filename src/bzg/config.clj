@@ -18,6 +18,7 @@
    :smtp-login        (System/getenv "WOOF_SMTP_LOGIN")
    :smtp-password     (System/getenv "WOOF_SMTP_PASSWORD")
    :contributing-url  (System/getenv "WOOF_CONTRIBUTING_URL")
+   :contributing-cta  (System/getenv "WOOF_CONTRIBUTING_CTA")
    :log-file          (or (System/getenv "WOOF_LOG_FILE") "logs.txt")
    :port              (or (System/getenv "WOOF_PORT") "3000")
    :base-url          (or (System/getenv "WOOF_BASE_URL") "https://localhost:3000")})

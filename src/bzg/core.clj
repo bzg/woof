@@ -76,13 +76,14 @@
       (string/replace #" *\([^)]+\)" "")
       (string/trim)))
 
+;; FIXME: only used in feeds
 (defn format-link-fn
   [{:keys [from summary date id commit]} what]
   (let [shortcommit  (cond (and (string? commit)
                                 (< (count commit) 8))
                            commit
                            (string? commit) (subs commit 0 8)
-                           :else nil)
+                           :else            nil)
         mail-title   (format "Visit email sent by %s on %s" from date)
         commit-title (when shortcommit
                        (format "Visit commit %s from %s" shortcommit from))]
@@ -111,20 +112,19 @@
   "Send an email."
   [{:keys [msg body]}]
   (let  [{:keys [id from subject]} msg
-         op (get-from from)]
+         op                        (get-from from)]
     (try
       (when-let
           [res (postal/send-message
                 {:host (:smtp-host config/woof)
                  :port 587
-                 :tls true
+                 :tls  true
                  :user (:smtp-login config/woof)
                  :pass (:smtp-password config/woof)}
                 {:from        (:smtp-login config/woof)
                  :message-id  #(postal.support/message-id (:base-url config/woof))
                  :reply-to    (:admin config/woof)
                  :In-Reply-To id
-                 :cc "bastien.guerry@data.gouv.fr"
                  :to          op
                  :subject     (str "Re: " (get-subject subject))
                  :body        (str body "\n\n"
@@ -136,8 +136,6 @@
       (catch Exception e
         (timbre/error (str "Can't send email: "
                            (:cause (Throwable->map e) "\n")))))))
-
-;; (try (/ 0 1) "OK" (catch Exception e "Not OK"))
 
 (def mail-chan (async/chan))
 
