@@ -47,7 +47,7 @@
   {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (html/render-file
-             (io/resource "index.html")
+             (io/resource (str "html/" (:theme config/woof) "/index.html"))
              {:title            (:title config/woof)
               :updates-feed     (string/replace
                                  (:base-url config/woof)

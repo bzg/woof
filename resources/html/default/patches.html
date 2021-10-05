@@ -1,0 +1,35 @@
+<section class="section" style="padding: 1.5rem 1.0rem">
+  <div class="container">
+    <h1 class="title" id="patches">
+      <span>
+	<a href="/#" title="Back to top">ꜛ</a>Patches
+	<a class="tag is-info is-light" href="/feed/patches">RSS</a>
+	<a class="tag is-success is-light" href="/data/patches">JSON</a>
+      </span>
+    </h1>
+    <div class="table-container">
+      <table class="table is-hoverable is-fullwidth is-striped">
+	<thead>
+	  <tr>
+	    <th>Summary</th>
+	    <th width="15%"><a href="/?sort-patches-by=date#patches" title="Sort patches by date">Date</a></th>
+	    <th width="5%"><a href="/?sort-patches-by=refs#patches" title="Sort patches by number of references">Refs</a>
+	    </th>
+	  </tr>
+	</thead>
+	<tbody>
+	  {% for patch in patches %}
+	  <tr>
+	    <td>
+	      <p><a href="{{patch.data.link}}" target="_blank" title="Visit email sent by {{patch.data.from}} on {{patch.data.date}}">{{patch.data.summary}}
+	      </a></p>
+	    </td>
+	    <td><p>{{patch.data.date|date:shortDate}}</p></td>
+	    <td><p>{{patch.data.refs-cnt}}</p></td>
+	  </tr>
+	  {% endfor %}
+	</tbody>
+      </table>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,43 @@
+<section class="section" style="padding: 1.5rem 1.0rem">
+  <div class="container">
+    <h1 class="title" id="help">
+      <span>
+	<a href="/#" title="Back to top">ꜛ</a>Help requests
+	<a class="tag is-info is-light" href="/feed/help">RSS</a>
+	<a class="tag is-success is-light" href="/data/help">JSON</a>
+      </span>
+    </h1>
+    <div class="table-container">
+      <table class="table is-hoverable is-fullwidth is-striped">
+	<thead>
+	  <tr>
+	    <th>Summary</th>
+	    <th width="15%">
+	      <a href="/?sort-help-by=date#help" title="Sort help requests by date">Date</a>
+	    </th>
+	    <th width="5%">
+	      <a href="/?sort-help-by=refs#help" title="Sort help requests by number of references">Refs</a>
+	    </th>
+	  </tr>
+	</thead>
+	<tbody>
+	  {% for help in helps %}
+	  <tr>
+	    <td>
+	      <p>
+		<a href="{{help.data.link}}" target="_blank" title="Visit email sent by {{help.data.from}} on {{help.data.date}}">{{help.data.summary}}</a>
+	      </p>
+	    </td>
+	    <td>
+	      <p>{{help.data.date|date:shortDate}}</p>
+	    </td>
+	    <td>
+	      <p>{{help.data.refs-cnt}}</p>
+	    </td>
+	  </tr>
+	  {% endfor %}
+	</tbody>
+      </table>
+    </div>
+  </div>
+</section>
