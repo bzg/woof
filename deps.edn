@@ -9,6 +9,7 @@
                http-kit/http-kit                   {:mvn/version "2.5.3"}
                clj-rss/clj-rss                     {:mvn/version "0.2.7"}
                hiccup/hiccup                       {:mvn/version "1.0.5"}
+               markdown-clj/markdown-clj           {:mvn/version "1.10.6"}
                metosin/reitit                      {:mvn/version "0.5.15"}
                metosin/reitit-ring                 {:mvn/version "0.5.15"}
                metosin/reitit-middleware           {:mvn/version "0.5.15"}

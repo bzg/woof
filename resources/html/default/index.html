@@ -4,11 +4,16 @@
   <body>
     {% include "html/default/hero.html" %}
     <div class="container">
-      {% include "html/default/changes.html" %}
+      {% if howto %}
+      {% safe %}
+      <div class="content">{{howto}}</div>
+      {% endsafe %}
+      {% else %}      {% include "html/default/changes.html" %}
       {% include "html/default/help.html" %}
       {% include "html/default/bugs.html" %}
       {% include "html/default/patches.html" %}
       {% include "html/default/releases.html" %}
+      {% endif %}
     </div>
     {% include "html/default/footer.html" %}
   </body>

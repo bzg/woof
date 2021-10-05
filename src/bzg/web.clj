@@ -14,6 +14,7 @@
             [clojure.edn :as edn]
             [tea-time.core :as tt]
             [selmer.parser :as html]
+            [markdown.core :as md]
             [clojure.java.io :as io])
   (:gen-class))
 
@@ -43,33 +44,36 @@
               % [:data :refs-cnt]
               (count (:refs (:data %)))))))
 
+(def html-defaults
+  {:title            (:title config/woof)
+   :updates-feed     (string/replace
+                      (:base-url config/woof)
+                      #"([^/])/*$" "$1/feed/updates")
+   ;; FIXME: still needed?
+   ;; :project-url      (:project-url config/woof)
+   ;; :project-name     (:project-name config/woof)
+   :contributing-url (:contributing-url config/woof)
+   :contributing-cta (:contributing-cta config/woof)})
+
 (defn get-homepage [{:keys [query-params]}]
   {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (html/render-file
              (io/resource (str "html/" (:theme config/woof) "/index.html"))
-             {:title            (:title config/woof)
-              :updates-feed     (string/replace
-                                 (:base-url config/woof)
-                                 #"([^/])/*$" "$1/feed/updates")
-              ;; FIXME: still needed?
-              ;; :project-url      (:project-url config/woof)
-              ;; :project-name     (:project-name config/woof)
-              :contributing-url (:contributing-url config/woof)
-              :contributing-cta (:contributing-cta config/woof)
-              :helps            (get-db-data (apply core/get-pending-help [@core/db])
-                                             (get query-params "s")
-                                             (get query-params "sort-help-by"))
-              :bugs             (get-db-data (apply core/get-unfixed-bugs [@core/db])
-                                             (get query-params "s")
-                                             (get query-params "sort-bugs-by"))
-              :patches          (get-db-data (apply core/get-unapplied-patches [@core/db])
-                                             (get query-params "s")
-                                             (get query-params "sort-patches-by"))
-              :releases         (get-db-data (apply core/get-releases [@core/db])
-                                             (get query-params "s") [])
-              :changes          (get-db-data (apply core/get-changes [@core/db])
-                                             (get query-params "s") [])})})
+             (merge html-defaults
+                    {:helps    (get-db-data (apply core/get-pending-help [@core/db])
+                                            (get query-params "s")
+                                            (get query-params "sort-help-by"))
+                     :bugs     (get-db-data (apply core/get-unfixed-bugs [@core/db])
+                                            (get query-params "s")
+                                            (get query-params "sort-bugs-by"))
+                     :patches  (get-db-data (apply core/get-unapplied-patches [@core/db])
+                                            (get query-params "s")
+                                            (get query-params "sort-patches-by"))
+                     :releases (get-db-data (apply core/get-releases [@core/db])
+                                            (get query-params "s") [])
+                     :changes  (get-db-data (apply core/get-changes [@core/db])
+                                            (get query-params "s") [])}))})
 
 (defn get-data-updates [_] (get-data :updates))
 (defn get-data-bugs [_] (get-data :bugs))
@@ -82,6 +86,15 @@
   (ring/ring-handler
    (ring/router
     [["/" {:get (fn [params] (get-homepage params))}]
+     ["/howto"
+      {:get (fn [params]
+              {:status  200
+               :headers {"Content-Type" "text/html"}
+               :body    (html/render-file
+                         (str "html/" (:theme config/woof) "/index.html")
+                         (merge html-defaults
+                                {:howto (md/md-to-html-string
+                                         (slurp (io/resource "md/howto.md")))}))})}]
      ["/data"
       ["/updates" {:get get-data-updates}]
       ["/bugs" {:get get-data-bugs}]
