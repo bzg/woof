@@ -162,11 +162,12 @@ instead of doing Z, as expected.` as the summary for this bug.
 
 ## Synonyms
 
-We encourage you to use `t` and `nil` in the Woof! header.  However,
+We encourage you to use `t` and `nil` in the `X-Woof-*` headers.  However,
 all headers support these synonymes:
 
--   `t`, `confirmed`, `true`
--   `nil`, `canceled`, `cancel`, `closed`, `close`, `done`, `fixed`.
+-   `t`, `confirmed`, `true`.
+-   `nil`, `canceled`, `cancelled`, `cancel`, `closed`, `close`, `done`,
+    `fix`, `fixed`, `applied`.
 
 </div>
 
