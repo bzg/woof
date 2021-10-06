@@ -44,12 +44,6 @@
   (->> (map first (d/q `[:find ?e :where [?e :type ?a]] db))
        (map #(d/pull db '[*] %))))
 
-(get-db)
-
-({:date #inst "2021-10-05T20:23:03.000-00:00", :msgid "878rz7p6fs.fsf@bzg.fr", :refs #{"878rz7p6fs.fsf@bzg.fr"}, :type "change", :summary "Un sujet", :from "bzg@bzg.fr", :commit "Un", :db/id 3, :versions #{"changement"}}
- {:db/id 2, :id "87bl43p6h0.fsf@bzg.fr", :type "patch", :from "bzg@bzg.fr", :refs #{"87bl43p6h0.fsf@bzg.fr"}, :summary "[PATCH] Un patch", :date #inst "2021-10-05T20:22:19.000-00:00"}
- {:db/id 1, :id "87ee8zp6i7.fsf@bzg.fr", :type "bug", :from "bzg@bzg.fr", :refs #{"87ee8zp6i7.fsf@bzg.fr"}, :summary "Un bug!!!!", :date #inst "2021-10-05T20:21:36.000-00:00"})
-
 (defn- all-refs []
   (->> (d/q '[:find ?refs :where [_ :refs ?refs]] db)
        (map first)
