@@ -1,28 +1,41 @@
 (ns bzg.config)
 
 (def woof
-  {:user              (System/getenv "WOOF_MAIL_USER")
-   :server            (System/getenv "WOOF_MAIL_SERVER")
-   :password          (System/getenv "WOOF_MAIL_PASSWORD")
-   :mailing-list      (System/getenv "WOOF_MAILING_LIST")
-   :admin             (System/getenv "WOOF_ADMIN")
+  {;; Configure the mailbox to monitor
+   ;; FIXME: Shall we always assume tls connection?
+   :inbox-user     (System/getenv "WOOF_INBOX_USER")
+   :inbox-server   (System/getenv "WOOF_INBOX_SERVER")
+   :inbox-password (System/getenv "WOOF_INBOX_PASSWORD")
+   :inbox-folder   (System/getenv "WOOF_INBOX_FOLDER")
+
+   ;; General application options
+   :admin                (System/getenv "WOOF_ADMIN")
+   :port                 (or (System/getenv "WOOF_PORT") "3000")
+   :db-dir               (or (System/getenv "WOOF_DB_DIR") ".db")
+   :log-file             (or (System/getenv "WOOF_LOG_FILE") "logs.txt")
+   :mailing-list-address (System/getenv "WOOF_MAILING_LIST_ADDRESS")
+   :base-url             (or (System/getenv "WOOF_BASE_URL")
+                             "https://localhost:3000")
+   
+   ;; General formatting options
    :mail-url-format   (System/getenv "WOOF_MAIL_URL_FORMAT")
-   :folder            (System/getenv "WOOF_MAIL_FOLDER")
-   :project-name      (System/getenv "WOOF_PROJECT_NAME")
-   :project-url       (System/getenv "WOOF_PROJECT_URL")
-   :title             (System/getenv "WOOF_TITLE")
-   :feed-title        (System/getenv "WOOF_FEED_TITLE")
-   :feed-description  (System/getenv "WOOF_FEED_DESCRIPTION")
    :commit-url-format (System/getenv "WOOF_COMMIT_URL_FORMAT")
-   :smtp-host         (System/getenv "WOOF_SMTP_HOST")
-   :smtp-login        (System/getenv "WOOF_SMTP_LOGIN")
-   :smtp-password     (System/getenv "WOOF_SMTP_PASSWORD")
-   :contributing-url  (System/getenv "WOOF_CONTRIBUTING_URL")
-   :contributing-cta  (System/getenv "WOOF_CONTRIBUTING_CTA")
-   :theme             (or (System/getenv "WOOF_THEME") "default")
-   :log-file          (or (System/getenv "WOOF_LOG_FILE") "logs.txt")
-   :port              (or (System/getenv "WOOF_PORT") "3000")
-   :base-url          (or (System/getenv "WOOF_BASE_URL") "https://localhost:3000")})
+   
+   ;; Configuration to send notification emails
+   :smtp-host     (System/getenv "WOOF_SMTP_HOST")
+   :smtp-login    (System/getenv "WOOF_SMTP_LOGIN")
+   :smtp-password (System/getenv "WOOF_SMTP_PASSWORD")
+
+   ;; Configuring the HTML page
+   :theme            (or (System/getenv "WOOF_THEME") "default")
+   :title            (System/getenv "WOOF_TITLE")
+   :project-name     (System/getenv "WOOF_PROJECT_NAME")
+   :project-url      (System/getenv "WOOF_PROJECT_URL")
+   :contributing-url (System/getenv "WOOF_CONTRIBUTING_URL")
+   :contributing-cta (System/getenv "WOOF_CONTRIBUTING_CTA")
+   :feed-title       (System/getenv "WOOF_FEED_TITLE")
+   :feed-description (System/getenv "WOOF_FEED_DESCRIPTION")
+   })
 
 (defn format-mail [s t]
   (str (format (str "%s\n\n"
@@ -40,6 +53,7 @@
          (str "\n\nFor details on how to submit a patch, read this page:\n"
               (:contributing-url woof)))))
 
+;; FIXME: Allow configuration?
 (def mails
   {:email-link "Follow the discussion on the mailing list:"
    :add
@@ -54,6 +68,7 @@
     :help   (format-mail "Thanks for closing this call for help." :none)
     :change (format-mail "Thanks for cancelling this change." :none)}})
 
+;; FIXME: be more strict and allow only t|nil?
 (def actions-regexps
   {:confirmed #"(?i)^confirm(ed)?|t(rue)?"
    :closed    #"(?i)^(cancell?(ed)?|done|closed?|fix(ed)?|nil|applied)"})
