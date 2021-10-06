@@ -14,7 +14,6 @@
 (spec/def ::smtp-login string?)
 (spec/def ::smtp-password string?)
 (spec/def ::mail-url-format string?)
-(spec/def ::commit-url-format string?)
 (spec/def ::folder string?)
 (spec/def ::project-name string?)
 (spec/def ::project-url string?)
@@ -30,7 +29,6 @@
                       ::password
                       ::mailing-list
                       ::mail-url-format
-                      ::commit-url-format
                       ::admin
                       ::smtp-host
                       ::smtp-login

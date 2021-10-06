@@ -16,16 +16,13 @@
    :mailing-list-address (System/getenv "WOOF_MAILING_LIST_ADDRESS")
    :base-url             (or (System/getenv "WOOF_BASE_URL")
                              "https://localhost:3000")
-   
-   ;; General formatting options
-   :mail-url-format   (System/getenv "WOOF_MAIL_URL_FORMAT")
-   :commit-url-format (System/getenv "WOOF_COMMIT_URL_FORMAT")
-   
-   ;; Configuration to send notification emails
-   :smtp-host     (System/getenv "WOOF_SMTP_HOST")
-   :smtp-login    (System/getenv "WOOF_SMTP_LOGIN")
-   :smtp-password (System/getenv "WOOF_SMTP_PASSWORD")
 
+   ;; Configuration to send notification emails
+   :smtp-host       (System/getenv "WOOF_SMTP_HOST")
+   :smtp-login      (System/getenv "WOOF_SMTP_LOGIN")
+   :smtp-password   (System/getenv "WOOF_SMTP_PASSWORD")
+   :mail-url-format (System/getenv "WOOF_MAIL_URL_FORMAT")
+   
    ;; Configuring the HTML page
    :theme            (or (System/getenv "WOOF_THEME") "default")
    :title            (System/getenv "WOOF_TITLE")
@@ -43,15 +40,15 @@
                       (format "You can find it here:\n%s%s"
                               (:base-url woof)
                               (condp = t
-                                :help    "#help"
-                                :change  "#changes"
-                                :bug     "#bugs"
-                                :patch   "#patches"
-                                :release "#releases"))))
+                                :help    "/help"
+                                :change  "/changes"
+                                :bug     "/bugs"
+                                :patch   "/patches"
+                                :release "/"))))
                s)
        (when (= t :patch)
          (str "\n\nFor details on how to submit a patch, read this page:\n"
-              (:contributing-url woof)))))
+              (:contribute-url woof)))))
 
 ;; FIXME: Allow configuration?
 (def mails
