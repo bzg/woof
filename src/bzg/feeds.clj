@@ -35,30 +35,24 @@
         (sort-by
          :pubDate
          (concat
-          (map #(feed-item % :bug)
-               (core/intern-id (core/get-unfixed-bugs @core/db)))
-          (map #(feed-item % :patch)
-               (core/intern-id (core/get-unapplied-patches @core/db)))
-          (map #(feed-item % :bug)
-               (core/intern-id (core/get-pending-help @core/db)))
-          (map #(feed-item % :change)
-               (core/intern-id (core/get-unreleased-changes @core/db)))
-          (map #(feed-item % :release)
-               (core/intern-id (core/get-releases @core/db)))))))
+          (map #(feed-item % :bug) (core/get-unfixed-bugs))
+          (map #(feed-item % :patch) (core/get-unapplied-patches))
+          (map #(feed-item % :bug) (core/get-pending-help-requests))
+          (map #(feed-item % :change) (core/get-unreleased-changes))
+          (map #(feed-item % :release) (core/get-releases))))))
 
 (defn- make-feed [{:keys [path what]}]
-  (let [get-type (condp = what
-                   :bug     core/get-unfixed-bugs
-                   :help    core/get-pending-help
-                   :patch   core/get-unapplied-patches
-                   :change  core/get-unreleased-changes
-                   :release core/get-releases)]
-    (feed path
-          (sort-by
-           :pubDate
-           (concat
-            (map #(feed-item % what)
-                 (core/intern-id (get-type @core/db))))))))
+  (feed path
+        (sort-by
+         :pubDate
+         (concat
+          (map #(feed-item % what)
+               (condp = what
+                 :bug     (core/get-unfixed-bugs)
+                 :help    (core/get-pending-help-requests)
+                 :patch   (core/get-unapplied-patches)
+                 :change  (core/get-unreleased-changes)
+                 :release (core/get-releases)))))))
 
 (defn feed-bugs [_] (make-feed {:path "/feed/bugs" :what :bug}))
 

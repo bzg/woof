@@ -3,7 +3,6 @@
             [clojure-mail.message :as message]
             [clojure-mail.events :as events]
             [clojure.string :as string]
-            [clojure.edn :as edn]
             [clojure.set :as set]
             [clojure.walk :as walk]
             [mount.core :as mount]
@@ -14,7 +13,8 @@
             [clojure.core.async :as async]
             [taoensso.timbre :as timbre]
             [taoensso.timbre.appenders.core :as appenders]
-            [taoensso.timbre.appenders (postal :as postal-appender)])
+            [taoensso.timbre.appenders (postal :as postal-appender)]
+            [datalevin.core :as d])
   (:import [javax.mail.internet MimeUtility]))
 
 ;; Setup logging
@@ -34,32 +34,28 @@
                      :to   (:admin config/woof)})
                    {:min-level :warn})}})
 
-;; Use a dynamic var here to use another value when testing
+;; Set up the database
 
-(def ^:dynamic db-file-name "db.edn")
+(def conn (d/get-conn (:db-dir config/woof)))
 
-;;; Core atoms and related functions
+(def db (d/db conn))
 
-(def db
-  (atom (or (try (edn/read-string (slurp db-file-name))
-                 (catch Exception _ nil))
-            {})))
+(defn get-db []
+  (->> (map first (d/q `[:find ?e :where [?e :type ?a]] db))
+       (map #(d/pull db '[*] %))))
 
-(def db-refs (atom #{}))
+(get-db)
 
-(defn- all-refs [db]
-  (into #{} (apply set/union (map :refs (vals db)))))
+({:date #inst "2021-10-05T20:23:03.000-00:00", :msgid "878rz7p6fs.fsf@bzg.fr", :refs #{"878rz7p6fs.fsf@bzg.fr"}, :type "change", :summary "Un sujet", :from "bzg@bzg.fr", :commit "Un", :db/id 3, :versions #{"changement"}}
+ {:db/id 2, :id "87bl43p6h0.fsf@bzg.fr", :type "patch", :from "bzg@bzg.fr", :refs #{"87bl43p6h0.fsf@bzg.fr"}, :summary "[PATCH] Un patch", :date #inst "2021-10-05T20:22:19.000-00:00"}
+ {:db/id 1, :id "87ee8zp6i7.fsf@bzg.fr", :type "bug", :from "bzg@bzg.fr", :refs #{"87ee8zp6i7.fsf@bzg.fr"}, :summary "Un bug!!!!", :date #inst "2021-10-05T20:21:36.000-00:00"})
 
-(add-watch
- db :serialize-refs
- (fn [_ _ _ newdb]
-   (reset! db-refs (all-refs newdb))
-   (spit db-file-name (pr-str newdb))))
+(defn- all-refs []
+  (->> (d/q '[:find ?refs :where [_ :refs ?refs]] db)
+       (map first)
+       (apply set/union)))
 
 ;;; Utility functions
-
-(defn intern-id [m]
-  (map (fn [[k v]] (assoc v :id k)) m))
 
 (defn- mime-decode [^String s]
   (when (string? s) (MimeUtility/decodeText s)))
@@ -152,55 +148,46 @@
 
 (defn- update-refs [id new-refs]
   (loop [refs new-refs
-         ref  (some @db-refs refs)]
+         ref  (some (all-refs) refs)]
     (when ref
-      (doseq [e @db]
-        (when-let [rfs (:refs (val e))]
+      (doseq [e (get-db)]
+        (when-let [rfs (:refs e)]
           (when (rfs ref)
-            (swap! db assoc-in [(key e) :refs] (conj rfs (get-id id)))))))
+            (d/transact!
+             conn [{:db/id (:db/id e)
+                    :refs  (conj rfs (get-id id))}])))))
     (when-let [rest-refs (last (next (partition-by #{ref} refs)))]
       (recur rest-refs
-             (some @db-refs rest-refs)))))
+             (some (all-refs) rest-refs)))))
 
 (defn- some-db-refs? [refs]
-  (some @db-refs refs))
+  (some (all-refs) refs))
 
 ;;; Core functions to return db entries
 
-(defn get-bugs [db]
-  (filter #(= (:type (val %)) "bug") db))
+(defn get-entries [entry-type]
+  (->> (map first (d/q `[:find ?bug :where [?bug :type ~entry-type]] db))
+       (map #(d/pull db '[*] %))))
 
-(defn get-unfixed-bugs [db]
-  (filter #(not (get (val %) :fixed))
-          (get-bugs db)))
+(defn get-bugs [] (get-entries "bug"))
+(defn get-patches [] (get-entries "patch"))
+(defn get-help-requests [] (get-entries "help"))
+(defn get-changes [] (get-entries "change"))
+(defn get-releases [] (get-entries "release"))
 
-(defn get-patches [db]
-  (filter #(= (:type (val %)) "patch") db))
+(defn get-unfixed-entries [entries]
+  (filter #(not (get % :fixed)) entries))
 
-(defn get-unapplied-patches [db]
-  (filter #(not (get (val %) :fixed))
-          (get-patches db)))
+(defn get-unfixed-bugs [] (get-unfixed-entries (get-bugs)))
+(defn get-unapplied-patches [] (get-unfixed-entries (get-patches)))
+(defn get-pending-help-requests [] (get-unfixed-entries (get-help-requests)))
+(defn get-unreleased-changes []
+  (filter #(and (not (get % :released))
+                (not (get % :canceled)))
+          (get-changes)))
 
-(defn get-help [db]
-  (filter #(= (:type (val %)) "help") db))
-
-(defn get-pending-help [db]
-  (filter #(not (get (val %) :fixed))
-          (get-help db)))
-
-(defn get-changes [db]
-  (filter #(= (:type (val %)) "change") db))
-
-(defn get-unreleased-changes [db]
-  (filter #(and (not (get (val %) :released))
-                (not (get (val %) :canceled)))
-          (get-changes db)))
-
-(defn get-releases [db]
-  (filter #(= (:type (val %)) "release") db))
-
-(defn get-released-versions [db]
-  (into #{} (map :version (vals (get-releases db)))))
+(defn get-released-versions []
+  (into #{} (map :version (get-releases))))
 
 (defn- confirmed? [{:keys [msg header what]}]
   (let [header-confirmation
@@ -263,20 +250,21 @@
   (let [c-specs   (string/split X-Woof-Change #"\s")
         commit    (when (< 1 (count c-specs)) (first c-specs))
         versions  (into #{} (if commit (next c-specs) (first c-specs)))
-        released  (get-released-versions @db)
+        released  (get-released-versions)
         true-from (get-from from)
         true-id   (get-id id)]
     (if (and released (some released versions))
       (timbre/error
        (format "%s tried to add a change against a past release, ignoring %s"
                true-from true-id))
-      (do (swap! db conj {true-id {:type     "change"
-                                   :from     true-from
-                                   :commit   commit
-                                   :refs     (into #{} (conj refs true-id))
-                                   :versions versions
-                                   :summary  (get-subject subject)
-                                   :date     date-sent}})
+      (do (d/transact! conn [{:msgid    true-id
+                              :type     "change"
+                              :from     true-from
+                              :commit   commit
+                              :refs     (into #{} (conj refs true-id))
+                              :versions versions
+                              :summary  (get-subject subject)
+                              :date     date-sent}])
           (timbre/info (format "%s added a change for version %s via %s"
                                true-from (first versions) true-id))
           (mail msg (:change (:add config/mails)))))))
@@ -285,11 +273,12 @@
   (let [true-from (get-from from)
         true-id   (get-id id)]
     ;; Prevent release when not from the release manager
-    (doseq [e (get-unreleased-changes @db)]
-      (when (some (:refs (val e)) refs)
-        (swap! db assoc-in [(key e) :canceled] true-id)
-        (swap! db assoc-in [(key e) :canceled-by] true-from)
-        (swap! db assoc-in [(key e) :canceled-at] date-sent)))
+    (doseq [e (get-unreleased-changes)]
+      (when (some (:refs e) refs)
+        (d/transact! conn [{:db/id       (:db/id e)
+                            :canceled    true-id
+                            :canceled-by true-from
+                            :canceled-at date-sent}])))
     (timbre/info
      (format "%s canceled a change announcement via %s" true-from true-id))
     (mail msg (:change (:fix config/woof)))))
@@ -314,11 +303,12 @@
         summary     (or note (get-subject subject))
         true-from   (get-from from)
         true-id     (get-id id)]
-    (swap! db conj {true-id {:type    what-type
-                             :from    true-from
-                             :refs    (into #{} (conj refs true-id))
-                             :summary summary
-                             :date    date-sent}})
+    (d/transact! conn [{:id      true-id
+                        :type    what-type
+                        :from    true-from
+                        :refs    (into #{} (conj refs true-id))
+                        :summary summary
+                        :date    date-sent}])
     (timbre/info (format what-msg true-from true-id))
     (mail msg (get (:add config/mails) what))))
 
@@ -340,20 +330,21 @@
         get-what     (condp = what
                        :bug   get-unfixed-bugs
                        :patch get-unapplied-patches
-                       :help  get-pending-help
+                       :help  get-pending-help-requests
                        nil)
         true-subject (get-subject subject)
         true-from    (get-from from)
         true-id      (get-id id)]
-    (doseq [e (get-what @db)]
-      (let [ve (val e) e-refs (:refs ve)]
+    (doseq [e (get-what (get-db))]
+      (let [e-refs (:refs e)]
         (when (and (some e-refs refs)
                    (if (= what :patch)
-                     (= (:summary ve) true-subject)
+                     (= (:summary e) true-subject)
                      true))
-          (swap! db assoc-in [(key e) :fixed] true-id)
-          (swap! db assoc-in [(key e) :fixed-by] true-from)
-          (swap! db assoc-in [(key e) :fixed-at] date-sent))))
+          (d/transact! conn [{:db/id    (:db/id e)
+                              :fixed    true-id
+                              :fixed-by true-from
+                              :fixed-at date-sent}]))))
     (format msg true-from true-id)
     (mail msg (get (:fix config/mails) what))))
 
@@ -364,7 +355,7 @@
   (fix-entry msg refs :help))
 
 (defn- add-release [{:keys [id from subject date-sent] :as msg} X-Woof-Release]
-  (let [released  (get-released-versions @db)
+  (let [released  (get-released-versions)
         true-from (get-from from)
         true-id   (get-id id)]
     (cond
@@ -378,15 +369,17 @@
               true-from true-id)
       ;; Add the release to the db
       :else
-      (do (swap! db conj {true-id {:type    "release"
-                                   :from    true-from
-                                   :version X-Woof-Release
-                                   :summary (get-subject subject)
-                                   :date    date-sent}})
+      (do (d/transact! conn [{:id      true-id
+                              :type    "release"
+                              :from    true-from
+                              :version X-Woof-Release
+                              :summary (get-subject subject)
+                              :date    date-sent}])
           ;; Mark related changes as released
-          (doseq [[k v] (get-unreleased-changes @db)]
-            (when ((:versions v) X-Woof-Release)
-              (swap! db assoc-in [k :released] X-Woof-Release)))
+          (doseq [e (get-unreleased-changes)]
+            (when ((:versions e) X-Woof-Release)
+              (d/transact! conn [{:db/id    (:db/id e)
+                                  :released X-Woof-Release}])))
           (timbre/info
            (format "%s released %s via %s" true-from X-Woof-Release true-id))
           (mail msg (:release (:add config/mails)))))))
@@ -411,10 +404,11 @@
               (some (into #{} (list X-Original-To X-BeenThere
                                     (when (string? To)
                                       (peek (re-matches #"^.*<(.*[^>])>.*$" To)))))
-                    (into #{} (list (:mailing-list config/woof)))))
+                    (into #{} (list (:mailing-list-address config/woof)))))
       ;; If any email with references contains in its references the id
       ;; of a known bug, add the message-id of this mail to the refs of
       ;; this bug.
+      ;; FIXME_
       (when refs (update-refs (get-id id) refs))
       (cond
         ;; Detect and add a patch (anyone).
@@ -469,10 +463,11 @@
    woof-monitor
    (let [session      (mail/get-session "imaps")
          mystore      (mail/store "imaps" session
-                                  (:server config/woof)
-                                  (:user config/woof)
-                                  (:password config/woof))
-         folder       (mail/open-folder mystore (:folder config/woof) :readonly)
+                                  (:inbox-server config/woof)
+                                  (:inbox-user config/woof)
+                                  (:inbox-password config/woof))
+         folder       (mail/open-folder mystore (:inbox-folder config/woof)
+                                        :readonly)
          idle-manager (events/new-idle-manager session)]
      (events/add-message-count-listener
       ;; Process incoming mails

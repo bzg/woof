@@ -20,60 +20,62 @@
 
 (defn- get-data [what]
   {:status 200
-   :body   (core/intern-id
-            (apply (condp = what
-                     :updates  identity
-                     :bugs     core/get-bugs
-                     :patches  core/get-patches
-                     :helps    core/get-help
-                     :releases core/get-releases
-                     :changes  core/get-changes)
-                   [@core/db]))})
+   :body   (condp = what
+             :updates  identity
+             :bugs     (core/get-bugs)
+             :patches  (core/get-patches)
+             :helps    (core/get-help-requests)
+             :releases (core/get-releases)
+             :changes  (core/get-changes))})
 
-(defn- get-db-data [kvl s srt]
-  (->> kvl
-       (map (fn [[k v]] {:id k :data v}))
-       (sort-by (if (= srt "date") #(:date (:data %)) #(count (:refs (:data %)))))
-       reverse
-       (filter #(re-find (re-pattern (str "(?i)" (or (not-empty s) "")))
-                         (:summary (:data %))))
-       (map #(assoc-in
-              % [:data :link]
-              (format (:mail-url-format config/woof) (:id %))))
-       (map #(assoc-in
-              % [:data :refs-cnt]
-              (count (:refs (:data %)))))))
+(defn- db-filter [{:keys [db s sort-bugs-by sort-help-by sort-patches-by]}]
+  (->>
+   db
+   (sort-by (if (some (into #{} (remove nil? [sort-bugs-by
+                                              sort-help-by
+                                              sort-patches-by]))
+                      "date")
+              #(:date %) #(count (:refs %))))
+   reverse
+   (filter #(re-find (re-pattern (str "(?i)" (or (not-empty s) ""))) (:summary %)))
+   (map #(assoc-in % [:link] (format (:mail-url-format config/woof) (:id %))))
+   (map #(assoc-in % [:refs-cnt] (count (:refs %))))))
 
 (def html-defaults
   {:title            (:title config/woof)
+   :project-name     (:project-name config/woof)
+   :project-url      (:project-url config/woof)
    :updates-feed     (string/replace
                       (:base-url config/woof)
                       #"([^/])/*$" "$1/feed/updates")
-   ;; FIXME: still needed?
-   ;; :project-url      (:project-url config/woof)
-   ;; :project-name     (:project-name config/woof)
    :contributing-url (:contributing-url config/woof)
    :contributing-cta (:contributing-cta config/woof)})
 
 (defn get-homepage [{:keys [query-params]}]
   {:status  200
    :headers {"Content-Type" "text/html"}
-   :body    (html/render-file
-             (io/resource (str "html/" (:theme config/woof) "/index.html"))
-             (merge html-defaults
-                    {:helps    (get-db-data (apply core/get-pending-help [@core/db])
-                                            (get query-params "s")
-                                            (get query-params "sort-help-by"))
-                     :bugs     (get-db-data (apply core/get-unfixed-bugs [@core/db])
-                                            (get query-params "s")
-                                            (get query-params "sort-bugs-by"))
-                     :patches  (get-db-data (apply core/get-unapplied-patches [@core/db])
-                                            (get query-params "s")
-                                            (get query-params "sort-patches-by"))
-                     :releases (get-db-data (apply core/get-releases [@core/db])
-                                            (get query-params "s") [])
-                     :changes  (get-db-data (apply core/get-changes [@core/db])
-                                            (get query-params "s") [])}))})
+   :body
+   (html/render-file
+    (io/resource (str "html/" (:theme config/woof) "/index.html"))
+    (merge html-defaults
+           {:helps
+            (db-filter {:db           (core/get-pending-help-requests)
+                        :s            (get query-params "s")
+                        :sort-help-by (get query-params "sort-help-by")})
+            :bugs
+            (db-filter {:db           (core/get-unfixed-bugs)
+                        :s            (get query-params "s")
+                        :sort-bugs-by (get query-params "sort-bugs-by")                                       })
+            :patches
+            (db-filter {:db              (core/get-unapplied-patches)
+                        :s               (get query-params "s")
+                        :sort-patches-by (get query-params "sort-patches-by")})
+            :releases
+            (db-filter {:db (core/get-releases)
+                        :s  (get query-params "s")})
+            :changes
+            (db-filter {:db (core/get-changes)
+                        :s  (get query-params "s")})}))})
 
 (defn get-data-updates [_] (get-data :updates))
 (defn get-data-bugs [_] (get-data :bugs))
@@ -87,7 +89,7 @@
    (ring/router
     [["/" {:get (fn [params] (get-homepage params))}]
      ["/howto"
-      {:get (fn [params]
+      {:get (fn [_]
               {:status  200
                :headers {"Content-Type" "text/html"}
                :body    (html/render-file
