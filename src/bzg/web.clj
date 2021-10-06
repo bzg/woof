@@ -11,7 +11,6 @@
             [reitit.ring.middleware.parameters :as parameters]
             [ring.middleware.cors :refer [wrap-cors]]
             [mount.core :as mount]
-            [clojure.string :as string]
             [clojure.edn :as edn]
             [tea-time.core :as tt]
             [selmer.parser :as html]
