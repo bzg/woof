@@ -22,7 +22,7 @@
 (defn- get-data [what]
   {:status 200
    :body   (condp = what
-             :updates  identity
+             :updates  (core/get-db)
              :bugs     (core/get-bugs)
              :patches  (core/get-patches)
              :helps    (core/get-help-requests)
