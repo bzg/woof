@@ -65,9 +65,9 @@
        (map first)
        (apply set/union)))
 
-(defn- get-logs []
-  (->> (d/q '[:find ?logs :where [?logs :type "log"]] db)
-       (map first)))
+;; (defn- get-logs []
+;;   (->> (d/q '[:find ?logs :where [?logs :type "log"]] db)
+;;        (map first)))
 
 (defn get-from [from]
   (:address (first from)))

@@ -1,3 +1,8 @@
+<div class="container">
+
+
+# What is Woof! and how to use it?
+
 Woof! monitors updates sent to a mailing list.
 
 Plug Woof! to a mailbox subscribed to a mailing list, and Woof! will
@@ -167,4 +172,6 @@ instead of doing Z, as expected.` as the summary for this bug.
 
 -   `confirmed`, `true`, `t`
 -   `canceled`, `cancel`, `closed`, `close`, `done`, `fixed`, `nil`.
+
+</div>
 

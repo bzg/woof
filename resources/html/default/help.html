@@ -1,43 +1,52 @@
-<section class="section" style="padding: 1.5rem 1.0rem">
-  <div class="container">
-    <h1 class="title" id="help">
-      <span>
-	<a href="/#" title="Back to top">ꜛ</a>Help requests
-	<a class="tag is-info is-light" href="/feed/help">RSS</a>
-	<a class="tag is-success is-light" href="/data/help">JSON</a>
-      </span>
-    </h1>
-    <div class="table-container">
-      <table class="table is-hoverable is-fullwidth is-striped">
-	<thead>
-	  <tr>
-	    <th>Summary</th>
-	    <th width="15%">
-	      <a href="/?sort-help-by=date#help" title="Sort help requests by date">Date</a>
-	    </th>
-	    <th width="5%">
-	      <a href="/?sort-help-by=refs#help" title="Sort help requests by number of references">Refs</a>
-	    </th>
-	  </tr>
-	</thead>
-	<tbody>
-	  {% for help in helps %}
-	  <tr>
-	    <td>
-	      <p>
-		<a href="{{help.link}}" target="_blank" title="Visit email sent by {{help.from}} on {{help.date}}">{{help.summary}}</a>
-	      </p>
-	    </td>
-	    <td>
-	      <p>{{help.date|date:shortDate}}</p>
-	    </td>
-	    <td>
-	      <p>{{help.refs-cnt}}</p>
-	    </td>
-	  </tr>
-	  {% endfor %}
-	</tbody>
-      </table>
+<!DOCTYPE html>
+<html lang="en" class="has-navbar-fixed-top">
+  {% include "html/default/head.html" %}
+  <body>
+    {% include "html/default/nav.html" with action-path="/help" %}
+    <div class="container">
+      <section class="section" style="padding: 1.5rem 1.0rem">
+	<div class="container">
+	  <h1 class="title" id="help">
+	    <span>
+	      Pending help requests ({{helps|count}})
+	      <a class="tag is-info is-light" href="/help.rss">RSS</a>
+	      <a class="tag is-success is-light" href="/help.json">JSON</a>
+	    </span>
+	  </h1>
+	  <div class="table-container">
+	    <table class="table is-hoverable is-fullwidth is-striped">
+	      <thead>
+		<tr>
+		  <th>Summary</th>
+		  <th width="15%">
+		    <a href="?sorting-by=date" title="Sort help requests by date">Date</a>
+		  </th>
+		  <th width="5%">
+		    <a href="?sorting-by=refs" title="Sort help requests by number of references">Refs</a>
+		  </th>
+		</tr>
+	      </thead>
+	      <tbody>
+		{% for help in helps %}
+		<tr>
+		  <td>
+		    <p>
+		      <a href="{{help.link}}" target="_blank" title="Visit email sent by {{help.from}} on {{help.date}}">{{help.summary}}</a>
+		    </p>
+		  </td>
+		  <td>
+		    <p>{{help.date|date:shortDate}}</p>
+		  </td>
+		  <td>
+		    <p>{{help.refs-cnt}}</p>
+		  </td>
+		</tr>
+		{% endfor %}
+	      </tbody>
+	    </table>
+	  </div>
+	</div>
+      </section>
     </div>
-  </div>
-</section>
+  </body>
+</html>

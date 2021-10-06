@@ -1,20 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="has-navbar-fixed-top">
   {% include "html/default/head.html" %}
   <body>
-    {% include "html/default/hero.html" %}
+    {% include "html/default/nav.html" with action-path="/" %}
     <div class="container">
       {% if howto %}
       {% safe %}
       <div class="content">{{howto}}</div>
       {% endsafe %}
-      {% else %}      {% include "html/default/changes.html" %}
-      {% include "html/default/help.html" %}
-      {% include "html/default/bugs.html" %}
-      {% include "html/default/patches.html" %}
-      {% include "html/default/releases.html" %}
+      {% else %}
+      <section class="section" style="padding: 1.5rem 1.0rem">
+	<div class="container">
+	  <h1 class="title" id="changes">
+	    <span>
+	      Upcoming changes
+	      <a class="tag is-info is-light" href="/changes.rss">RSS</a>
+	      <a class="tag is-success is-light" href="/changes.json">JSON</a>
+	    </span>
+	  </h1>
+	  <div class="content">
+	    {% for change in changes %}
+	    <p>
+	      <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.summary}}</a>
+	    </p>
+	    {% endfor %}
+	  </div>
+	</div>
+      </section>
+      <section class="section" style="padding: 1.5rem 1.0rem">
+	<div class="container">
+	  <h1 class="title" id="releases">
+	    <span>
+	      Latest releases
+	      <a class="tag is-info is-light" href="/releases.rss">RSS</a>
+	      <a class="tag is-success is-light" href="/releases.json">JSON</a>
+	    </span>
+	  </h1>
+	  <div class="content">
+	    {% for release in releases %}
+	    <p>
+	      <a href="{{release.link}}" target="_blank" title="Visit email sent by {{release.from}} on {{release.date}}">{{release.summary}}</a>
+	    </p>
+	    {% endfor %}
+	  </div>
+	</div>
+      </section>
       {% endif %}
     </div>
-    {% include "html/default/footer.html" %}
   </body>
 </html>

@@ -1,0 +1,32 @@
+<nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a class="navbar-item" href="/">🐕</a>
+  </div>
+  
+  <div id="navbarBasicExample" class="navbar-menu">
+    <div class="navbar-start">
+      <a class="navbar-item" href="/">Home</a>
+      <a class="navbar-item" href="/bugs">Bugs</a>
+      <a class="navbar-item" href="/patches">Patches</a>
+      <a class="navbar-item" href="/help">Help</a>
+      <a class="navbar-item" href="/howto">Howto</a>
+      <a class="navbar-item" href="{{project-url}}">{{project-name}}</a>
+      <a class="navbar-item" href="{{contribute-url}}">{{contribute-cta}}</a>
+      <a class="navbar-item" href="{{updates-feed}}">RSS</a>
+    </div>
+    <div class="navbar-end">
+      <div class="navbar-item">
+	<div class="level">
+	  <form action="{{action-path}}" class="level-item">
+	    <input class="input" name="s" placeHolder="Leave empty to remove filters" type="text">
+	    <button class="button is-light" type="submit">Filter</button>
+	  </form>
+	  <form action="{{action-path}}" class="level-item">
+	    <input name="s" type="hidden" value="">
+	    <button class="button is-light" type="submit">❌</button>
+	  </form>
+	</div>
+      </div>
+    </div>
+  </div>
+</nav>
