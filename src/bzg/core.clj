@@ -90,8 +90,11 @@
 (defn send-email
   "Send an email."
   [{:keys [msg body]}]
-  (let  [{:keys [id from subject]} msg
-         op                        (get-from from)]
+  (let  [{:keys [id from subject]}
+         msg
+         refs (:References (walk/keywordize-keys
+                            (apply conj (:headers msg))))
+         op   (get-from from)]
     (try
       (when-let
           [res (postal/send-message
@@ -103,7 +106,8 @@
                 {:from        (:smtp-login config/woof)
                  :message-id  #(postal.support/message-id (:base-url config/woof))
                  :reply-to    (:admin config/woof)
-                 :In-Reply-To id
+                 :references  (str refs " " id)
+                 :in-reply-to id
                  :to          op
                  :subject     (str "Re: " (get-subject subject))
                  :body        (str body "\n\n"
