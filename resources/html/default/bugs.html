@@ -2,8 +2,9 @@
 <html lang="en" class="has-navbar-fixed-top">
   {% include "html/default/head.html" %}
   <body>
-    {% include "html/default/nav.html" with action-path="/bugs" %}
+    {% include "html/default/hero.html"%}
     <div class="container">
+      {% include "html/default/tabs.html" with active="bugs" action-path="/bugs" %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  <h1 class="title" id="bugs">

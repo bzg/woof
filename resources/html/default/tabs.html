@@ -1,0 +1,18 @@
+<div class="tabs">
+  <ul>
+    <li {% ifequal active "home" %}class="is-active"{% endifequal %}><a href="/">Home</a></li>
+    <li {% ifequal active "bugs" %}class="is-active"{% endifequal %}><a href="/bugs">Bugs</a></li>
+    <li {% ifequal active "patches" %}class="is-active"{% endifequal %}><a href="/patches">Patches</a></li>
+    <li {% ifequal active "helps" %}class="is-active"{% endifequal %}><a href="/help">Help Requests</a></li>
+  </ul>
+  <div class="level">
+    <form action="{{action-path}}" class="level-item">
+      <input class="input" name="s" placeHolder="Leave empty to remove filters" type="text">
+      <button class="button is-success is-light" type="submit">Filter</button>
+    </form>
+    <form action="{{action-path}}">
+      <input name="s" type="hidden" value="">
+      <button class="button is-danger is-light" type="submit">❌</button>
+    </form>
+  </div>
+</div>

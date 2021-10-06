@@ -44,9 +44,6 @@
   {:title          (:title config/woof)
    :project-name   (:project-name config/woof)
    :project-url    (:project-url config/woof)
-   :updates-feed   (string/replace
-                    (:base-url config/woof)
-                    #"([^/])/*$" "$1/feed/updates")
    :contribute-url (:contribute-url config/woof)
    :contribute-cta (:contribute-cta config/woof)})
 
