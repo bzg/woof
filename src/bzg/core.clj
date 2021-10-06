@@ -19,20 +19,34 @@
 
 ;; Setup logging
 
+(defn dl-appender []
+  {:enabled?   true
+   :async?     false
+   :min-level  :info
+   :rate-limit nil
+   :output-fn  nil
+   :fn
+   (fn [data]
+     (let [{:keys [msg_]} data]
+       (d/transact! conn [{:type "log"
+                           :msg  (force msg_)
+                           :date (java.util.Date.)}])))})
+
 (timbre/set-config!
  {:level     :debug
   :output-fn (partial timbre/default-output-fn {:stacktrace-fonts {}})
   :appenders
-  {:println (appenders/println-appender {:stream :auto})
-   :spit    (appenders/spit-appender {:fname (:log-file config/woof)})
-   :postal  (merge (postal-appender/postal-appender ;; :min-level :warn
-                    ^{:host (:smtp-host config/woof)
-                      :user (:smtp-login config/woof)
-                      :pass (:smtp-password config/woof)
-                      :tls  true}
-                    {:from (:smtp-login config/woof)
-                     :to   (:admin config/woof)})
-                   {:min-level :warn})}})
+  {:dl-appender (dl-appender)
+   :println     (appenders/println-appender {:stream :auto})
+   :spit        (appenders/spit-appender {:fname (:log-file config/woof)})
+   :postal      (merge (postal-appender/postal-appender ;; :min-level :warn
+                        ^{:host (:smtp-host config/woof)
+                          :user (:smtp-login config/woof)
+                          :pass (:smtp-password config/woof)
+                          :tls  true}
+                        {:from (:smtp-login config/woof)
+                         :to   (:admin config/woof)})
+                       {:min-level :warn})}})
 
 ;; Set up the database
 
@@ -48,6 +62,10 @@
   (->> (d/q '[:find ?refs :where [_ :refs ?refs]] db)
        (map first)
        (apply set/union)))
+
+(defn- get-logs []
+  (->> (d/q '[:find ?logs :where [?logs :type "log"]] db)
+       (map first)))
 
 ;;; Utility functions
 
