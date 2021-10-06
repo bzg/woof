@@ -65,7 +65,7 @@
            :from      (list {:address (:user config/woof)})
            :date-sent #inst "2020-05-27T00:13:11.037044Z"
            :headers   [{"X-Original-To" (:mailing-list config/woof)}
-                       {"X-Woof-Change" "commithash 8.3"}]}
+                       {"X-Woof-Change" "8.3"}]}
    :msg4  {:id        "id4"
            :subject   "Release 8.3"
            :from      (list {:address (:admin config/woof)})
@@ -169,10 +169,6 @@
       ;; Ignore a second release with the same version
       (core/process-incoming-message (:msg4 test-data))
       (is (= 1 (count (core/get-releases @core/db))))
-      (reset! core/db {}))
-    (testing "Add a change with a commit"
-      (core/process-incoming-message (:msg3 test-data))
-      (is (= 1 (count (core/get-unreleased-changes @core/db))))
       (reset! core/db {}))
     (testing "Add a change without a commit"
       (core/process-incoming-message (:msg10 test-data))

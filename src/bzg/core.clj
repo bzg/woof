@@ -230,9 +230,7 @@
 ;;; Core functions to update the db
 
 (defn- add-change [{:keys [id from subject date-sent] :as msg} refs X-Woof-Change]
-  (let [c-specs   (string/split X-Woof-Change #"\s")
-        commit    (when (< 1 (count c-specs)) (first c-specs))
-        versions  (into #{} (if commit (next c-specs) (first c-specs)))
+  (let [versions  (into #{} (string/split X-Woof-Change #"\s"))
         released  (get-released-versions)
         true-from (get-from from)
         true-id   (get-id id)]
@@ -240,10 +238,9 @@
       (timbre/error
        (format "%s tried to add a change against a past release, ignoring %s"
                true-from true-id))
-      (do (d/transact! conn [{:msgid    true-id
+      (do (d/transact! conn [{:id       true-id
                               :type     "change"
                               :from     true-from
-                              :commit   commit
                               :refs     (into #{} (conj refs true-id))
                               :versions versions
                               :summary  (get-subject subject)

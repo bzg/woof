@@ -104,29 +104,21 @@ will cancel the help request from within this thread.
 ** Announce a change
 
 : From: xxx@xxx.xx
-: X-Woof-Change: 1234567879 8.4
-: ...
-
-will declare commit =1234567879= as an upcoming change for the /future/
-release version =8.4=.  When the =8.4= release is done, the change will
-not be advertized anymore.
-
-: From: xxx@xxx.xx
-: X-Woof-Change: 1234567879 8.4.2 8.5
-: ...
-
-will declare commit =1234567879= as an upcoming change for the /future/
-release versions =8.4= /or/ =8.5=.  If, for any reason, version =8.4.2= is not
-released and version =8.5= is released instead, the change will not be
-advertized anymore.
-
-You can also omit the commit:
-
-: From: xxx@xxx.xx
 : X-Woof-Change: 8.4
 : ...
 
-Note that in this case, only one version is allowed.
+will declare an upcoming change for the /future/ release version =8.4=.
+When the =8.4= version is released, the change will not be advertized
+anymore.
+
+: From: xxx@xxx.xx
+: X-Woof-Change: 8.4.2 8.5 8.6
+: ...
+
+will declare an upcoming change for the /future/ release versions
+=8.4.2=, =8.5= or =8.6=.  If, for any reason, version =8.4.2= is not
+released and version =8.5= or =8.6= is released instead, the change
+will not be advertized anymore.
 
 ** Cancel a change announcement
 
@@ -157,7 +149,10 @@ instead of doing Z, as expected.~ as the summary for this bug.
 
 ** Synonyms
 
-- =confirmed=, =true=, =t=
-- =canceled=, =cancel=, =closed=, =close=, =done=, =fixed=, =nil=.
+We encourage you to use =t= and =nil= in the Woof! header.  However,
+all headers support these synonymes:
+
+- =t=, =confirmed=, =true=
+- =nil=, =canceled=, =cancel=, =closed=, =close=, =done=, =fixed=.
 
 #+html: </div>
