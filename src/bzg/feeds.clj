@@ -3,11 +3,16 @@
             [bzg.config :as config]
             [bzg.core :as core]
             [clojure.string :as string]
-            [hiccup.core :as h]))
+            [selmer.parser :as html]
+            [clojure.java.io :as io]))
 
 (defn feed-description [msg what]
-  (let [cdata "<![CDATA[ %s ]]>"]
-    (format cdata (h/html (core/format-link-fn msg what)))))
+  (format "<![CDATA[ %s ]]>"
+          (html/render-file
+           (io/resource "html/link.html")
+           (assoc msg
+                  :link (format (:mail-url-format config/woof) (:id msg))
+                  :what what))))
 
 (defn feed-item [{:keys [id summary date from] :as msg} what]
   (let [link (format (:mail-url-format config/woof) id)]
@@ -55,11 +60,7 @@
                  :release (core/get-releases)))))))
 
 (defn feed-bugs [_] (make-feed {:path "/feed/bugs" :what :bug}))
-
 (defn feed-patches [_] (make-feed {:path "/feed/patches" :what :patch}))
-
 (defn feed-help [_] (make-feed {:path "/feed/help" :what :help}))
-
 (defn feed-changes [_] (make-feed {:path "/feed/changes" :what :change}))
-
 (defn feed-releases [_] (make-feed {:path "/feed/releases" :what :release}))

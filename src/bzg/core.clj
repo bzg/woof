@@ -67,35 +67,6 @@
       (string/trim)))
 
 ;; FIXME: only used in feeds
-(defn format-link-fn
-  [{:keys [from summary date id commit]} what]
-  (let [shortcommit  (cond (and (string? commit)
-                                (< (count commit) 8))
-                           commit
-                           (string? commit) (subs commit 0 8)
-                           :else            nil)
-        mail-title   (format "Visit email sent by %s on %s" from date)
-        commit-title (when shortcommit
-                       (format "Visit commit %s from %s" shortcommit from))]
-    (if (= what :change)
-      [:p
-       [:a {:href   (format (:mail-url-format config/woof) id)
-            :title  mail-title
-            :target "_blank"}
-        summary]
-       (when shortcommit
-         [:span
-          " ("
-          [:a {:href   (format (:commit-url-format config/woof) commit)
-               :title  commit-title
-               :target "_blank"}
-           shortcommit] ")"])]
-      ;; Otherwise use the default for :patch, :bug, :help, or :release:
-      [:p [:a {:href   (format (:mail-url-format config/woof) id)
-               :title  mail-title
-               :target "_blank"}
-           summary]])))
-
 ;; Email functions
 
 (defn send-email
