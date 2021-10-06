@@ -24,12 +24,12 @@
 	  {% for bug in bugs %}
 	  <tr>
 	    <td>
-	      <p><a href="{{bug.data.link}}" target="_blank" title="Visit email sent by {{bug.data.from}} on {{bug.data.date}}">
-		  {{bug.data.summary}}
+	      <p><a href="{{bug.link}}" target="_blank" title="Visit email sent by {{bug.from}} on {{bug.date}}">
+		  {{bug.summary}}
 	      </a></p>
 	    </td>
-	    <td><p>{{bug.data.date|date:shortDate}}</p></td>
-	    <td><p>{{bug.data.refs-cnt}}</p></td>
+	    <td><p>{{bug.date|date:shortDate}}</p></td>
+	    <td><p>{{bug.refs-cnt}}</p></td>
 	  </tr>
 	  {% endfor %}
 	</tbody>

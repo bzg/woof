@@ -25,14 +25,14 @@
 	  <tr>
 	    <td>
 	      <p>
-		<a href="{{help.data.link}}" target="_blank" title="Visit email sent by {{help.data.from}} on {{help.data.date}}">{{help.data.summary}}</a>
+		<a href="{{help.link}}" target="_blank" title="Visit email sent by {{help.from}} on {{help.date}}">{{help.summary}}</a>
 	      </p>
 	    </td>
 	    <td>
-	      <p>{{help.data.date|date:shortDate}}</p>
+	      <p>{{help.date|date:shortDate}}</p>
 	    </td>
 	    <td>
-	      <p>{{help.data.refs-cnt}}</p>
+	      <p>{{help.refs-cnt}}</p>
 	    </td>
 	  </tr>
 	  {% endfor %}

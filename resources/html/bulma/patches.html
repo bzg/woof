@@ -21,11 +21,11 @@
 	  {% for patch in patches %}
 	  <tr>
 	    <td>
-	      <p><a href="{{patch.data.link}}" target="_blank" title="Visit email sent by {{patch.data.from}} on {{patch.data.date}}">{{patch.data.summary}}
+	      <p><a href="{{patch.link}}" target="_blank" title="Visit email sent by {{patch.from}} on {{patch.date}}">{{patch.summary}}
 	      </a></p>
 	    </td>
-	    <td><p>{{patch.data.date|date:shortDate}}</p></td>
-	    <td><p>{{patch.data.refs-cnt}}</p></td>
+	    <td><p>{{patch.date|date:shortDate}}</p></td>
+	    <td><p>{{patch.refs-cnt}}</p></td>
 	  </tr>
 	  {% endfor %}
 	</tbody>

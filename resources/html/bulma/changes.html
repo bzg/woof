@@ -10,7 +10,7 @@
     <div class="content">
       {% for change in changes %}
       <p>
-	<a href="{{change.data.link}}" target="_blank" title="Visit email sent by {{change.data.from}} on {{change.data.date}}">{{change.data.summary}}</a>
+	<a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.summary}}</a>
       </p>
       {% endfor %}
     </div>

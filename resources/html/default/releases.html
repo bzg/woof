@@ -10,7 +10,7 @@
     <div class="content">
       {% for release in releases %}
       <p>
-	<a href="{{release.data.link}}" target="_blank" title="Visit email sent by {{release.data.from}} on {{release.data.date}}">{{release.data.summary}}</a>
+	<a href="{{release.link}}" target="_blank" title="Visit email sent by {{release.from}} on {{release.date}}">{{release.summary}}</a>
       </p>
       {% endfor %}
     </div>
