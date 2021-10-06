@@ -14,6 +14,7 @@
                metosin/reitit-middleware {:mvn/version "0.5.15"}
                metosin/jsonista          {:mvn/version "0.3.4"}
                metosin/muuntaja          {:mvn/version "0.6.8"}
+               ring/ring-devel           {:mvn/version "1.9.4"}
                ring-cors/ring-cors       {:mvn/version "0.1.13"}
                mount/mount               {:mvn/version "0.1.16"}
                tea-time/tea-time         {:mvn/version "1.0.1"}

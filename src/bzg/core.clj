@@ -17,6 +17,12 @@
             [datalevin.core :as d])
   (:import [javax.mail.internet MimeUtility]))
 
+;; Set up the database
+
+(def conn (d/get-conn (:db-dir config/woof)))
+
+(def db (d/db conn))
+
 ;; Setup logging
 
 (defn dl-appender []
@@ -48,11 +54,7 @@
                          :to   (:admin config/woof)})
                        {:min-level :warn})}})
 
-;; Set up the database
-
-(def conn (d/get-conn (:db-dir config/woof)))
-
-(def db (d/db conn))
+;;; Utility functions
 
 (defn get-db []
   (->> (map first (d/q `[:find ?e :where [?e :type ?a]] db))
@@ -67,11 +69,6 @@
   (->> (d/q '[:find ?logs :where [?logs :type "log"]] db)
        (map first)))
 
-;;; Utility functions
-
-(defn- mime-decode [^String s]
-  (when (string? s) (MimeUtility/decodeText s)))
-
 (defn get-from [from]
   (:address (first from)))
 
@@ -83,6 +80,9 @@
       (string/replace #"^(R[Ee] ?: ?)+" "")
       (string/replace #" *\([^)]+\)" "")
       (string/trim)))
+
+(defn- mime-decode [^String s]
+  (when (string? s) (MimeUtility/decodeText s)))
 
 ;; FIXME: only used in feeds
 ;; Email functions
