@@ -1,9 +1,17 @@
 <div class="tabs">
   <ul>
-    <li {% ifequal active "home" %}class="is-active"{% endifequal %}><a href="/">Changes</a></li>
-    <li {% ifequal active "helps" %}class="is-active"{% endifequal %}><a href="/help">Help Requests</a></li>
-    <li {% ifequal active "bugs" %}class="is-active"{% endifequal %}><a href="/bugs">Bugs</a></li>
-    <li {% ifequal active "patches" %}class="is-active"{% endifequal %}><a href="/patches">Patches</a></li>
+    <li {% ifequal active "home" %}class="is-active"{% endifequal %}>
+      <a title="Important changes to be aware of" href="/">Changes</a>
+    </li>
+    <li {% ifequal active "helps" %}class="is-active"{% endifequal %}>
+      <a title="Where contributors ask for help" href="/help">Help Requests</a>
+    </li>
+    <li {% ifequal active "bugs" %}class="is-active"{% endifequal %}>
+      <a title="Confirmed bugs" href="/bugs">Bugs</a>
+    </li>
+    <li {% ifequal active "patches" %}class="is-active"{% endifequal %}>
+      <a title="Patches" href="/patches">Patches</a>
+    </li>
   </ul>
   <div class="level">
     <form action="{{action-path}}" class="level-item">
