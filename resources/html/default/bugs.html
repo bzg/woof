@@ -22,7 +22,7 @@
 	    <table class="table is-hoverable is-fullwidth is-striped">
 	      <thead>
 		<tr>
-		  <th>Summary</th>
+		  <th>Subject</th>
 		  <th width="15%">
 		    <a href="?sorting-by=date" title="Sort bugs by date">Date</a>
 		  </th>
@@ -40,7 +40,7 @@
 		    </a></p>
 		  </td>
 		  <td><p>{{bug.date|date:shortDate}}</p></td>
-		  <td><p>{{bug.refs-cnt}}</p></td>
+		  <td><p>{{bug.backrefs}}</p></td>
 		</tr>
 		{% endfor %}
 	      </tbody>
@@ -62,7 +62,7 @@
 	    <table class="table is-hoverable is-fullwidth is-striped">
 	      <thead>
 		<tr>
-		  <th>Summary</th>
+		  <th>Subject</th>
 		  <th width="15%">
 		    <a href="?sorting-by=date" title="Sort bugs by date">Date</a>
 		  </th>
@@ -80,7 +80,7 @@
 		    </a></p>
 		  </td>
 		  <td><p>{{bug.date|date:shortDate}}</p></td>
-		  <td><p>{{bug.refs-cnt}}</p></td>
+		  <td><p>{{bug.backrefs}}</p></td>
 		</tr>
 		{% endfor %}
 	      </tbody>

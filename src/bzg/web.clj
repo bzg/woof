@@ -22,13 +22,10 @@
 (defn- db-format [{:keys [db s sorting-by]}]
   (->>
    db
-   (sort-by (if (= sorting-by "date")
-              #(:date %)
-              #(count (:references %))))
+   (sort-by (if (= sorting-by "date") #(:date %) #(:backrefs %)))
    reverse
    (filter #(re-find (re-pattern (str "(?i)" (or (not-empty s) ""))) (:subject %)))
-   (map #(assoc-in % [:link] (format (:mail-url-format config/woof) (:message-id %))))
-   (map #(assoc-in % [:refs-cnt] (count (:references %))))))
+   (map #(assoc-in % [:link] (format (:mail-url-format config/woof) (:message-id %))))))
 
 (def html-defaults
   {:title          (:title config/woof)

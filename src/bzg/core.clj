@@ -163,7 +163,8 @@
                         :subject    subject
                         :references refs
                         :from       (get-from from)
-                        :date       (java.util.Date.)}]) 
+                        :date       (java.util.Date.)
+                        :backrefs   1}])
     (d/touch (d/entity db [:message-id id]))))
 
 (defn update-person [{:keys [email role aliases]}]
@@ -181,6 +182,12 @@
    :request #{"handled" "canceled" "done"}
    :change  #{"canceled" "released"}
    :release #{"canceled"}})
+
+(defn is-in-a-known-thread? [references]
+  (doseq [i (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db))
+                    references)]
+    (let [backrefs (:backrefs (d/entity db [:message-id i]))]
+      (d/transact! conn [{:message-id i :backrefs (inc backrefs)}]))))
 
 (defn is-report-update? [report-type body-woof-lines references]
   ;; Is there a known action (e.g. "!canceled") for this report type
@@ -348,7 +355,7 @@
                      (->> (string/split References #"\s")
                           (keep not-empty)
                           (map get-id)))
-        from       (get-from (:from from))]
+        from       (get-from (:from msg))]
 
     ;; Only process emails if they are sent directly from the release
     ;; manager or from the mailing list.
@@ -362,6 +369,9 @@
 
       ;; Possibly add a new person
       (update-person {:email from})
+
+      ;; Possibly increment backrefs count in known emails
+      (is-in-a-known-thread? references)
       
       ;; Detect a new bug/patch/request
       (cond

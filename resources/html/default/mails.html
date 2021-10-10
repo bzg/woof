@@ -22,8 +22,10 @@
 	    <table class="table is-hoverable is-fullwidth is-striped">
 	      <thead>
 		<tr>
-		  <th>Summary</th>
+		  <th>Subject</th>
 		  <th width="15%"><a href="?sorting-by=date" title="Sort mails by date">Date</a></th>
+		  <th width="5%">
+		    <a href="?sorting-by=refs" title="Sort mails by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>
@@ -35,6 +37,7 @@
 		    </a></p>
 		  </td>
 		  <td><p>{{mail.date|date:shortDate}}</p></td>
+		  <td><p>{{mail.backrefs}}</p></td>
 		</tr>
 		{% endfor %}
 	      </tbody>

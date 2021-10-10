@@ -22,7 +22,7 @@
 	    <table class="table is-hoverable is-fullwidth is-striped">
 	      <thead>
 		<tr>
-		  <th>Summary</th>
+		  <th>Subject</th>
 		  <th width="15%">
 		    <a href="?sorting-by=date" title="Sort help requests by date">Date</a>
 		  </th>
@@ -43,7 +43,7 @@
 		    <p>{{request.date|date:shortDate}}</p>
 		  </td>
 		  <td>
-		    <p>{{request.refs-cnt}}</p>
+		    <p>{{request.backrefs}}</p>
 		  </td>
 		</tr>
 		{% endfor %}
@@ -66,7 +66,7 @@
 	    <table class="table is-hoverable is-fullwidth is-striped">
 	      <thead>
 		<tr>
-		  <th>Summary</th>
+		  <th>Subject</th>
 		  <th width="15%">
 		    <a href="?sorting-by=date" title="Sort help requests by date">Date</a>
 		  </th>
@@ -87,7 +87,7 @@
 		    <p>{{request.date|date:shortDate}}</p>
 		  </td>
 		  <td>
-		    <p>{{request.refs-cnt}}</p>
+		    <p>{{request.backrefs}}</p>
 		  </td>
 		</tr>
 		{% endfor %}
