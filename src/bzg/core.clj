@@ -3,7 +3,6 @@
             [clojure-mail.message :as message]
             [clojure-mail.events :as events]
             [clojure.string :as string]
-            [clojure.set :as set]
             [clojure.walk :as walk]
             [mount.core :as mount]
             [bzg.config :as config]
@@ -14,60 +13,35 @@
             [taoensso.timbre :as timbre]
             [taoensso.timbre.appenders.core :as appenders]
             [taoensso.timbre.appenders (postal :as postal-appender)]
-            [datalevin.core :as d])
-  (:import [javax.mail.internet MimeUtility]))
+            [datalevin.core :as d]))
 
 ;; Set up the database
 
-(def conn (d/get-conn (:db-dir config/woof)))
+(def schema {:log        {:db/valueType :db.type/instant
+                          :db/unique    :db.unique/identity}
+             :message-id {:db/valueType :db.type/string
+                          :db/unique    :db.unique/identity}
+             :email      {:db/valueType :db.type/string
+                          :db/unique    :db.unique/identity}
+             :references {:db/cardinality :db.cardinality/many}
+             :aliases    {:db/cardinality :db.cardinality/many}
+             :versions   {:db/cardinality :db.cardinality/many}
+             :bug        {:db/valueType :db.type/ref
+                          :db/unique    :db.unique/identity}
+             :patch      {:db/valueType :db.type/ref
+                          :db/unique    :db.unique/identity}
+             :request    {:db/valueType :db.type/ref
+                          :db/unique    :db.unique/identity}
+             :change     {:db/valueType :db.type/ref
+                          :db/unique    :db.unique/identity}
+             :release    {:db/valueType :db.type/ref
+                          :db/unique    :db.unique/identity}})
+
+(def conn (d/get-conn (:db-dir config/woof) schema))
 
 (def db (d/db conn))
 
-;; Setup logging
-
-(defn dl-appender []
-  {:enabled?   true
-   :async?     false
-   :min-level  :info
-   :rate-limit nil
-   :output-fn  nil
-   :fn
-   (fn [data]
-     (let [{:keys [msg_]} data]
-       (d/transact! conn [{:type "log"
-                           :msg  (force msg_)
-                           :date (java.util.Date.)}])))})
-
-(timbre/set-config!
- {:level     :debug
-  :output-fn (partial timbre/default-output-fn {:stacktrace-fonts {}})
-  :appenders
-  {:dl-appender (dl-appender)
-   :println     (appenders/println-appender {:stream :auto})
-   :spit        (appenders/spit-appender {:fname (:log-file config/woof)})
-   :postal      (merge (postal-appender/postal-appender ;; :min-level :warn
-                        ^{:host (:smtp-host config/woof)
-                          :user (:smtp-login config/woof)
-                          :pass (:smtp-password config/woof)
-                          :tls  true}
-                        {:from (:smtp-login config/woof)
-                         :to   (:admin config/woof)})
-                       {:min-level :warn})}})
-
-;;; Utility functions
-
-(defn get-db []
-  (->> (map first (d/q `[:find ?e :where [?e :type ?a]] db))
-       (map #(d/pull db '[*] %))))
-
-(defn- all-refs []
-  (->> (d/q '[:find ?refs :where [_ :refs ?refs]] db)
-       (map first)
-       (apply set/union)))
-
-;; (defn- get-logs []
-;;   (->> (d/q '[:find ?logs :where [?logs :type "log"]] db)
-;;        (map first)))
+;; Small utility functions
 
 (defn get-from [from]
   (:address (first from)))
@@ -81,11 +55,192 @@
       (string/replace #" *\([^)]+\)" "")
       (string/trim)))
 
-(defn- mime-decode [^String s]
-  (when (string? s) (MimeUtility/decodeText s)))
+(defn- get-reports [report-type]
+  (->> (d/q `[:find ?e :where [?e ~report-type ?msg-eid]] db)
+       (map first)
+       (map #(d/pull db '[*] %))
+       ;; Always remove canceled reports, we never need them
+       (remove :canceled)))
 
-;; FIXME: only used in feeds
-;; Email functions
+(defn- get-reports-msgs [report-type reports]
+  (->> (map #(d/touch (d/entity db (:db/id (report-type %)))) reports)
+       (map #(dissoc (into {} %) :db/id))))
+
+(defn get-mails []
+  (->> (d/q `[:find ?e :where [?e :message-id _]] db)
+       (map first)
+       (map #(d/pull db '[*] %))))
+
+;; FIXME: useful?
+;; (defn- get-persons []
+;;   (->> (d/q `[:find ?eid :where [?eid :email _]] db)
+;;        (map first)
+;;        (map #(d/pull db '[*] %))))
+
+(defn get-bugs [] (get-reports-msgs :bug (get-reports :bug)))
+(defn get-patches [] (get-reports-msgs :patch (get-reports :patch)))
+(defn get-requests [] (get-reports-msgs :request (get-reports :request)))
+(defn get-changes [] (get-reports-msgs :change (get-reports :change)))
+(defn get-releases [] (get-reports-msgs :release (get-reports :release)))
+
+(defn get-updates []
+  (flatten
+   (list
+    (get-bugs)
+    (get-patches)
+    (get-requests)
+    (get-changes)
+    (get-releases))))
+
+(defn get-logs []
+  (->> (d/q '[:find ?e :where [?e :log _]] db)
+       (map first)
+       (map #(d/pull db '[*] %))))
+
+(defn get-confirmed-bugs []
+  (->> (get-reports :bug)
+       (filter :confirmed)
+       (remove :fixed)
+       (get-reports-msgs :bug)))
+
+(defn get-unconfirmed-bugs []
+  (->> (get-reports :bug)
+       (remove :confirmed)
+       (remove :fixed)
+       (get-reports-msgs :bug)))
+
+(defn get-unfixed-bugs []
+  (->> (get-reports :bug)
+       (remove :fixed)
+       (get-reports-msgs :bug)))
+
+(defn get-approved-patches []
+  (->> (get-reports :patch)
+       (filter :approved)
+       (remove :applied)
+       (get-reports-msgs :patch)))
+
+(defn get-unapproved-patches []
+  (->> (get-reports :patch)
+       (remove :approved)
+       (remove :applied)
+       (get-reports-msgs :patch)))
+
+(defn get-unapplied-patches []
+  (->> (get-reports :patch)
+       (remove :applied)
+       (get-reports-msgs :patch)))
+
+(defn get-handled-requests []
+  (->> (get-reports :request)
+       (filter :handled)
+       (remove :done)
+       (get-reports-msgs :request)))
+
+(defn get-unhandled-requests []
+  (->> (get-reports :request)
+       (remove :handled)
+       (get-reports-msgs :request)))
+
+(defn get-unreleased-changes []
+  (->> (get-reports :change)
+       (remove :released)
+       (get-reports-msgs :change)))
+
+;; Core db functions to add and update entities
+
+(defn add-log [date msg]
+  (d/transact! conn [{:log date :msg msg}])
+  (d/touch (d/entity db [:log date])))
+
+(defn add-mail [{:keys [id from subject] :as msg}]
+  (let [headers     (walk/keywordize-keys (apply conj (:headers msg)))
+        id          (get-id id)
+        refs-string (:References headers)
+        refs        (if refs-string
+                      (into #{} (string/split refs-string #"\s")) #{})]
+    (d/transact! conn [{:message-id id
+                        :subject    subject
+                        :references refs
+                        :from       (get-from from)
+                        :date       (java.util.Date.)}]) 
+    (d/touch (d/entity db [:message-id id]))))
+
+(defn update-person [{:keys [email role aliases]}]
+  (let [role (or role :contributor)]
+    (d/transact! conn [{:email   email
+                        role     (java.util.Date.)
+                        :aliases (or aliases #{})}])
+    (d/touch (d/entity db [:email email]))))
+
+;; Check whether a report is an action against a known entity
+
+(def update-strings
+  {:bug     #{"confirmed" "canceled" "fixed"}
+   :patch   #{"approved" "canceled" "applied"}
+   :request #{"handled" "canceled" "done"}
+   :change  #{"canceled" "released"}
+   :release #{"canceled"}})
+
+(defn is-report-update? [report-type body-woof-lines references]
+  ;; Is there a known action (e.g. "!canceled") for this report type
+  ;; in the body of the email?
+  (when-let [action (some (report-type update-strings) body-woof-lines)]
+    ;; Is this action against a known report, and if so, which one?
+    (when-let [e (-> #(ffirst (d/q `[:find ?e
+                                     :where
+                                     [?e ~report-type ?ref]
+                                     [?ref :message-id ~%]]
+                                   db))
+                     (map references)
+                     (as-> refs (remove nil? refs))
+                     first)]
+      {:status     (keyword (string/lower-case action))
+       :report-eid (:db/id (report-type (d/touch (d/entity db e))))})))
+
+(defn is-bug-update? [body-woof-lines references]
+  (is-report-update? :bug body-woof-lines references))
+
+(defn is-patch-update? [body-woof-lines references]
+  (is-report-update? :patch body-woof-lines references))
+
+(defn is-request-update? [body-woof-lines references]
+  (is-report-update? :request body-woof-lines references))
+
+(defn is-change-update? [body-woof-lines references]
+  (is-report-update? :change body-woof-lines references))
+
+(defn is-release-update? [body-woof-lines references]
+  (is-report-update? :release body-woof-lines references))
+
+;; Setup logging
+
+(defn datalevin-appender []
+  {:enabled?   true
+   :async?     false
+   :min-level  :info
+   :rate-limit nil
+   :output-fn  nil
+   :fn
+   (fn [data] (add-log (java.util.Date.) (force (:msg_ data))))})
+
+(timbre/set-config!
+ {:level     :debug
+  :output-fn (partial timbre/default-output-fn {:stacktrace-fonts {}})
+  :appenders
+  {:datalevin-appender (datalevin-appender)
+   :println            (appenders/println-appender {:stream :auto})
+   :spit               (appenders/spit-appender {:fname (:log-file config/woof)})
+   :postal             (merge (postal-appender/postal-appender ;; :min-level :warn
+                               ^{:host (:smtp-host config/woof)
+                                 :user (:smtp-login config/woof)
+                                 :pass (:smtp-password config/woof)
+                                 :tls  true}
+                               {:from (:smtp-login config/woof)
+                                :to   (:admin config/woof)})
+                              {:min-level :warn})}})
+
+;; Email notifications
 
 (defn send-email
   "Send an email."
@@ -131,320 +286,153 @@
       (send-email e)
       (recur (async/<! mail-chan)))))
 
-;;; Handle refs
-
-(defn- update-refs [id new-refs]
-  (loop [refs new-refs
-         ref  (some (all-refs) refs)]
-    (when ref
-      (doseq [e (get-db)]
-        (when-let [rfs (:refs e)]
-          (when (rfs ref)
-            (d/transact!
-             conn [{:db/id (:db/id e)
-                    :refs  (conj rfs (get-id id))}])))))
-    (when-let [rest-refs (last (next (partition-by #{ref} refs)))]
-      (recur rest-refs
-             (some (all-refs) rest-refs)))))
-
-(defn- some-db-refs? [refs]
-  (some (all-refs) refs))
-
 ;;; Core functions to return db entries
-
-(defn get-entries [entry-type]
-  (->> (map first (d/q `[:find ?bug :where [?bug :type ~entry-type]] db))
-       (map #(d/pull db '[*] %))))
-
-(defn get-bugs [] (get-entries "bug"))
-(defn get-patches [] (get-entries "patch"))
-(defn get-help-requests [] (get-entries "help"))
-(defn get-changes [] (get-entries "change"))
-(defn get-releases [] (get-entries "release"))
-
-(defn get-unfixed-entries [entries]
-  (filter #(not (get % :fixed)) entries))
-
-(defn get-unfixed-bugs [] (get-unfixed-entries (get-bugs)))
-(defn get-unapplied-patches [] (get-unfixed-entries (get-patches)))
-(defn get-pending-help-requests [] (get-unfixed-entries (get-help-requests)))
-(defn get-unreleased-changes []
-  (filter #(and (not (get % :released))
-                (not (get % :canceled)))
-          (get-changes)))
-
-(defn get-released-versions []
-  (into #{} (map :version (get-releases))))
-
-(defn- confirmed? [{:keys [msg header what]}]
-  (let [header-confirmation
-        (and (seq header)
-             (not (re-matches (:closed config/actions-regexps)
-                              (string/trim header)))
-             (if (re-matches (:confirmed config/actions-regexps)
-                             (string/trim header))
-               true
-               (mime-decode header)))
-        body (:body (:body msg))]
-    (if (and body (what #{:bug}))
-      (or (seq (->> (map #(re-matches #"^Confirmed.*" %)
-                         (string/split-lines body))
-                    (remove nil?)))
-          header-confirmation)
-      header-confirmation)))
-
-(defn- closed? [{:keys [msg header what]}]
-  (let [header-confirmation
-        (and header
-             (re-matches (:closed config/actions-regexps)
-                         (string/trim header)))
-        body (:body (:body msg))]
-    (if (and body (what #{:patch :bug}))
-      (or (seq (->> (map #(re-matches
-                           (condp = what
-                             :patch #"^Applied.*"
-                             :bug   #"^Fixed.*")
-                           %)
-                         (string/split-lines body))
-                    (remove nil?)))
-          header-confirmation)
-      header-confirmation)))
 
 (defn- new-patch? [msg]
   (or
-   ;; Messages with a subject starting with "[PATCH" and that have no
-   ;; references are patches:
-   (and (re-matches #"(?i)^\[PATCH(?: ([0-9]+)/[0-9]+)?].*$"
-                    (:subject msg))
-        (empty? (:References (walk/keywordize-keys
-                              (apply conj (:headers msg))))))
-   ;; Also messages with a text/x-diff or text/x-patch MIME part:
+   ;; New patches with a subject starting with "[PATCH"
+   (re-matches #"(?i)^\[PATCH(?: [0-9]+/[0-9]+)?].*$" (:subject msg))
+   ;; New patches with a text/x-diff or text/x-patch MIME part
    (and (:multipart? msg)
         (not-empty
          (filter #(re-matches #"^text/x-(diff|patch).*" %)
                  (map :content-type (:body msg)))))))
 
-(defn- applying-patch? [msg refs X-Woof-Patch]
-  (and refs
-       (or (closed? {:header X-Woof-Patch :what :patch})
-           (when-let [body (:body (:body msg))]
-             (seq (remove nil? (map #(re-matches #"^Applied.*" %)
-                                    (string/split-lines body))))))))
+(defn- new-bug? [msg]
+  (re-matches #"(?i)^\[BUG].*$" (:subject msg)))
 
-;;; Core functions to update the db
+(defn- new-request? [msg]
+  (re-matches #"(?i)^\[HELP].*$" (:subject msg)))
 
-(defn- add-change [{:keys [id from subject date-sent] :as msg} refs X-Woof-Change]
-  (let [versions  (into #{} (string/split X-Woof-Change #"\s"))
-        released  (get-released-versions)
-        true-from (get-from from)
-        true-id   (get-id id)]
-    (if (and released (some released versions))
-      (timbre/error
-       (format "%s tried to add a change against a past release, ignoring %s"
-               true-from true-id))
-      (do (d/transact! conn [{:id       true-id
-                              :type     "change"
-                              :from     true-from
-                              :refs     (into #{} (conj refs true-id))
-                              :versions versions
-                              :summary  (get-subject subject)
-                              :date     date-sent}])
-          (timbre/info (format "%s added a change for version %s via %s"
-                               true-from (first versions) true-id))
-          (mail msg (:change (:add config/mails)))))))
+(defn- new-change? [msg]
+  (when-let [m (re-matches #"(?i)^\[CHANGE\s*([^]]+)].*$" (:subject msg))]
+    (into #{} (string/split (second m) #"\s"))))
 
-(defn- cancel-change [{:keys [id from date-sent] :as msg} refs]
-  (let [true-from (get-from from)
-        true-id   (get-id id)]
-    ;; Prevent release when not from the release manager
-    (doseq [e (get-unreleased-changes)]
-      (when (some (:refs e) refs)
-        (d/transact! conn [{:db/id       (:db/id e)
-                            :canceled    true-id
-                            :canceled-by true-from
-                            :canceled-at date-sent}])))
+(defn- new-release? [msg]
+  (when-let [m (re-matches #"(?i)^\[RELEASE\s*([^]]+)].*$" (:subject msg))]
+    (into #{} (string/split (second m) #"\s"))))
+
+(defn report! [action & status]
+  (d/transact! conn [action])
+  (let [action-type   (cond (:bug action)     :bug
+                            (:patch action)   :patch
+                            (:request action) :request
+                            (:change action)  :change
+                            (:release action) :release)
+        action-string (name action-type)
+        ;; Get the original report db entity
+        op-report-msg (d/touch (d/entity db (action-type action)))
+        op-from       (:from op-report-msg)
+        op-msgid      (:message-id op-report-msg)
+        ;; Get the report entity from the new status
+        report-msg    (when status
+                        (->> status first (get action) (d/entity db) d/touch))
+        from          (or (:from report-msg) op-from)
+        msgid         (or (:message-id report-msg) op-msgid)]
+    ;; Timbre logging
     (timbre/info
-     (format "%s canceled a change announcement via %s" true-from true-id))
-    (mail msg (:change (:fix config/woof)))))
+     (if-let [status-string (first status)]
+       ;; Report against a known entry
+       (format "%s (%s) marked %s reported by %s (%s) as %s"
+               from msgid action-string op-from op-msgid (name status-string))
+       ;; Report a new entry
+       (format "%s (%s) reported a new %s" from msgid action-string))))
+  ;; FIXME: Email notification to the update author
+  ;; FIXME: Email notification to the OP
+  )
 
-(defn- add-entry [{:keys [id from subject date-sent] :as msg} refs what]
-  (let [{:keys [X-Woof-Help X-Woof-Bug] }
+(defn process-incoming-message [msg]
+  (let [{:keys [X-Original-To X-BeenThere To References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
-        X-Woof-Help (mime-decode X-Woof-Help)
-        X-Woof-Bug  (mime-decode X-Woof-Bug)
-        what-type   (name what)
-        what-msg    (condp = what
-                      :bug   "%s added a bug via %s"
-                      :patch "%s sent a patch via %s"
-                      :help  "%s added a call for help via %s"
-                      "")
-        note        (condp = what
-                      :bug  (when (string? (confirmed? {:header X-Woof-Bug}))
-                              X-Woof-Bug)
-                      :help (when (string? (confirmed? {:header X-Woof-Help}))
-                              X-Woof-Help)
-                      nil)
-        summary     (or note (get-subject subject))
-        true-from   (get-from from)
-        true-id     (get-id id)]
-    (d/transact! conn [{:id      true-id
-                        :type    what-type
-                        :from    true-from
-                        :refs    (into #{} (conj refs true-id))
-                        :summary summary
-                        :date    date-sent}])
-    (timbre/info (format what-msg true-from true-id))
-    (mail msg (get (:add config/mails) what))))
+        references (when (not-empty References)
+                     (->> (string/split References #"\s")
+                          (keep not-empty)
+                          (map get-id)))
+        from       (get-from (:from from))]
 
-(defn- add-bug [msg refs]
-  (add-entry msg refs :bug))
-
-(defn- add-patch [msg refs]
-  (add-entry msg refs :patch))
-
-(defn- add-help [msg refs]
-  (add-entry msg refs :help))
-
-(defn- fix-entry [{:keys [id from subject date-sent]} refs what]
-  (let [msg          (condp = what
-                       :bug   "%s marked bug fixed via %s"
-                       :patch "%s marked patch applied via %s"
-                       :help  "%s marked help fixed via %s"
-                       "")
-        get-what     (condp = what
-                       :bug   get-unfixed-bugs
-                       :patch get-unapplied-patches
-                       :help  get-pending-help-requests
-                       nil)
-        true-subject (get-subject subject)
-        true-from    (get-from from)
-        true-id      (get-id id)]
-    (doseq [e (get-what (get-db))]
-      (let [e-refs (:refs e)]
-        (when (and (some e-refs refs)
-                   (if (= what :patch)
-                     (= (:summary e) true-subject)
-                     true))
-          (d/transact! conn [{:db/id    (:db/id e)
-                              :fixed    true-id
-                              :fixed-by true-from
-                              :fixed-at date-sent}]))))
-    (format msg true-from true-id)
-    (mail msg (get (:fix config/mails) what))))
-
-(defn- fix-bug [msg refs]
-  (fix-entry msg refs :bug))
-
-(defn- cancel-help [msg refs]
-  (fix-entry msg refs :help))
-
-(defn- add-release [{:keys [id from subject date-sent] :as msg} X-Woof-Release]
-  (let [released  (get-released-versions)
-        true-from (get-from from)
-        true-id   (get-id id)]
-    (cond
-      ;; Prevent release when not from the release manager
-      (not (= true-from (:admin config/woof)))
-      (format "%s tried to release via %s while not being release manager"
-              true-from true-id)
-      ;; Prevent duplicate release
-      (and released (some released #{X-Woof-Release}))
-      (format "%s tried to release with a known version number via %s"
-              true-from true-id)
-      ;; Add the release to the db
-      :else
-      (do (d/transact! conn [{:id      true-id
-                              :type    "release"
-                              :from    true-from
-                              :version X-Woof-Release
-                              :summary (get-subject subject)
-                              :date    date-sent}])
-          ;; Mark related changes as released
-          (doseq [e (get-unreleased-changes)]
-            (when ((:versions e) X-Woof-Release)
-              (d/transact! conn [{:db/id    (:db/id e)
-                                  :released X-Woof-Release}])))
-          (timbre/info
-           (format "%s released %s via %s" true-from X-Woof-Release true-id))
-          (mail msg (:release (:add config/mails)))))))
-
-(defn process-incoming-message
-  [{:keys [id from] :as msg}]
-  (let [{:keys [X-Woof-Bug X-Woof-Release X-Woof-Change
-                X-Woof-Help X-Woof-Patch
-                X-Original-To X-BeenThere To References] }
-        (walk/keywordize-keys (apply conj (:headers msg)))
-        X-Woof-Help (mime-decode X-Woof-Help)
-        X-Woof-Bug  (mime-decode X-Woof-Bug)
-        refs
-        (when (not-empty References)
-          (->> (string/split References #"\s")
-               (keep not-empty)
-               (map get-id)
-               (into #{})))]
     ;; Only process emails if they are sent directly from the release
     ;; manager or from the mailing list.
-    (when (or (= (get-from from) (:admin config/woof))
-              (some (into #{} (list X-Original-To X-BeenThere
-                                    (when (string? To)
-                                      (peek (re-matches #"^.*<(.*[^>])>.*$" To)))))
+    (when (or (= from (:admin config/woof))
+              (some (->>
+                     (list X-Original-To X-BeenThere
+                           (when (string? To) (re-find #"[^\s<>]+" To)))
+                     (remove nil?)
+                     (into #{}))
                     (into #{} (list (:mailing-list-address config/woof)))))
-      ;; If any email with references contains in its references the id
-      ;; of a known bug, add the message-id of this mail to the refs of
-      ;; this bug.
-      ;; FIXME_
-      (when refs (update-refs (get-id id) refs))
+
+      ;; Possibly add a new person
+      (update-person {:email from})
+      
+      ;; Detect a new bug/patch/request
       (cond
-        ;; Detect and add a patch (anyone).
         (new-patch? msg)
-        (add-patch msg refs)
+        (report! {:patch (:db/id (add-mail msg))})
 
-        ;; Detect applied patch (anyone).
-        (applying-patch? msg refs X-Woof-Patch)
-        (fix-entry msg refs :patch)
+        (new-bug? msg)
+        (report! {:bug (:db/id (add-mail msg))})
 
-        ;; Confirm a bug and add it to the registry (anyone).
-        (confirmed? {:msg msg :header X-Woof-Bug :what :bug})
-        (add-bug msg refs)
+        (new-request? msg)
+        (report! {:request (:db/id (add-mail msg))})
+        
+        :else
+        ;; Or detect new changes and releases
+        (or
+         (when-let [versions (new-change? msg)]
+           (report! {:change   (:db/id (add-mail msg))
+                     :versions versions}))
 
-        ;; Mark a bug as fixed (anyone).  If an email contains
-        ;; X-Woof-Bug: fixed, we scan all refs from this email and see
-        ;; if we can find a matching ref in those of a bug, and if
-        ;; yes, then we mark the bug as :fixed by the message id.
-        (and (some-db-refs? refs)
-             (closed? {:msg msg :header X-Woof-Bug :what :bug}))
-        (fix-bug msg refs)
+         (when-let [versions (new-release? msg)]
+           (report! {:release  (:db/id (add-mail msg))
+                     :versions versions}))
+         
+         ;; Or detect new actions
+         (when (not-empty references)
+           ;; FIXME: Check against multiple text/plain parts?
+           (when-let [body-woof-lines
+                      (->>
+                       (map
+                        #(when-let [m (re-find #"^!([^!\s]+)" %)] (peek m))
+                        (-> msg :body :body string/trim string/split-lines))
+                       (remove nil?))]
+             (or
+              
+              ;; New action against a known patch?
+              (when-let [{:keys [report-eid status]}
+                         (is-patch-update? body-woof-lines references)]
+                (report! {:patch report-eid status (:db/id (add-mail msg))}
+                         status))
 
-        ;; Call for help (anyone).
-        (confirmed? {:header X-Woof-Help})
-        (add-help msg refs)
+              ;; New action against a known bug?
+              (when-let [{:keys [report-eid status]}
+                         (is-bug-update? body-woof-lines references)]
+                (report! {:bug report-eid status (:db/id (add-mail msg))}
+                         status))
+              
+              ;; New action against a known help request?
+              (when-let [{:keys [report-eid status]}
+                         (is-request-update? body-woof-lines references)]
+                (report! {:request report-eid status (:db/id (add-mail msg))}
+                         status))
 
-        ;; Cancel a call for help (anyone).
-        (and (some-db-refs? refs)
-             (closed? {:header X-Woof-Help}))
-        (cancel-help msg refs)
+              ;; New action against a known change announcement?
+              (when-let [{:keys [report-eid status]}
+                         (is-change-update? body-woof-lines references)]
+                (report! {:change report-eid status (:db/id (add-mail msg))}
+                         status))
+              
+              ;; New action against a known release announcement?
+              (when-let [{:keys [report-eid status]}
+                         (is-release-update? body-woof-lines references)]
+                (report! {:release report-eid status (:db/id (add-mail msg))}
+                         status))))))))))
 
-        ;; Mark a change as canceled (anyone).
-        (and (some-db-refs? refs)
-             (closed? {:header X-Woof-Change}))
-        (cancel-change msg refs)
+;;; Inbox monitoring
 
-        ;; Announce a breaking change in the current development
-        ;; branches and associate it with future version(s) (anyone).
-        X-Woof-Change
-        (add-change msg refs X-Woof-Change)
-
-        ;; Make a release (only the release manager).
-        X-Woof-Release
-        (add-release msg X-Woof-Release)
-        :else nil))))
-
-;;; Monitoring
-(def woof-monitor (atom nil))
+(def woof-inbox-monitor (atom nil))
 
 (defn- start-inbox-monitor! []
   (reset!
-   woof-monitor
+   woof-inbox-monitor
    (let [session      (mail/get-session "imaps")
          mystore      (mail/store "imaps" session
                                   (:inbox-server config/woof)
@@ -471,7 +459,7 @@
   (tt/every! 1200 ;; 20 minutes
              (fn []
                (try 
-                 (events/stop @woof-monitor)
+                 (events/stop @woof-inbox-monitor)
                  (catch Exception _ nil))
                (start-inbox-monitor!))))
 
@@ -480,5 +468,5 @@
   :start (do (start-tasks!)
              (timbre/info "Woof started"))
   :stop (when woof-manager
-          (events/stop woof-monitor)
+          (events/stop woof-inbox-monitor)
           (timbre/info "Woof stopped")))

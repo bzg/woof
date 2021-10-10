@@ -40,7 +40,7 @@
                       (format "You can find it here:\n%s%s"
                               (:base-url woof)
                               (condp = t
-                                :help    "/help"
+                                :request "/requests"
                                 :change  "/changes"
                                 :bug     "/bugs"
                                 :patch   "/patches"
@@ -56,16 +56,11 @@
    :add
    {:bug     (format-mail "Thanks for reporting this bug!" :bug)
     :patch   (format-mail "Thanks for submitting this patch!" :patch)
-    :help    (format-mail "Thanks for adding this call for help!" :help)
+    :request (format-mail "Thanks for adding this help request!" :request)
     :change  (format-mail "Thanks for announcing this new change!" :change)
     :release (format-mail "Thanks for announcing this new release!" :release)}
    :fix
-   {:bug    (format-mail "Thanks for closing this bug report." :none)
-    :patch  (format-mail "Thanks for handling this patch." :none)
-    :help   (format-mail "Thanks for closing this call for help." :none)
-    :change (format-mail "Thanks for cancelling this change." :none)}})
-
-;; FIXME: be more strict and allow only t|nil?
-(def actions-regexps
-  {:confirmed #"(?i)^confirm(ed)?|t(rue)?"
-   :closed    #"(?i)^(cancell?(ed)?|done|closed?|fix(ed)?|nil|applied)"})
+   {:bug     (format-mail "Thanks for closing this bug report." :none)
+    :patch   (format-mail "Thanks for handling this patch." :none)
+    :request (format-mail "Thanks for closing this help request." :none)
+    :change  (format-mail "Thanks for cancelling this change." :none)}})

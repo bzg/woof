@@ -3,14 +3,17 @@
     <li {% ifequal active "home" %}class="is-active"{% endifequal %}>
       <a title="Important news to be aware of" href="/">News</a>
     </li>
-    <li {% ifequal active "helps" %}class="is-active"{% endifequal %}>
-      <a title="Where contributors ask for help" href="/help">Help Requests</a>
+    <li {% ifequal active "requests" %}class="is-active"{% endifequal %}>
+      <a title="Where contributors ask for help" href="/requests">Requests</a>
     </li>
     <li {% ifequal active "bugs" %}class="is-active"{% endifequal %}>
       <a title="Confirmed bugs" href="/bugs">Bugs</a>
     </li>
     <li {% ifequal active "patches" %}class="is-active"{% endifequal %}>
       <a title="Patches" href="/patches">Patches</a>
+    </li>
+    <li {% ifequal active "mails" %}class="is-active"{% endifequal %}>
+      <a title="Mails that triggered an action" href="/mails">Mails</a>
     </li>
   </ul>
   <div class="level">

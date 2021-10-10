@@ -9,14 +9,14 @@
 (defn feed-description [msg what]
   (format "<![CDATA[ %s ]]>"
           (html/render-file
-           (io/resource "html/link.html")
+           (io/resource (str "html/" (:theme config/woof) "/link.html"))
            (assoc msg
-                  :link (format (:mail-url-format config/woof) (:id msg))
-                  :what what))))
+                  :link (format (:mail-url-format config/woof) (:message-id msg))
+                  :what (name what)))))
 
-(defn feed-item [{:keys [id summary date from] :as msg} what]
-  (let [link (format (:mail-url-format config/woof) id)]
-    {:title       summary
+(defn feed-item [{:keys [message-id subject date from] :as msg} what]
+  (let [link (format (:mail-url-format config/woof) message-id)]
+    {:title       subject
      :link        link
      :description (feed-description msg what)
      :author      from
@@ -36,13 +36,13 @@
     items)})
 
 (defn feed-updates [_]
-  (feed "/feed/updates"
+  (feed "/updates.rss"
         (sort-by
          :pubDate
          (concat
           (map #(feed-item % :bug) (core/get-unfixed-bugs))
           (map #(feed-item % :patch) (core/get-unapplied-patches))
-          (map #(feed-item % :bug) (core/get-pending-help-requests))
+          (map #(feed-item % :bug) (core/get-unhandled-requests))
           (map #(feed-item % :change) (core/get-unreleased-changes))
           (map #(feed-item % :release) (core/get-releases))))))
 
@@ -54,13 +54,15 @@
           (map #(feed-item % what)
                (condp = what
                  :bug     (core/get-unfixed-bugs)
-                 :help    (core/get-pending-help-requests)
+                 :mail    (core/get-mails)
+                 :request (core/get-unhandled-requests)
                  :patch   (core/get-unapplied-patches)
                  :change  (core/get-unreleased-changes)
                  :release (core/get-releases)))))))
 
-(defn feed-bugs [_] (make-feed {:path "/feed/bugs" :what :bug}))
-(defn feed-patches [_] (make-feed {:path "/feed/patches" :what :patch}))
-(defn feed-help [_] (make-feed {:path "/feed/help" :what :help}))
-(defn feed-changes [_] (make-feed {:path "/feed/changes" :what :change}))
-(defn feed-releases [_] (make-feed {:path "/feed/releases" :what :release}))
+(defn feed-bugs [_] (make-feed {:path "/bugs.rss" :what :bug}))
+(defn feed-mails [_] (make-feed {:path "/mails.rss" :what :mail}))
+(defn feed-patches [_] (make-feed {:path "/patches.rss" :what :patch}))
+(defn feed-requests [_] (make-feed {:path "/requests.rss" :what :request}))
+(defn feed-changes [_] (make-feed {:path "/changes.rss" :what :change}))
+(defn feed-releases [_] (make-feed {:path "/releases.rss" :what :release}))

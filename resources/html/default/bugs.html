@@ -7,9 +7,13 @@
       {% include "html/default/tabs.html" with active="bugs" action-path="/bugs" %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
-	  <h1 class="title" id="bugs">
+
+	  {% ifequal confirmed-bugs|count 0 %}
+	  <h1 class="title is-size-4">No confirmed bug</h1>
+	  {% else %}
+	  <h1 class="title is-size-4">
 	    <span>
-	      Confirmed bugs ({{bugs|count}})
+	      Confirmed bugs ({{confirmed-bugs|count}})
 	      <a class="tag is-info is-light" href="/bugs.rss">RSS</a>
 	      <a class="tag is-success is-light" href="/bugs.json">JSON</a>
 	    </span>
@@ -28,11 +32,11 @@
 		</tr>
 	      </thead>
 	      <tbody>
-		{% for bug in bugs %}
+		{% for bug in confirmed-bugs %}
 		<tr>
 		  <td>
 		    <p><a href="{{bug.link}}" target="_blank" title="Visit email sent by {{bug.from}} on {{bug.date}}">
-			{{bug.summary}}
+			{{bug.subject}}
 		    </a></p>
 		  </td>
 		  <td><p>{{bug.date|date:shortDate}}</p></td>
@@ -42,6 +46,48 @@
 	      </tbody>
 	    </table>
 	  </div>
+	  {% endifequal %}
+
+	  {% ifequal unconfirmed-bugs|count 0 %}
+	  <h1 class="title is-size-4">No unconfirmed bug</h1>
+	  {% else %}
+	  <h1 class="title is-size-4">
+	    <span>
+	      Unconfirmed bugs ({{unconfirmed-bugs|count}})
+	      <a class="tag is-info is-light" href="/bugs.rss">RSS</a>
+	      <a class="tag is-success is-light" href="/bugs.json">JSON</a>
+	    </span>
+	  </h1>
+	  <div class="table-container">
+	    <table class="table is-hoverable is-fullwidth is-striped">
+	      <thead>
+		<tr>
+		  <th>Summary</th>
+		  <th width="15%">
+		    <a href="?sorting-by=date" title="Sort bugs by date">Date</a>
+		  </th>
+		  <th width="5%">
+		    <a href="?sorting-by=refs" title="Sort bugs by number of references">Refs</a>
+		  </th>
+		</tr>
+	      </thead>
+	      <tbody>
+		{% for bug in unconfirmed-bugs %}
+		<tr>
+		  <td>
+		    <p><a href="{{bug.link}}" target="_blank" title="Visit email sent by {{bug.from}} on {{bug.date}}">
+			{{bug.subject}}
+		    </a></p>
+		  </td>
+		  <td><p>{{bug.date|date:shortDate}}</p></td>
+		  <td><p>{{bug.refs-cnt}}</p></td>
+		</tr>
+		{% endfor %}
+	      </tbody>
+	    </table>
+	  </div>
+	  {% endifequal %}
+
 	</div>
       </section>
     </div>
