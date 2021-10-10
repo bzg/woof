@@ -250,11 +250,7 @@
 ;; Email notifications
 
 (defn send-email [{:keys [msg body]}]
-  (let  [{:keys [id from subject]} msg
-         refs
-         (:References (walk/keywordize-keys
-                       (apply conj (:headers msg))))
-         op                        (get-from from)]
+  (let  [{:keys [id from subject references]} msg]
     (try
       (when-let
           [res (postal/send-message
@@ -266,16 +262,13 @@
                 {:from        (:smtp-login config/woof)
                  :message-id  #(postal.support/message-id (:base-url config/woof))
                  :reply-to    (:admin config/woof)
-                 :references  (str refs " " id)
+                 :references  (string/join " " (remove nil? (list references id)))
                  :in-reply-to id
-                 :to          op
+                 :to          from
                  :subject     (str "Re: " (get-subject subject))
-                 :body        (str body "\n\n"
-                                   (:email-link config/mails) "\n"
-                                   (format (:mail-url-format config/woof)
-                                           (get-id id)))})]
+                 :body        body})]
         (when (= (:error res) :SUCCESS)
-          (timbre/info (str "Sent email to " op))))
+          (timbre/info (str "Sent email to " from))))
       (catch Exception e
         (timbre/error (str "Can't send email: "
                            (:cause (Throwable->map e) "\n")))))))
@@ -333,18 +326,45 @@
         report-msg    (when status
                         (->> status first (get action) (d/entity db) d/touch))
         from          (or (:from report-msg) op-from)
-        msgid         (or (:message-id report-msg) op-msgid)]
-    ;; Timbre logging
-    (timbre/info
-     (if-let [status-string (first status)]
-       ;; Report against a known entry
-       (format "%s (%s) marked %s reported by %s (%s) as %s"
-               from msgid action-string op-from op-msgid (name status-string))
-       ;; Report a new entry
-       (format "%s (%s) reported a new %s" from msgid action-string))))
-  ;; FIXME: Email notification to the update author
-  ;; FIXME: Email notification to the OP
-  )
+        msgid         (or (:message-id report-msg) op-msgid)
+        status-string (when-let [s (first status)] (name s))]
+    (if status-string
+      ;; Report against a known entry
+      (do
+        (timbre/info
+         (format "%s (%s) marked %s reported by %s (%s) as %s"
+                 from msgid action-string op-from op-msgid (name status-string)))
+        (mail {:id   msgid :subject    (:subject report-msg)
+               :from from  :references (:references report-msg)}
+              (format (str "Thanks for marking this %s as \"%s\".\n\n"
+                           "You can find your email here:\n%s\n\n"
+                           "More on how to contribute to %s:\n%s")
+                      action-string status-string
+                      (format (:mail-url-format config/woof) msgid)
+                      (:project-name config/woof)
+                      (:contribute-url config/woof)))
+        (mail {:id   op-msgid :subject    (:subject op-report-msg)
+               :from op-from  :references (:references op-report-msg)}
+              (format (str "%s marked your %s as %s.\n\n"
+                           "Find your original report here:\n%s\n\n"
+                           "More on how to contribute to %s:\n%s")
+                      from action-string status-string
+                      (format (:mail-url-format config/woof) op-msgid)
+                      (:project-name config/woof)
+                      (:contribute-url config/woof))))
+      ;; Report a new entry
+      (do
+        (timbre/info
+         (format "%s (%s) reported a new %s" from msgid action-string))
+        (mail {:id   op-msgid :subject    (:subject op-report-msg)
+               :from op-from  :references (:references op-report-msg)}
+              (format (str "Thanks for sharing this %s!\n\n"
+                           "You can find it here:\n%s\n\n"
+                           "More on how to contribute to %s:\n%s")
+                      action-string
+                      (format (:mail-url-format config/woof) op-msgid)
+                      (:project-name config/woof)
+                      (:contribute-url config/woof)))))))
 
 (defn process-incoming-message [msg]
   (let [{:keys [X-Original-To X-BeenThere To References]}

@@ -34,33 +34,3 @@
    :feed-description (System/getenv "WOOF_FEED_DESCRIPTION")
    })
 
-(defn format-mail [s t]
-  (str (format (str "%s\n\n"
-                    (when-not (= t :none)
-                      (format "You can find it here:\n%s%s"
-                              (:base-url woof)
-                              (condp = t
-                                :request "/requests"
-                                :change  "/changes"
-                                :bug     "/bugs"
-                                :patch   "/patches"
-                                :release "/"))))
-               s)
-       (when (= t :patch)
-         (str "\n\nFor details on how to submit a patch, read this page:\n"
-              (:contribute-url woof)))))
-
-;; FIXME: Allow configuration?
-(def mails
-  {:email-link "Follow the discussion on the mailing list:"
-   :add
-   {:bug     (format-mail "Thanks for reporting this bug!" :bug)
-    :patch   (format-mail "Thanks for submitting this patch!" :patch)
-    :request (format-mail "Thanks for adding this help request!" :request)
-    :change  (format-mail "Thanks for announcing this new change!" :change)
-    :release (format-mail "Thanks for announcing this new release!" :release)}
-   :fix
-   {:bug     (format-mail "Thanks for closing this bug report." :none)
-    :patch   (format-mail "Thanks for handling this patch." :none)
-    :request (format-mail "Thanks for closing this help request." :none)
-    :change  (format-mail "Thanks for cancelling this change." :none)}})
