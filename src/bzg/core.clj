@@ -249,14 +249,12 @@
 
 ;; Email notifications
 
-(defn send-email
-  "Send an email."
-  [{:keys [msg body]}]
-  (let  [{:keys [id from subject]}
-         msg
-         refs (:References (walk/keywordize-keys
-                            (apply conj (:headers msg))))
-         op   (get-from from)]
+(defn send-email [{:keys [msg body]}]
+  (let  [{:keys [id from subject]} msg
+         refs
+         (:References (walk/keywordize-keys
+                       (apply conj (:headers msg))))
+         op                        (get-from from)]
     (try
       (when-let
           [res (postal/send-message
@@ -355,6 +353,7 @@
                      (->> (string/split References #"\s")
                           (keep not-empty)
                           (map get-id)))
+        ;; FIXME: Also get and store the name, if any?
         from       (get-from (:from msg))]
 
     ;; Only process emails if they are sent directly from the release
@@ -362,7 +361,9 @@
     (when (or (= from (:admin config/woof))
               (some (->>
                      (list X-Original-To X-BeenThere
-                           (when (string? To) (re-find #"[^\s<>]+" To)))
+                           (when (string? To)
+                             (re-seq #"[^<@\s;,]+@[^>@\s;,]+" To)))
+                     flatten
                      (remove nil?)
                      (into #{}))
                     (into #{} (list (:mailing-list-address config/woof)))))
