@@ -137,19 +137,39 @@
      ;; json data
      ["/updates.json" {:get data/get-data-updates}]
      ["/mails.json" {:get data/get-data-mails}]
-     ["/bugs.json" {:get data/get-data-bugs}]
-     ["/patches.json" {:get data/get-data-patches}]
-     ["/requests.json" {:get data/get-data-requests}]
      ["/changes.json" {:get data/get-data-changes}]
      ["/releases.json" {:get data/get-data-releases}]
+
+     ["/bugs.json" {:get data/get-data-bugs}]
+     ["/confirmed-bugs.json" {:get data/get-data-confirmed-bugs}]
+     ["/unconfirmed-bugs.json" {:get data/get-data-unconfirmed-bugs}]
+     
+     ["/patches.json" {:get data/get-data-patches}]
+     ["/approved-patches.json" {:get data/get-data-approved-patches}]
+     ["/unapproved-patches.json" {:get data/get-data-unapproved-patches}]
+     
+     ["/requests.json" {:get data/get-data-requests}]
+     ["/handled-requests.json" {:get data/get-data-handled-requests}]
+     ["/unhandled-requests.json" {:get data/get-data-unhandled-requests}]
+     
      ;; rss feeds
      ["/updates.rss" {:get feeds/feed-updates}]
      ["/mails.rss" {:get feeds/feed-mails}]
-     ["/bugs.rss" {:get feeds/feed-bugs}]
-     ["/patches.rss" {:get feeds/feed-patches}]
-     ["/requests.rss" {:get feeds/feed-requests}]
      ["/changes.rss" {:get feeds/feed-changes}]
-     ["/releases.rss" {:get feeds/feed-releases}]]
+     ["/releases.rss" {:get feeds/feed-releases}]
+     
+     ["/bugs.rss" {:get feeds/feed-bugs}]
+     ["/confirmed-bugs.rss" {:get feeds/feed-confirmed-bugs}]
+     ["/unconfirmed-bugs.rss" {:get feeds/feed-unconfirmed-bugs}]
+     
+     ["/patches.rss" {:get feeds/feed-patches}]
+     ["/approved-patches.rss" {:get feeds/feed-approved-patches}]
+     ["/unapproved-patches.rss" {:get feeds/feed-unapproved-patches}]
+     
+     ["/requests.rss" {:get feeds/feed-requests}]
+     ["/handled-requests.rss" {:get feeds/feed-handled-requests}]
+     ["/unhandled-requests.rss" {:get feeds/feed-unhandled-requests}]
+     ]
     {:data {:muuntaja   m/instance
       	    :middleware [params/wrap-params
                          muuntaja/format-middleware]}})

@@ -36,8 +36,9 @@
 
 (defn format-email-notification
   [{:keys [notification-type
-           op-from op-msgid from msgid
-           subject references
+           ;; op-from op-msgid
+           from msgid
+           ;; subject references
            action-string status-string]}]
   (str
    (condp = notification-type
@@ -53,5 +54,4 @@
      (format "You can find your email here:\n%s\n\n" link))
    (when-let [contribute-url (not-empty (:contribute-url woof))]
      (format "More on how to contribute to %s:\n%s"
-             (:project-name woof)
-             (:contribute-url woof)))))
+             (:project-name woof) contribute-url))))

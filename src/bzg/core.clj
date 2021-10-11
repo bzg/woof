@@ -144,6 +144,11 @@
        (remove :handled)
        (get-reports-msgs :request)))
 
+(defn get-undone-requests []
+  (->> (get-reports :request)
+       (remove :done)
+       (get-reports-msgs :request)))
+
 (defn get-unreleased-changes []
   (->> (get-reports :change)
        (remove :released)

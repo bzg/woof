@@ -14,9 +14,7 @@
      (if-let [mail-url-format (not-empty (:mail-url-format config/woof))]
        (html/render-file
         (io/resource (str "html/" (:theme config/woof) "/link.html"))
-        (assoc msg
-               :link (format (:mail-url-format config/woof) msgid)
-               :what what))
+        (assoc msg :link (format mail-url-format msgid) :what what))
        (str msgid (format " (%s)" what))))))
 
 (defn feed-item [{:keys [message-id subject date from] :as msg} what]
@@ -45,11 +43,18 @@
         (sort-by
          :pubDate
          (concat
-          (map #(feed-item % :bug) (core/get-unfixed-bugs))
-          (map #(feed-item % :patch) (core/get-unapplied-patches))
-          (map #(feed-item % :bug) (core/get-unhandled-requests))
-          (map #(feed-item % :change) (core/get-unreleased-changes))
-          (map #(feed-item % :release) (core/get-releases))))))
+          (map #(feed-item % :confirmed-bugs) (core/get-confirmed-bugs))
+          (map #(feed-item % :unconfirmed-bugs) (core/get-unconfirmed-bugs))
+          (map #(feed-item % :bugs) (core/get-unfixed-bugs))
+          (map #(feed-item % :mails) (core/get-mails))
+          (map #(feed-item % :unhandled-requests) (core/get-unhandled-requests))
+          (map #(feed-item % :handled-requests) (core/get-handled-requests))
+          (map #(feed-item % :requests) (core/get-undone-requests))
+          (map #(feed-item % :unapproved-patches) (core/get-unapproved-patches))
+          (map #(feed-item % :approved-patches) (core/get-approved-patches))
+          (map #(feed-item % :patches) (core/get-unapplied-patches))
+          (map #(feed-item % :changes) (core/get-unreleased-changes))
+          (map #(feed-item % :releases) (core/get-releases))))))
 
 (defn- make-feed [{:keys [path what]}]
   (feed path
@@ -58,16 +63,33 @@
          (concat
           (map #(feed-item % what)
                (condp = what
-                 :bug     (core/get-unfixed-bugs)
-                 :mail    (core/get-mails)
-                 :request (core/get-unhandled-requests)
-                 :patch   (core/get-unapplied-patches)
-                 :change  (core/get-unreleased-changes)
-                 :release (core/get-releases)))))))
+                 :confirmed-bugs     (core/get-confirmed-bugs)
+                 :unconfirmed-bugs   (core/get-unconfirmed-bugs)
+                 :bugs               (core/get-unfixed-bugs)
+                 :unhandled-requests (core/get-unhandled-requests)
+                 :handled-requests   (core/get-handled-requests)
+                 :requests           (core/get-undone-requests)
+                 :unapproved-patches (core/get-unapproved-patches)
+                 :approved-patches   (core/get-approved-patches)
+                 :patches            (core/get-unapplied-patches)
+                 :mails              (core/get-mails)
+                 :changes            (core/get-unreleased-changes)
+                 :releases           (core/get-releases)
+                 :updates            (core/get-updates)
+                 ))))))
 
-(defn feed-bugs [_] (make-feed {:path "/bugs.rss" :what :bug}))
-(defn feed-mails [_] (make-feed {:path "/mails.rss" :what :mail}))
-(defn feed-patches [_] (make-feed {:path "/patches.rss" :what :patch}))
-(defn feed-requests [_] (make-feed {:path "/requests.rss" :what :request}))
-(defn feed-changes [_] (make-feed {:path "/changes.rss" :what :change}))
-(defn feed-releases [_] (make-feed {:path "/releases.rss" :what :release}))
+(defn feed-confirmed-bugs [_] (make-feed {:path "/bugs.rss" :what :confirmed-bugs}))
+(defn feed-unconfirmed-bugs [_] (make-feed {:path "/bugs.rss" :what :unconfirmed-bugs}))
+(defn feed-bugs [_] (make-feed {:path "/bugs.rss" :what :bugs}))
+
+(defn feed-unapproved-patches [_] (make-feed {:path "/unapproved-patches.rss" :what :unapproved-patches}))
+(defn feed-approved-patches [_] (make-feed {:path "/approved-patches.rss" :what :approved-patches}))
+(defn feed-patches [_] (make-feed {:path "/patches.rss" :what :patches}))
+
+(defn feed-unhandled-requests [_] (make-feed {:path "/unhandled-requests.rss" :what :unhandled-requests}))
+(defn feed-handled-requests [_] (make-feed {:path "/handled-requests.rss" :what :handled-requests}))
+(defn feed-requests [_] (make-feed {:path "/requests.rss" :what :requests}))
+
+(defn feed-mails [_] (make-feed {:path "/mails.rss" :what :mails}))
+(defn feed-changes [_] (make-feed {:path "/changes.rss" :what :changes}))
+(defn feed-releases [_] (make-feed {:path "/releases.rss" :what :releases}))
