@@ -9,11 +9,11 @@
 	<div class="container">
 
 	  {% ifequal mails|count 0 %}
-	  <h1 class="title is-size-4">No email sent.</h1>
+	  <h1 class="title is-size-4">No email sent</h1>
 	  {% else %}
 	  <h1 class="title is-size-4">
 	    <span>
-	      Mails sent ({{mails|count}})
+	      Mails sent ({{mails|count}}) (max 100)
 	      <a class="tag is-info is-light" href="/mails.rss">RSS</a>
 	      <a class="tag is-success is-light" href="/mails.json">JSON</a>
 	    </span>

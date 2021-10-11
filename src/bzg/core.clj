@@ -69,7 +69,9 @@
 (defn get-mails []
   (->> (d/q `[:find ?e :where [?e :message-id _]] db)
        (map first)
-       (map #(d/pull db '[*] %))))
+       (map #(d/pull db '[*] %))
+       (sort-by :date)
+       (take 100)))
 
 ;; FIXME: useful?
 ;; (defn- get-persons []
