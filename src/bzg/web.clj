@@ -49,8 +49,10 @@
       (merge html-defaults
              {:releases
               (db-format
-               {:db (->> (core/get-releases) (sort-by :data) reverse (take 3))
-                :s  s})
+               {:db (->> (core/get-releases) (sort-by :data) reverse
+                         ;; FIXME: Allow to configure
+                         (take 3))
+                :s s})
               :changes
               (db-format {:db (core/get-unreleased-changes) :s s})
               :announcements

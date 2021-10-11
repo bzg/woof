@@ -74,6 +74,7 @@
        (map first)
        (map #(d/pull db '[*] %))
        (sort-by :date)
+       ;; FIXME: Allow to configure?
        (take 100)))
 
 (defn get-bugs [] (get-reports-msgs :bug (get-reports :bug)))
@@ -247,13 +248,14 @@
 
 ;; Email notifications
 
-(defn send-email [{:keys [msg body]}]
+(defn send-email [{:keys [msg body purpose]}]
   (let  [{:keys [id from subject references]} msg]
     (try
       (when-let
           [res (postal/send-message
                 {:host (:smtp-host config/woof)
                  :port 587
+                 ;; FIXME: Always assume a tls connection (or configure)?
                  :tls  true
                  :user (:smtp-login config/woof)
                  :pass (:smtp-password config/woof)}
@@ -266,15 +268,21 @@
                  :subject     (str "Re: " (get-subject subject))
                  :body        body})]
         (when (= (:error res) :SUCCESS)
-          (timbre/info (str "Sent email to " from))))
+          (timbre/info
+           (format
+            (condp = purpose
+              :ack-reporter    "Sent mail to %s: ack report"
+              :ack-op-reporter "Sent mail to %s: ack report against original report"
+              :ack-op          "Sent mail to %s: ack original report")
+            from))))
       (catch Exception e
-        (timbre/error (str "Can't send email: "
+        (timbre/error (str "Cannot send email: "
                            (:cause (Throwable->map e) "\n")))))))
 
 (def mail-chan (async/chan))
 
-(defn mail [msg body]
-  (async/put! mail-chan {:msg msg :body body}))
+(defn mail [msg body purpose]
+  (async/put! mail-chan {:msg msg :body body :purpose purpose}))
 
 (defn start-mail-loop! []
   (async/go
@@ -347,11 +355,13 @@
 
         ;; Send email to the action reporter
         (mail msg (config/format-email-notification
-                   (merge msg action-status {:notification-type :action-reporter})))
+                   (merge msg action-status {:notification-type :action-reporter}))
+              :ack-reporter)
 
         ;; Send email to the original poster
         (mail op-msg (config/format-email-notification
-                      (merge msg action-status {:notification-type :action-op}))))
+                      (merge msg action-status {:notification-type :action-op}))
+              :ack-op-reporter))
 
       ;; Report a new entry
       (do
@@ -360,7 +370,8 @@
          (format "%s (%s) reported a new %s" from msgid action-string))
         ;; Send email to the original poster
         (mail op-msg (config/format-email-notification
-                      (merge msg {:notification-type :new} action-status)))))))
+                      (merge msg {:notification-type :new} action-status))
+              :ack-op)))))
 
 (defn process-incoming-message [msg]
   (let [{:keys [X-Original-To X-BeenThere To References]}

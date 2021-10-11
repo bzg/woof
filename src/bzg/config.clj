@@ -2,7 +2,6 @@
 
 (def woof
   {;; Configure the mailbox to monitor
-   ;; FIXME: Shall we always assume tls connection?
    :inbox-user     (System/getenv "WOOF_INBOX_USER")
    :inbox-server   (System/getenv "WOOF_INBOX_SERVER")
    :inbox-password (System/getenv "WOOF_INBOX_PASSWORD")
@@ -16,12 +15,11 @@
    :mailing-list-address (System/getenv "WOOF_MAILING_LIST_ADDRESS")
    :base-url             (or (System/getenv "WOOF_BASE_URL")
                              "https://localhost:3000")
-
    ;; Configuration to send notification emails
-   :smtp-host       (System/getenv "WOOF_SMTP_HOST")
-   :smtp-login      (System/getenv "WOOF_SMTP_LOGIN")
-   :smtp-password   (System/getenv "WOOF_SMTP_PASSWORD")
-   :mail-url-format (System/getenv "WOOF_MAIL_URL_FORMAT")
+   :smtp-host            (System/getenv "WOOF_SMTP_HOST")
+   :smtp-login           (System/getenv "WOOF_SMTP_LOGIN")
+   :smtp-password        (System/getenv "WOOF_SMTP_PASSWORD")
+   :mail-url-format      (System/getenv "WOOF_MAIL_URL_FORMAT")
    
    ;; Configuring the HTML page
    :theme            (or (System/getenv "WOOF_THEME") "default")
