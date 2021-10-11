@@ -40,6 +40,33 @@
 
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
+	  {% ifequal announcements|count 0 %}
+	  <h1 class="title is-size-4">No announcement</h1>
+	  {% else %}
+	  <h1 class="title is-size-4">
+	    <span>
+	      Recent announcements
+	      <a class="tag is-info is-light" href="/announcements.rss">RSS</a>
+	      <a class="tag is-success is-light" href="/announcements.json">JSON</a>
+	    </span>
+	  </h1>
+	  <div class="content">
+	    {% for announcement in announcements %}
+	    <p>
+	      {% if announcement.link %}
+	      <a href="{{announcement.link}}" target="_blank" title="Visit email sent by {{announcement.from}} on {{announcement.date}}">{{announcement.subject}}</a>
+	      {% else %}
+	      {{announcement.subject}}
+	      {% endif %}
+	    </p>
+	    {% endfor %}
+	  </div>
+	  {% endifequal %}
+	</div>
+      </section>
+
+      <section class="section" style="padding: 1.5rem 1.0rem">
+	<div class="container">
 	  {% ifequal releases|count 0 %}
 	  <h1 class="title is-size-4">No announced release</h1>
 	  {% else %}

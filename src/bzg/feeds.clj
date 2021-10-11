@@ -54,6 +54,7 @@
           (map #(feed-item % :approved-patches) (core/get-approved-patches))
           (map #(feed-item % :patches) (core/get-unapplied-patches))
           (map #(feed-item % :changes) (core/get-unreleased-changes))
+          (map #(feed-item % :announcements) (core/get-announcements))
           (map #(feed-item % :releases) (core/get-releases))))))
 
 (defn- make-feed [{:keys [path what]}]
@@ -73,6 +74,7 @@
                  :approved-patches   (core/get-approved-patches)
                  :patches            (core/get-unapplied-patches)
                  :mails              (core/get-mails)
+                 :announcements      (core/get-announcements)
                  :changes            (core/get-unreleased-changes)
                  :releases           (core/get-releases)
                  :updates            (core/get-updates)
@@ -92,4 +94,5 @@
 
 (defn feed-mails [_] (make-feed {:path "/mails.rss" :what :mails}))
 (defn feed-changes [_] (make-feed {:path "/changes.rss" :what :changes}))
+(defn feed-announcements [_] (make-feed {:path "/announcements.rss" :what :announcements}))
 (defn feed-releases [_] (make-feed {:path "/releases.rss" :what :releases}))

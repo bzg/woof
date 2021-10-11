@@ -17,25 +17,28 @@
 
 ;; Set up the database
 
-(def schema {:log        {:db/valueType :db.type/instant
-                          :db/unique    :db.unique/identity}
-             :message-id {:db/valueType :db.type/string
-                          :db/unique    :db.unique/identity}
-             :email      {:db/valueType :db.type/string
-                          :db/unique    :db.unique/identity}
-             :references {:db/cardinality :db.cardinality/many}
-             :aliases    {:db/cardinality :db.cardinality/many}
-             :versions   {:db/cardinality :db.cardinality/many}
-             :bug        {:db/valueType :db.type/ref
-                          :db/unique    :db.unique/identity}
-             :patch      {:db/valueType :db.type/ref
-                          :db/unique    :db.unique/identity}
-             :request    {:db/valueType :db.type/ref
-                          :db/unique    :db.unique/identity}
-             :change     {:db/valueType :db.type/ref
-                          :db/unique    :db.unique/identity}
-             :release    {:db/valueType :db.type/ref
-                          :db/unique    :db.unique/identity}})
+(def schema
+  {:log          {:db/valueType :db.type/instant
+                  :db/unique    :db.unique/identity}
+   :message-id   {:db/valueType :db.type/string
+                  :db/unique    :db.unique/identity}
+   :email        {:db/valueType :db.type/string
+                  :db/unique    :db.unique/identity}
+   :references   {:db/cardinality :db.cardinality/many}
+   :aliases      {:db/cardinality :db.cardinality/many}
+   :versions     {:db/cardinality :db.cardinality/many}
+   :bug          {:db/valueType :db.type/ref
+                  :db/unique    :db.unique/identity}
+   :patch        {:db/valueType :db.type/ref
+                  :db/unique    :db.unique/identity}
+   :request      {:db/valueType :db.type/ref
+                  :db/unique    :db.unique/identity}
+   :change       {:db/valueType :db.type/ref
+                  :db/unique    :db.unique/identity}
+   :announcement {:db/valueType :db.type/ref
+                  :db/unique    :db.unique/identity}
+   :release      {:db/valueType :db.type/ref
+                  :db/unique    :db.unique/identity}})
 
 (def conn (d/get-conn (:db-dir config/woof) schema))
 
@@ -73,31 +76,23 @@
        (sort-by :date)
        (take 100)))
 
-;; FIXME: useful?
-;; (defn- get-persons []
-;;   (->> (d/q `[:find ?eid :where [?eid :email _]] db)
-;;        (map first)
-;;        (map #(d/pull db '[*] %))))
-
 (defn get-bugs [] (get-reports-msgs :bug (get-reports :bug)))
 (defn get-patches [] (get-reports-msgs :patch (get-reports :patch)))
 (defn get-requests [] (get-reports-msgs :request (get-reports :request)))
 (defn get-changes [] (get-reports-msgs :change (get-reports :change)))
 (defn get-releases [] (get-reports-msgs :release (get-reports :release)))
 
-(defn get-updates []
-  (flatten
-   (list
-    (get-bugs)
-    (get-patches)
-    (get-requests)
-    (get-changes)
-    (get-releases))))
-
 (defn get-logs []
   (->> (d/q '[:find ?e :where [?e :log _]] db)
        (map first)
        (map #(d/pull db '[*] %))))
+
+(defn get-announcements []
+  (->> (get-reports :announcement)
+       (remove :canceled)
+       (get-reports-msgs :announcement)
+       ;; FIXME: allow to configure?
+       (take 10)))
 
 (defn get-confirmed-bugs []
   (->> (get-reports :bug)
@@ -154,6 +149,16 @@
        (remove :released)
        (get-reports-msgs :change)))
 
+(defn get-updates []
+  (flatten
+   (list
+    (get-bugs)
+    (get-patches)
+    (get-requests)
+    (get-changes)
+    (get-announcements)
+    (get-releases))))
+
 ;; Core db functions to add and update entities
 
 (defn add-log [date msg]
@@ -184,11 +189,12 @@
 ;; Check whether a report is an action against a known entity
 
 (def update-strings
-  {:bug     #{"confirmed" "canceled" "fixed"}
-   :patch   #{"approved" "canceled" "applied"}
-   :request #{"handled" "canceled" "done"}
-   :change  #{"canceled" "released"}
-   :release #{"canceled"}})
+  {:bug          #{"confirmed" "canceled" "fixed"}
+   :patch        #{"approved" "canceled" "applied"}
+   :request      #{"handled" "canceled" "done"}
+   :change       #{"canceled" "released"}
+   :announcement #{"canceled"}
+   :release      #{"canceled"}})
 
 (defn is-in-a-known-thread? [references]
   (doseq [i (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db))
@@ -211,21 +217,6 @@
                      first)]
       {:status     (keyword (string/lower-case action))
        :report-eid (:db/id (report-type (d/touch (d/entity db e))))})))
-
-(defn is-bug-update? [body-woof-lines references]
-  (is-report-update? :bug body-woof-lines references))
-
-(defn is-patch-update? [body-woof-lines references]
-  (is-report-update? :patch body-woof-lines references))
-
-(defn is-request-update? [body-woof-lines references]
-  (is-report-update? :request body-woof-lines references))
-
-(defn is-change-update? [body-woof-lines references]
-  (is-report-update? :change body-woof-lines references))
-
-(defn is-release-update? [body-woof-lines references]
-  (is-report-update? :release body-woof-lines references))
 
 ;; Setup logging
 
@@ -309,6 +300,9 @@
 (defn- new-request? [msg]
   (re-matches #"(?i)^\[HELP].*$" (:subject msg)))
 
+(defn- new-announcement? [msg]
+  (re-matches #"(?i)^\[ANN].*$" (:subject msg)))
+
 (defn- new-change? [msg]
   (when-let [m (re-matches #"(?i)^\[CHANGE\s*([^]]+)].*$" (:subject msg))]
     (into #{} (string/split (second m) #"\s"))))
@@ -319,11 +313,12 @@
 
 (defn report! [action & status]
   (d/transact! conn [action])
-  (let [action-type   (cond (:bug action)     :bug
-                            (:patch action)   :patch
-                            (:request action) :request
-                            (:change action)  :change
-                            (:release action) :release)
+  (let [action-type   (cond (:bug action)          :bug
+                            (:patch action)        :patch
+                            (:request action)      :request
+                            (:change action)       :change
+                            (:announcement action) :announcement
+                            (:release action)      :release)
         action-string (name action-type)
         status-string (when-let [s (first status)] (name s))
         ;; Get the original report db entity
@@ -406,8 +401,11 @@
         (new-request? msg)
         (report! {:request (:db/id (add-mail msg))})
 
+        (new-announcement? msg)
+        (report! {:announcement (:db/id (add-mail msg))})
+
         :else
-        ;; Or detect new changes and releases
+        ;; Or detect a new announcement, change and release
         (or
          (when-let [versions (new-change? msg)]
            (report! {:change   (:db/id (add-mail msg))
@@ -430,31 +428,37 @@
 
               ;; New action against a known patch?
               (when-let [{:keys [report-eid status]}
-                         (is-patch-update? body-woof-lines references)]
+                         (is-report-update? :patch body-woof-lines references)]
                 (report! {:patch report-eid status (:db/id (add-mail msg))}
                          status))
 
               ;; New action against a known bug?
               (when-let [{:keys [report-eid status]}
-                         (is-bug-update? body-woof-lines references)]
+                         (is-report-update? :bug body-woof-lines references)]
                 (report! {:bug report-eid status (:db/id (add-mail msg))}
                          status))
 
               ;; New action against a known help request?
               (when-let [{:keys [report-eid status]}
-                         (is-request-update? body-woof-lines references)]
+                         (is-report-update? :request body-woof-lines references)]
                 (report! {:request report-eid status (:db/id (add-mail msg))}
                          status))
 
               ;; New action against a known change announcement?
               (when-let [{:keys [report-eid status]}
-                         (is-change-update? body-woof-lines references)]
+                         (is-report-update? :change body-woof-lines references)]
                 (report! {:change report-eid status (:db/id (add-mail msg))}
                          status))
 
+              ;; New action against a known announcement?
+              (when-let [{:keys [report-eid status]}
+                         (is-report-update? :announcement body-woof-lines references)]
+                (report! {:announcement report-eid status (:db/id (add-mail msg))}
+                         status))
+              
               ;; New action against a known release announcement?
               (when-let [{:keys [report-eid status]}
-                         (is-release-update? body-woof-lines references)]
+                         (is-report-update? :release body-woof-lines references)]
                 (report! {:release report-eid status (:db/id (add-mail msg))}
                          status))))))))))
 

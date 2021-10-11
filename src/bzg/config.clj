@@ -43,7 +43,7 @@
      :new
      (format "Thanks for sharing this %s!\n\n" action-string)
      :action-reporter
-     (format "Thanks for marking this %s as \"%s\".\n\n"
+     (format "Thanks for marking this %s as %s.\n\n"
              action-string status-string)
      :action-op
      (format "%s marked your %s as %s.\n\n"

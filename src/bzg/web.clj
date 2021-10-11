@@ -53,8 +53,8 @@
                 :s  s})
               :changes
               (db-format {:db (core/get-unreleased-changes) :s s})
-              ;; FIXME: Add announcements
-              }))}))
+              :announcements
+              (db-format {:db (core/get-announcements) :s s})}))}))
 
 (defn get-page-bugs [{:keys [query-params]}]
   (let [format-params {:s          (get query-params "s")
@@ -138,6 +138,7 @@
      ["/updates.json" {:get data/get-data-updates}]
      ["/mails.json" {:get data/get-data-mails}]
      ["/changes.json" {:get data/get-data-changes}]
+     ["/announcements.json" {:get data/get-data-announcements}]
      ["/releases.json" {:get data/get-data-releases}]
 
      ["/bugs.json" {:get data/get-data-bugs}]
@@ -156,6 +157,7 @@
      ["/updates.rss" {:get feeds/feed-updates}]
      ["/mails.rss" {:get feeds/feed-mails}]
      ["/changes.rss" {:get feeds/feed-changes}]
+     ["/announcements.rss" {:get feeds/feed-announcements}]
      ["/releases.rss" {:get feeds/feed-releases}]
      
      ["/bugs.rss" {:get feeds/feed-bugs}]
