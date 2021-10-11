@@ -7,12 +7,17 @@
             [clojure.java.io :as io]))
 
 (defn feed-description [msg what]
-  (format "<![CDATA[ %s ]]>"
-          (html/render-file
-           (io/resource (str "html/" (:theme config/woof) "/link.html"))
-           (assoc msg
-                  :link (format (:mail-url-format config/woof) (:message-id msg))
-                  :what (name what)))))
+  (let [what  (name what)
+        msgid (:message-id msg)]
+    (format
+     "<![CDATA[ %s ]]>"
+     (if-let [mail-url-format (not-empty (:mail-url-format config/woof))]
+       (html/render-file
+        (io/resource (str "html/" (:theme config/woof) "/link.html"))
+        (assoc msg
+               :link (format (:mail-url-format config/woof) msgid)
+               :what what))
+       (str msgid (format " (%s)" what))))))
 
 (defn feed-item [{:keys [message-id subject date from] :as msg} what]
   (let [link (format (:mail-url-format config/woof) message-id)]

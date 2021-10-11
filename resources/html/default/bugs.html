@@ -35,9 +35,13 @@
 		{% for bug in confirmed-bugs %}
 		<tr>
 		  <td>
-		    <p><a href="{{bug.link}}" target="_blank" title="Visit email sent by {{bug.from}} on {{bug.date}}">
-			{{bug.subject}}
-		    </a></p>
+		    <p>
+		      {% if bug.link %}
+		      <a href="{{bug.link}}" target="_blank" title="Visit email sent by {{bug.from}} on {{bug.date}}">{{bug.subject}}</a>
+		      {% else %}
+		      {{bug.subject}}
+		      {% endif %}
+		    </p>
 		  </td>
 		  <td><p>{{bug.date|date:shortDate}}</p></td>
 		  <td><p>{{bug.backrefs}}</p></td>
@@ -75,9 +79,13 @@
 		{% for bug in unconfirmed-bugs %}
 		<tr>
 		  <td>
-		    <p><a href="{{bug.link}}" target="_blank" title="Visit email sent by {{bug.from}} on {{bug.date}}">
-			{{bug.subject}}
-		    </a></p>
+		    <p>
+		      {% if bug.link %}
+		      <a href="{{bug.link}}" target="_blank" title="Visit email sent by {{bug.from}} on {{bug.date}}">{{bug.subject}}</a>
+		      {% else %}
+		      {{bug.subject}}
+		      {% endif %}
+		    </p>
 		  </td>
 		  <td><p>{{bug.date|date:shortDate}}</p></td>
 		  <td><p>{{bug.backrefs}}</p></td>

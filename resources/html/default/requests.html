@@ -36,7 +36,11 @@
 		<tr>
 		  <td>
 		    <p>
+		      {% if request.link %}
 		      <a href="{{request.link}}" target="_blank" title="Visit email sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>
+		      {% else %}
+		      {{request.subject}}
+		      {% endif %}
 		    </p>
 		  </td>
 		  <td>
@@ -80,7 +84,11 @@
 		<tr>
 		  <td>
 		    <p>
+		      {% if request.link %}
 		      <a href="{{request.link}}" target="_blank" title="Visit email sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>
+		      {% else %}
+		      {{request.subject}}
+		      {% endif %}
 		    </p>
 		  </td>
 		  <td>

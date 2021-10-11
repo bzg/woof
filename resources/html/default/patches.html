@@ -32,8 +32,13 @@
 		{% for patch in approved-patches %}
 		<tr>
 		  <td>
-		    <p><a href="{{patch.link}}" target="_blank" title="Visit email sent by {{patch.from}} on {{patch.date}}">{{patch.subject}}
-		    </a></p>
+		    <p>
+		      {% if patch.link %}
+		      <a href="{{patch.link}}" target="_blank" title="Visit email sent by {{patch.from}} on {{patch.date}}">{{patch.subject}}</a>
+		      {% else %}
+		      {{patch.subject}}
+		      {% endif %}
+		    </p>
 		  </td>
 		  <td><p>{{patch.date|date:shortDate}}</p></td>
 		  <td><p>{{patch.backrefs}}</p></td>
@@ -68,8 +73,13 @@
 		{% for patch in unapproved-patches %}
 		<tr>
 		  <td>
-		    <p><a href="{{patch.link}}" target="_blank" title="Visit email sent by {{patch.from}} on {{patch.date}}">{{patch.subject}}
-		    </a></p>
+		    <p>
+		      {% if patch.link %}
+		      <a href="{{patch.link}}" target="_blank" title="Visit email sent by {{patch.from}} on {{patch.date}}">{{patch.subject}}</a>
+		      {% else %}
+		      {{patch.subject}}
+		      {% endif %}
+		    </p>
 		  </td>
 		  <td><p>{{patch.date|date:shortDate}}</p></td>
 		  <td><p>{{patch.backrefs}}</p></td>
