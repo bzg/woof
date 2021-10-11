@@ -318,6 +318,7 @@
                             (:change action)  :change
                             (:release action) :release)
         action-string (name action-type)
+        status-string (when-let [s (first status)] (name s))
         ;; Get the original report db entity
         op-report-msg (d/touch (d/entity db (action-type action)))
         op-from       (:from op-report-msg)
@@ -327,44 +328,37 @@
                         (->> status first (get action) (d/entity db) d/touch))
         from          (or (:from report-msg) op-from)
         msgid         (or (:message-id report-msg) op-msgid)
-        status-string (when-let [s (first status)] (name s))]
+        msg           {:id   msgid :subject    (:subject report-msg)
+                       :from from  :references (:references report-msg)}
+        op-msg        {:id   op-msgid :subject    (:subject op-report-msg)
+                       :from op-from  :references (:references op-report-msg)}
+        action-status {:action-string action-string
+                       :status-string status-string}]
+
     (if status-string
       ;; Report against a known entry
       (do
+        ;; Timbre logging
         (timbre/info
          (format "%s (%s) marked %s reported by %s (%s) as %s"
                  from msgid action-string op-from op-msgid (name status-string)))
-        (mail {:id   msgid :subject    (:subject report-msg)
-               :from from  :references (:references report-msg)}
-              (format (str "Thanks for marking this %s as \"%s\".\n\n"
-                           "You can find your email here:\n%s\n\n"
-                           "More on how to contribute to %s:\n%s")
-                      action-string status-string
-                      (format (:mail-url-format config/woof) msgid)
-                      (:project-name config/woof)
-                      (:contribute-url config/woof)))
-        (mail {:id   op-msgid :subject    (:subject op-report-msg)
-               :from op-from  :references (:references op-report-msg)}
-              (format (str "%s marked your %s as %s.\n\n"
-                           "Find your original report here:\n%s\n\n"
-                           "More on how to contribute to %s:\n%s")
-                      from action-string status-string
-                      (format (:mail-url-format config/woof) op-msgid)
-                      (:project-name config/woof)
-                      (:contribute-url config/woof))))
+
+        ;; Send email to the action reporter
+        (mail msg (config/format-email-notification
+                   (merge msg action-status {:notification-type :action-reporter})))
+
+        ;; Send email to the original poster
+        (mail op-msg (config/format-email-notification
+                      (merge msg action-status {:notification-type :action-op}))))
+
       ;; Report a new entry
       (do
+        ;; Timbre logging
         (timbre/info
          (format "%s (%s) reported a new %s" from msgid action-string))
-        (mail {:id   op-msgid :subject    (:subject op-report-msg)
-               :from op-from  :references (:references op-report-msg)}
-              (format (str "Thanks for sharing this %s!\n\n"
-                           "You can find it here:\n%s\n\n"
-                           "More on how to contribute to %s:\n%s")
-                      action-string
-                      (format (:mail-url-format config/woof) op-msgid)
-                      (:project-name config/woof)
-                      (:contribute-url config/woof)))))))
+        ;; Send email to the original poster
+        (mail op-msg (config/format-email-notification
+                      (merge msg {:notification-type :new} action-status)))))))
 
 (defn process-incoming-message [msg]
   (let [{:keys [X-Original-To X-BeenThere To References]}
@@ -393,7 +387,7 @@
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
-      
+
       ;; Detect a new bug/patch/request
       (cond
         (new-patch? msg)
@@ -404,7 +398,7 @@
 
         (new-request? msg)
         (report! {:request (:db/id (add-mail msg))})
-        
+
         :else
         ;; Or detect new changes and releases
         (or
@@ -415,7 +409,7 @@
          (when-let [versions (new-release? msg)]
            (report! {:release  (:db/id (add-mail msg))
                      :versions versions}))
-         
+
          ;; Or detect new actions
          (when (not-empty references)
            ;; FIXME: Check against multiple text/plain parts?
@@ -426,7 +420,7 @@
                         (-> msg :body :body string/trim string/split-lines))
                        (remove nil?))]
              (or
-              
+
               ;; New action against a known patch?
               (when-let [{:keys [report-eid status]}
                          (is-patch-update? body-woof-lines references)]
@@ -438,7 +432,7 @@
                          (is-bug-update? body-woof-lines references)]
                 (report! {:bug report-eid status (:db/id (add-mail msg))}
                          status))
-              
+
               ;; New action against a known help request?
               (when-let [{:keys [report-eid status]}
                          (is-request-update? body-woof-lines references)]
@@ -450,7 +444,7 @@
                          (is-change-update? body-woof-lines references)]
                 (report! {:change report-eid status (:db/id (add-mail msg))}
                          status))
-              
+
               ;; New action against a known release announcement?
               (when-let [{:keys [report-eid status]}
                          (is-release-update? body-woof-lines references)]
@@ -489,7 +483,7 @@
 (defn- start-tasks! []
   (tt/every! 1200 ;; 20 minutes
              (fn []
-               (try 
+               (try
                  (events/stop @woof-inbox-monitor)
                  (catch Exception _ nil))
                (start-inbox-monitor!))))

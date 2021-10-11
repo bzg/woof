@@ -34,3 +34,24 @@
    :feed-description (System/getenv "WOOF_FEED_DESCRIPTION")
    })
 
+(defn format-email-notification
+  [{:keys [notification-type
+           op-from op-msgid from msgid
+           subject references
+           action-string status-string]}]
+  (str
+   (condp = notification-type
+     :new
+     (format "Thanks for sharing this %s!\n\n" action-string)
+     :action-reporter
+     (format "Thanks for marking this %s as \"%s\".\n\n"
+             action-string status-string)
+     :action-op
+     (format "%s marked your %s as %s.\n\n"
+             from action-string status-string))
+   (when-let [link (not-empty (format (:mail-url-format woof) msgid))]
+     (format "You can find your email here:\n%s\n\n" link))
+   (when-let [contribute-url (not-empty (:contribute-url woof))]
+     (format "More on how to contribute to %s:\n%s"
+             (:project-name woof)
+             (:contribute-url woof)))))
