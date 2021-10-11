@@ -190,12 +190,18 @@
 ;; Check whether a report is an action against a known entity
 
 (def update-strings
-  {:bug          #{"confirmed" "canceled" "fixed"}
-   :patch        #{"approved" "canceled" "applied"}
-   :request      #{"handled" "canceled" "done"}
-   :change       #{"canceled" "released"}
-   :announcement #{"canceled"}
-   :release      #{"canceled"}})
+  {:bug          #{"Confirmed" "Canceled" "Fixed"}
+   :patch        #{"Approved" "Canceled" "Applied"}
+   :request      #{"Handled" "Canceled" "Done"}
+   :change       #{"Canceled" "Released"}
+   :announcement #{"Canceled"}
+   :release      #{"Canceled"}})
+
+(def update-strings-re
+  (->> (into #{} (flatten (map concat (map val update-strings))))
+       (string/join "|")
+       (format "^(%s)[;,:.].*$")
+       (re-pattern)))
 
 (defn is-in-a-known-thread? [references]
   (doseq [i (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db))
@@ -204,7 +210,7 @@
       (d/transact! conn [{:message-id i :backrefs (inc backrefs)}]))))
 
 (defn is-report-update? [report-type body-woof-lines references]
-  ;; Is there a known action (e.g. "!canceled") for this report type
+  ;; Is there a known action (e.g. "Canceled") for this report type
   ;; in the body of the email?
   (when-let [action (some (report-type update-strings) body-woof-lines)]
     ;; Is this action against a known report, and if so, which one?
@@ -271,9 +277,9 @@
           (timbre/info
            (format
             (condp = purpose
-              :ack-reporter    "Sent mail to %s: ack report"
-              :ack-op-reporter "Sent mail to %s: ack report against original report"
-              :ack-op          "Sent mail to %s: ack original report")
+              :ack-reporter    "Sent mail to %s: ack report against known report"
+              :ack-op-reporter "Sent mail to %s: ack report against initial report"
+              :ack-op          "Sent mail to %s: ack initial report")
             from))))
       (catch Exception e
         (timbre/error (str "Cannot send email: "
@@ -295,7 +301,7 @@
 (defn- new-patch? [msg]
   (or
    ;; New patches with a subject starting with "[PATCH"
-   (re-matches #"(?i)^\[PATCH(?: [0-9]+/[0-9]+)?].*$" (:subject msg))
+   (re-matches #"^\[PATCH(?: [0-9]+/[0-9]+)?].*$" (:subject msg))
    ;; New patches with a text/x-diff or text/x-patch MIME part
    (and (:multipart? msg)
         (not-empty
@@ -303,20 +309,20 @@
                  (map :content-type (:body msg)))))))
 
 (defn- new-bug? [msg]
-  (re-matches #"(?i)^\[BUG].*$" (:subject msg)))
+  (re-matches #"^\[BUG].*$" (:subject msg)))
 
 (defn- new-request? [msg]
-  (re-matches #"(?i)^\[HELP].*$" (:subject msg)))
+  (re-matches #"^\[HELP].*$" (:subject msg)))
 
 (defn- new-announcement? [msg]
-  (re-matches #"(?i)^\[ANN].*$" (:subject msg)))
+  (re-matches #"^\[ANN].*$" (:subject msg)))
 
 (defn- new-change? [msg]
-  (when-let [m (re-matches #"(?i)^\[CHANGE\s*([^]]+)].*$" (:subject msg))]
+  (when-let [m (re-matches #"^\[CHANGE\s*([^]]+)].*$" (:subject msg))]
     (into #{} (string/split (second m) #"\s"))))
 
 (defn- new-release? [msg]
-  (when-let [m (re-matches #"(?i)^\[RELEASE\s*([^]]+)].*$" (:subject msg))]
+  (when-let [m (re-matches #"^\[RELEASE\s*([^]]+)].*$" (:subject msg))]
     (into #{} (string/split (second m) #"\s"))))
 
 (defn report! [action & status]
@@ -428,12 +434,14 @@
 
          ;; Or detect new actions
          (when (not-empty references)
-           ;; FIXME: Check against multiple text/plain parts?
            (when-let [body-woof-lines
                       (->>
                        (map
-                        #(when-let [m (re-find #"^!([^!\s]+)" %)] (peek m))
-                        (-> msg :body :body string/trim string/split-lines))
+                        #(when-let [m (re-matches update-strings-re %)] (peek m))
+                        ;; FIXME: Check against multiple text/plain parts?
+                        (->> msg :body :body
+                             string/trim string/split-lines
+                             (filter not-empty)))
                        (remove nil?))]
              (or
 
