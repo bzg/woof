@@ -2,6 +2,7 @@
   (:require [clojure-mail.core :as mail]
             [clojure-mail.message :as message]
             [clojure-mail.events :as events]
+            [clojure-mail.parser :as parser]
             [clojure.string :as string]
             [clojure.walk :as walk]
             [mount.core :as mount]
@@ -434,52 +435,64 @@
 
          ;; Or detect new actions
          (when (not-empty references)
-           (when-let [body-woof-lines
-                      (->>
-                       (map
-                        #(when-let [m (re-matches update-strings-re %)] (peek m))
-                        ;; FIXME: Check against multiple text/plain parts?
-                        (->> msg :body :body
-                             string/trim string/split-lines
-                             (filter not-empty)))
-                       (remove nil?))]
-             (or
+           (let [body-parts (if (:multipart? msg) (:body msg) (list (:body msg)))
+                 body-seq
+                 (map
+                  #(condp
+                       (fn [a b] (re-matches (re-pattern (str "text/" a ".*")) b))
+                       (:content-type %)
+                     "plain" (:body %)
+                     "html"  (parser/html->text (:body %)))
+                  body-parts)]
+             (when-let
+                 [body-woof-lines
+                  (->>
+                   (map
+                    #(when-let [m (re-matches update-strings-re %)] (peek m))
+                    ;; FIXME: Check against multiple text/plain parts?
+                    (->> body-seq
+                         (string/join "\n")
+                         string/split-lines
+                         (map string/trim)
+                         (filter not-empty)))
+                   (remove nil?))]
 
-              ;; New action against a known patch?
-              (when-let [{:keys [report-eid status]}
-                         (is-report-update? :patch body-woof-lines references)]
-                (report! {:patch report-eid status (:db/id (add-mail msg))}
-                         status))
+               (or
+                ;; New action against a known patch?
+                (when-let [{:keys [report-eid status]}
+                           (is-report-update? :patch body-woof-lines references)]
+                  (report! {:patch report-eid status (:db/id (add-mail msg))}
+                           status))
 
-              ;; New action against a known bug?
-              (when-let [{:keys [report-eid status]}
-                         (is-report-update? :bug body-woof-lines references)]
-                (report! {:bug report-eid status (:db/id (add-mail msg))}
-                         status))
+                ;; New action against a known bug?
+                (when-let [{:keys [report-eid status]}
+                           (is-report-update? :bug body-woof-lines references)]
+                  (report! {:bug report-eid status (:db/id (add-mail msg))}
+                           status))
 
-              ;; New action against a known help request?
-              (when-let [{:keys [report-eid status]}
-                         (is-report-update? :request body-woof-lines references)]
-                (report! {:request report-eid status (:db/id (add-mail msg))}
-                         status))
+                ;; New action against a known help request?
+                (when-let [{:keys [report-eid status]}
+                           (is-report-update? :request body-woof-lines references)]
+                  (report! {:request report-eid status (:db/id (add-mail msg))}
+                           status))
 
-              ;; New action against a known change announcement?
-              (when-let [{:keys [report-eid status]}
-                         (is-report-update? :change body-woof-lines references)]
-                (report! {:change report-eid status (:db/id (add-mail msg))}
-                         status))
+                ;; New action against a known change announcement?
+                (when-let [{:keys [report-eid status]}
+                           (is-report-update? :change body-woof-lines references)]
+                  (report! {:change report-eid status (:db/id (add-mail msg))}
+                           status))
 
-              ;; New action against a known announcement?
-              (when-let [{:keys [report-eid status]}
-                         (is-report-update? :announcement body-woof-lines references)]
-                (report! {:announcement report-eid status (:db/id (add-mail msg))}
-                         status))
-              
-              ;; New action against a known release announcement?
-              (when-let [{:keys [report-eid status]}
-                         (is-report-update? :release body-woof-lines references)]
-                (report! {:release report-eid status (:db/id (add-mail msg))}
-                         status))))))))))
+                ;; New action against a known announcement?
+                (when-let [{:keys [report-eid status]}
+                           (is-report-update? :announcement body-woof-lines references)]
+                  (report! {:announcement report-eid status (:db/id (add-mail msg))}
+                           status))
+
+                ;; New action against a known release announcement?
+                (when-let [{:keys [report-eid status]}
+                           (is-report-update? :release body-woof-lines references)]
+                  (report! {:release report-eid status (:db/id (add-mail msg))}
+                           status)))))))))))
 
 ;;; Inbox monitoring
 
