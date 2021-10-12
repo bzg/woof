@@ -226,7 +226,7 @@
   {:bug          #{"Confirmed" "Canceled" "Fixed"}
    :patch        #{"Approved" "Canceled" "Applied"}
    :request      #{"Handled" "Canceled" "Done"}
-   :change       #{"Canceled" "Released"}
+   :change       #{"Canceled"}
    :announcement #{"Canceled"}
    :release      #{"Canceled"}})
 
@@ -449,6 +449,14 @@
     (doseq [r changes-reports]
       (d/transact! conn [{:db/id r :released release-id}]))))
 
+(defn unrelease-changes! [release-id]
+  (let [changes-to-unrelease
+        (->> (filter #(= release-id (:released %))
+                     (get-reports :change))
+             (map #(get % :db/id)))]
+    (doseq [r changes-to-unrelease]
+      (d/transact! conn [[:db/retract r :released]]))))
+
 (defn process-incoming-message [msg]
   (let [{:keys [X-Original-To X-BeenThere To References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
@@ -567,7 +575,8 @@
                 (when-let [{:keys [report-eid status]}
                            (is-report-update? :release body-woof-lines references)]
                   (report! {:release report-eid status (:db/id (add-mail msg))}
-                           status)))))))))))
+                           status)
+                  (unrelease-changes! report-eid)))))))))))
 
 ;;; Inbox monitoring
 
