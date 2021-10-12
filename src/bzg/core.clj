@@ -191,7 +191,7 @@
 
 ;; Check whether a report is an action against a known entity
 
-(def update-strings
+(def report-strings
   {:bug          #{"Confirmed" "Canceled" "Fixed"}
    :patch        #{"Approved" "Canceled" "Applied"}
    :request      #{"Handled" "Canceled" "Done"}
@@ -199,11 +199,19 @@
    :announcement #{"Canceled"}
    :release      #{"Canceled"}})
 
-(def update-strings-re
-  (->> (into #{} (flatten (map concat (map val update-strings))))
-       (string/join "|")
-       (format "^(%s)[;,:.].*$")
-       (re-pattern)))
+(defn report-strings-all [report-type]
+  (let [report-do   (report-type report-strings)
+        report-undo (map #(string/capitalize (str "Un" %)) report-do)]
+    (into #{} (concat report-do report-undo))))
+
+(def report-strings-re
+  (let [all-do   (into #{} (flatten (map concat (map val report-strings))))
+        all-undo (map #(string/capitalize (str "Un" %)) all-do)
+        all      (into #{} (concat all-do all-undo))]
+    (->> all
+         (string/join "|")
+         (format "(%s)[;,:.].*")
+         (re-pattern))))
 
 (defn is-in-a-known-thread? [references]
   (doseq [i (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db))
@@ -214,7 +222,7 @@
 (defn is-report-update? [report-type body-woof-lines references]
   ;; Is there a known action (e.g. "Canceled") for this report type
   ;; in the body of the email?
-  (when-let [action (some (report-type update-strings) body-woof-lines)]
+  (when-let [action (some (report-strings-all report-type) body-woof-lines)]
     ;; Is this action against a known report, and if so, which one?
     (when-let [e (-> #(ffirst (d/q `[:find ?e
                                      :where
@@ -333,7 +341,6 @@
     (into #{} (string/split (second m) #"\s"))))
 
 (defn report! [action & status]
-  (d/transact! conn [action])
   (let [action-type   (cond (:bug action)          :bug
                             (:patch action)        :patch
                             (:request action)      :request
@@ -360,6 +367,14 @@
         admin-or-maintainer?
         (or (:admin (d/entity db [:email from]))
             (:maintainer (d/entity db [:email from])))]
+
+    ;; Add or retract status
+    (if-let [m (when (not-empty status-string)
+                 (re-matches #"un(.+)" status-string))]
+      (d/transact! conn [[:db/retract
+                          (:db/id (d/entity db [action-type (action-type action)]))
+                          (keyword (peek m))]])
+      (d/transact! conn [action]))
 
     (if status-string
       ;; Report against a known entry
@@ -464,7 +479,7 @@
                  [body-woof-lines
                   (->>
                    (map
-                    #(when-let [m (re-matches update-strings-re %)] (peek m))
+                    #(when-let [m (re-matches report-strings-re %)] (peek m))
                     (->> body-seq
                          (string/join "\n")
                          string/split-lines
