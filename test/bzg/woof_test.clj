@@ -9,7 +9,8 @@
 (spec/def ::server string?)
 (spec/def ::password string?)
 (spec/def ::mailing-list string?)
-(spec/def ::admin string?)
+(spec/def ::admin-address string?)
+(spec/def ::admin-username string?)
 (spec/def ::smtp-host string?)
 (spec/def ::smtp-login string?)
 (spec/def ::smtp-password string?)
@@ -29,7 +30,8 @@
                       ::password
                       ::mailing-list
                       ::mail-url-format
-                      ::admin
+                      ::admin-address
+                      ::admin-name
                       ::smtp-host
                       ::smtp-login
                       ::smtp-password

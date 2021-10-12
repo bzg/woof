@@ -195,9 +195,14 @@
   :stop (when woof-server (woof-server :timeout 100)))
 
 (defn -main []
-  (tt/start!)
-  (core/start-mail-loop!)
-  (mount/start #'core/woof-manager #'woof-server))
+  (let [admin-address (:admin-address config/woof)]
+    (tt/start!)
+    (core/update-person {:email    admin-address
+                         :username (or (:admin-username config/woof)
+                                       admin-address)
+                         :role     :admin})
+    (core/start-mail-loop!)
+    (mount/start #'core/woof-manager #'woof-server)))
 
 ;; (-main)
 

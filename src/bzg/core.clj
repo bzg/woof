@@ -47,8 +47,8 @@
 
 ;; Small utility functions
 
-(defn get-from [from]
-  (:address (first from)))
+(defn make-to [username address]
+  (str username " <" address ">"))
 
 (defn get-id [^String id]
   (peek (re-matches #"^<?(.+[^>])>?$" id)))
@@ -176,16 +176,17 @@
     (d/transact! conn [{:message-id id
                         :subject    subject
                         :references refs
-                        :from       (get-from from)
+                        :from       (:address (first from))
                         :date       (java.util.Date.)
                         :backrefs   1}])
     (d/touch (d/entity db [:message-id id]))))
 
-(defn update-person [{:keys [email role aliases]}]
+(defn update-person [{:keys [email username role aliases]}]
   (let [role (or role :contributor)]
-    (d/transact! conn [{:email   email
-                        role     (java.util.Date.)
-                        :aliases (or aliases #{})}])
+    (d/transact! conn [{:email    email
+                        :username username
+                        role      (java.util.Date.)
+                        :aliases  (or aliases #{})}])
     (d/touch (d/entity db [:email email]))))
 
 ;; Check whether a report is an action against a known entity
@@ -250,13 +251,17 @@
                                  :pass (:smtp-password config/woof)
                                  :tls  true}
                                {:from (:smtp-login config/woof)
-                                :to   (:admin config/woof)})
+                                :to   (make-to
+                                       (:admin-username config/woof)
+                                       (:admin-address config/woof))})
                               {:min-level :warn})}})
 
 ;; Email notifications
 
 (defn send-email [{:keys [msg body purpose]}]
-  (let  [{:keys [id from subject references]} msg]
+  (let  [{:keys [id from subject references]}
+         msg
+         to (make-to (:username (d/entity db [:email from])) from)]
     (try
       (when-let
           [res (postal/send-message
@@ -268,10 +273,11 @@
                  :pass (:smtp-password config/woof)}
                 {:from        (:smtp-login config/woof)
                  :message-id  #(postal.support/message-id (:base-url config/woof))
-                 :reply-to    (:admin config/woof)
+                 :reply-to    (make-to (:admin-username config/woof)
+                                       (:admin-address config/woof))
                  :references  (string/join " " (remove nil? (list references id)))
                  :in-reply-to id
-                 :to          from
+                 :to          to
                  :subject     (str "Re: " (get-subject subject))
                  :body        body})]
         (when (= (:error res) :SUCCESS)
@@ -281,9 +287,9 @@
               :ack-reporter    "Sent mail to %s: ack report against known report"
               :ack-op-reporter "Sent mail to %s: ack report against initial report"
               :ack-op          "Sent mail to %s: ack initial report")
-            from))))
+            to))))
       (catch Exception e
-        (timbre/error (str "Cannot send email: "
+        (timbre/error (str "Cannot send email to %s: " to
                            (:cause (Throwable->map e) "\n")))))))
 
 (def mail-chan (async/chan))
@@ -383,16 +389,16 @@
 (defn process-incoming-message [msg]
   (let [{:keys [X-Original-To X-BeenThere To References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
-        references (when (not-empty References)
-                     (->> (string/split References #"\s")
-                          (keep not-empty)
-                          (map get-id)))
-        ;; FIXME: Also get and store the name, if any?
-        from       (get-from (:from msg))]
+        references   (when (not-empty References)
+                       (->> (string/split References #"\s")
+                            (keep not-empty)
+                            (map get-id)))
+        from         (first (:from msg))
+        from-address (:address from)]
 
     ;; Only process emails if they are sent directly from the release
     ;; manager or from the mailing list.
-    (when (or (= from (:admin config/woof))
+    (when (or (= from (:admin-address config/woof))
               (some (->>
                      (list X-Original-To X-BeenThere
                            (when (string? To)
@@ -403,7 +409,8 @@
                     (into #{} (list (:mailing-list-address config/woof)))))
 
       ;; Possibly add a new person
-      (update-person {:email from})
+      (update-person {:email    from-address
+                      :username (or (not-empty (:name from)) from-address)})
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
@@ -449,7 +456,6 @@
                   (->>
                    (map
                     #(when-let [m (re-matches update-strings-re %)] (peek m))
-                    ;; FIXME: Check against multiple text/plain parts?
                     (->> body-seq
                          (string/join "\n")
                          string/split-lines

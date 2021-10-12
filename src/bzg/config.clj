@@ -8,7 +8,8 @@
    :inbox-folder   (System/getenv "WOOF_INBOX_FOLDER")
 
    ;; General application options
-   :admin                (System/getenv "WOOF_ADMIN")
+   :admin-address        (System/getenv "WOOF_ADMIN_ADDRESS")
+   :admin-username       (System/getenv "WOOF_ADMIN_NAME")
    :port                 (or (System/getenv "WOOF_PORT") "3000")
    :db-dir               (or (System/getenv "WOOF_DB_DIR") ".db")
    :log-file             (or (System/getenv "WOOF_LOG_FILE") "logs.txt")
