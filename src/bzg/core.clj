@@ -356,7 +356,10 @@
         op-msg        {:id   op-msgid :subject    (:subject op-report-msg)
                        :from op-from  :references (:references op-report-msg)}
         action-status {:action-string action-string
-                       :status-string status-string}]
+                       :status-string status-string}
+        admin-or-maintainer?
+        (or (:admin (d/entity db [:email from]))
+            (:maintainer (d/entity db [:email from])))]
 
     (if status-string
       ;; Report against a known entry
@@ -366,15 +369,19 @@
          (format "%s (%s) marked %s reported by %s (%s) as %s"
                  from msgid action-string op-from op-msgid (name status-string)))
 
-        ;; Send email to the action reporter
-        (mail msg (config/format-email-notification
-                   (merge msg action-status {:notification-type :action-reporter}))
-              :ack-reporter)
+        ;; Send email to the action reporter, if he's not an admin/maintainer
+        (if-not admin-or-maintainer?
+          (mail msg (config/format-email-notification
+                     (merge msg action-status {:notification-type :action-reporter}))
+                :ack-reporter)
+          (timbre/info "Skipping email ack for admin or maintainer"))
 
-        ;; Send email to the original poster
-        (mail op-msg (config/format-email-notification
-                      (merge msg action-status {:notification-type :action-op}))
-              :ack-op-reporter))
+        ;; Send email to the original poster, unless it is the action reporter
+        (if-not (= from op-from)
+          (mail op-msg (config/format-email-notification
+                        (merge msg action-status {:notification-type :action-op}))
+                :ack-op-reporter)
+          (timbre/info "Do not ack original poster, same as reporter")))
 
       ;; Report a new entry
       (do
@@ -382,9 +389,11 @@
         (timbre/info
          (format "%s (%s) reported a new %s" from msgid action-string))
         ;; Send email to the original poster
-        (mail op-msg (config/format-email-notification
-                      (merge msg {:notification-type :new} action-status))
-              :ack-op)))))
+        (if-not admin-or-maintainer?
+          (mail op-msg (config/format-email-notification
+                        (merge msg {:notification-type :new} action-status))
+                :ack-op)
+          (timbre/info "Skipping email ack for admin or maintainer"))))))
 
 (defn process-incoming-message [msg]
   (let [{:keys [X-Original-To X-BeenThere To References]}
