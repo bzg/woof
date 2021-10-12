@@ -6,7 +6,7 @@
             [bzg.config :as config]
             [bzg.feeds :as feeds]
             [reitit.ring.middleware.muuntaja :as muuntaja]
-            ;; [ring.middleware.reload :as reload]
+            [ring.middleware.reload :as reload]
             [ring.middleware.params :as params]
             [muuntaja.core :as m]
             [reitit.ring.middleware.parameters :as parameters]
@@ -52,9 +52,11 @@
                {:db (->> (core/get-releases) (sort-by :data) reverse
                          ;; FIXME: Allow to configure
                          (take 3))
-                :s s})
+                :s  s})
               :changes
               (db-format {:db (core/get-unreleased-changes) :s s})
+              :released-changes
+              (db-format {:db (core/get-latest-released-changes) :s s})
               :announcements
               (db-format {:db (core/get-announcements) :s s})}))}))
 
@@ -140,6 +142,7 @@
      ["/updates.json" {:get data/get-data-updates}]
      ["/mails.json" {:get data/get-data-mails}]
      ["/changes.json" {:get data/get-data-changes}]
+     ["/released-changes.json" {:get data/get-data-released-changes}]
      ["/announcements.json" {:get data/get-data-announcements}]
      ["/releases.json" {:get data/get-data-releases}]
 
@@ -159,6 +162,7 @@
      ["/updates.rss" {:get feeds/feed-updates}]
      ["/mails.rss" {:get feeds/feed-mails}]
      ["/changes.rss" {:get feeds/feed-changes}]
+     ["/released-changes.rss" {:get feeds/feed-released-changes}]
      ["/announcements.rss" {:get feeds/feed-announcements}]
      ["/releases.rss" {:get feeds/feed-releases}]
      
@@ -187,11 +191,11 @@
 
 (def woof-server)
 (mount/defstate ^{:on-reload :noop} woof-server
-  ;; :start (server/run-server
-  ;;         (reload/wrap-reload handler {:dirs ["src" "resources"]})
-  ;;         {:port (edn/read-string (:port config/woof))})
   :start (server/run-server
-          handler {:port (edn/read-string (:port config/woof))})
+          (reload/wrap-reload handler {:dirs ["src" "resources"]})
+          {:port (edn/read-string (:port config/woof))})
+  ;; :start (server/run-server
+  ;;         handler {:port (edn/read-string (:port config/woof))})
   :stop (when woof-server (woof-server :timeout 100)))
 
 (defn -main []

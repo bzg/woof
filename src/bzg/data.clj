@@ -18,6 +18,7 @@
            :patches            (core/get-unapplied-patches)
            :mails              (core/get-mails)
            :changes            (core/get-unreleased-changes)
+           :released-changes   (core/get-latest-released-changes)
            :announcements      (core/get-announcements)
            :releases           (core/get-releases)
            :updates            (core/get-updates)
@@ -36,4 +37,5 @@
 (defn get-data-mails [_] (get-data :mails))
 (defn get-data-releases [_] (get-data :releases))
 (defn get-data-changes [_] (get-data :changes))
+(defn get-data-released-changes [_] (get-data :released-changes))
 (defn get-data-announcements [_] (get-data :announcements))

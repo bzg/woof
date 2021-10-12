@@ -40,6 +40,33 @@
 
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
+	  {% ifequal released-changes|count 0 %}
+	  <h1 class="title is-size-4">No latest released changes</h1>
+	  {% else %}
+	  <h1 class="title is-size-4">
+	    <span>
+	      Latest released changes
+	      <a class="tag is-info is-light" href="/released-changes.rss">RSS</a>
+	      <a class="tag is-success is-light" href="/released-changes.json">JSON</a>
+	    </span>
+	  </h1>
+	  <div class="content">
+	    {% for change in released-changes %}
+	    <p>
+	      {% if change.link %}
+	      <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
+	      {% else %}
+	      {{change.subject}}
+	      {% endif %}
+	    </p>
+	    {% endfor %}
+	  </div>
+	  {% endifequal %}
+	</div>
+      </section>
+
+      <section class="section" style="padding: 1.5rem 1.0rem">
+	<div class="container">
 	  {% ifequal announcements|count 0 %}
 	  <h1 class="title is-size-4">No community announcement</h1>
 	  {% else %}

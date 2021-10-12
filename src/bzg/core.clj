@@ -27,7 +27,6 @@
                   :db/unique    :db.unique/identity}
    :references   {:db/cardinality :db.cardinality/many}
    :aliases      {:db/cardinality :db.cardinality/many}
-   :versions     {:db/cardinality :db.cardinality/many}
    :bug          {:db/valueType :db.type/ref
                   :db/unique    :db.unique/identity}
    :patch        {:db/valueType :db.type/ref
@@ -81,8 +80,12 @@
 (defn get-bugs [] (get-reports-msgs :bug (get-reports :bug)))
 (defn get-patches [] (get-reports-msgs :patch (get-reports :patch)))
 (defn get-requests [] (get-reports-msgs :request (get-reports :request)))
-(defn get-changes [] (get-reports-msgs :change (get-reports :change)))
 (defn get-releases [] (get-reports-msgs :release (get-reports :release)))
+
+(defn get-changes []
+  (->> (get-reports :change)
+       (remove :released)
+       (get-reports-msgs :change)))
 
 (defn get-logs []
   (->> (d/q '[:find ?e :where [?e :log _]] db)
@@ -150,6 +153,34 @@
   (->> (get-reports :change)
        (remove :released)
        (get-reports-msgs :change)))
+
+(defn get-latest-release []
+  (->> (d/q '[:find ?e :where [?e :release _]] db)
+       (map first)
+       (map #(d/pull db '[*] %))
+       (remove :canceled)
+       (map (juxt :release #(hash-map :version (:version %))))
+       (map (juxt #(select-keys (d/touch (d/entity db (:db/id (first %))))
+                                [:date])
+                  second))
+       (map #(conj (first %) (second %)))
+       (sort-by :date)
+       last))
+
+(defn get-all-releases []
+  (->> (d/q '[:find ?e :where [?e :release _]] db)
+       (map first)
+       (map #(d/pull db '[*] %))
+       (remove :canceled)
+       (map :version)
+       (into #{})))
+
+(defn get-latest-released-changes []
+  (let [latest-version (:version (get-latest-release))]
+    (->> (filter #(and (= latest-version (:version %))
+                       (:released %))
+                 (get-reports :change))
+         (get-reports-msgs :change))))
 
 (defn get-updates []
   (flatten
@@ -334,11 +365,11 @@
 
 (defn- new-change? [msg]
   (when-let [m (re-matches #"^\[CHANGE\s*([^]]+)].*$" (:subject msg))]
-    (into #{} (string/split (second m) #"\s"))))
+    (peek m)))
 
 (defn- new-release? [msg]
   (when-let [m (re-matches #"^\[RELEASE\s*([^]]+)].*$" (:subject msg))]
-    (into #{} (string/split (second m) #"\s"))))
+    (peek m)))
 
 (defn report! [action & status]
   (let [action-type   (cond (:bug action)          :bug
@@ -410,6 +441,14 @@
                 :ack-op)
           (timbre/info "Skipping email ack for admin or maintainer"))))))
 
+(defn release-changes! [version release-id]
+  (let [changes-reports
+        (->> (filter #(= version (:version %))
+                     (get-reports :change))
+             (map #(get % :db/id)))]
+    (doseq [r changes-reports]
+      (d/transact! conn [{:db/id r :released release-id}]))))
+
 (defn process-incoming-message [msg]
   (let [{:keys [X-Original-To X-BeenThere To References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
@@ -456,13 +495,19 @@
         :else
         ;; Or detect a new announcement, change and release
         (or
-         (when-let [versions (new-change? msg)]
-           (report! {:change   (:db/id (add-mail msg))
-                     :versions versions}))
+         (when-let [version (new-change? msg)]
+           (if (some (get-all-releases) (into #{} (list version)))
+             (timbre/error
+              (format "%s tried to announce a change against released version %s"
+                      from-address version))
+             (report! {:change  (:db/id (add-mail msg))
+                       :version version})))
 
-         (when-let [versions (new-release? msg)]
-           (report! {:release  (:db/id (add-mail msg))
-                     :versions versions}))
+         (when-let [version (new-release? msg)]
+           (let [release-id (:db/id (add-mail msg))]
+             (report! {:release release-id
+                       :version version})
+             (release-changes! version release-id)))
 
          ;; Or detect new actions
          (when (not-empty references)
