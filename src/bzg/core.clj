@@ -75,6 +75,7 @@
   (->> (d/q `[:find ?e :where [?e :message-id _]] db)
        (map first)
        (map #(d/pull db '[*] %))
+       (remove :private?)
        (sort-by :date)
        ;; FIXME: Allow to configure?
        (take 100)))
@@ -98,7 +99,7 @@
   (->> (get-reports :announcement)
        (remove :canceled)
        (get-reports-msgs :announcement)
-       ;; FIXME: allow to configure?
+       ;; FIXME: Allow to configure?
        (take 10)))
 
 (defn get-confirmed-bugs []
@@ -230,7 +231,7 @@
   (d/transact! conn [{:log date :msg msg}])
   (d/touch (d/entity db [:log date])))
 
-(defn add-mail [{:keys [id from subject] :as msg}]
+(defn add-mail [{:keys [id from subject] :as msg} & private?]
   (let [headers     (walk/keywordize-keys (apply conj (:headers msg)))
         id          (get-id id)
         refs-string (:References headers)
@@ -239,10 +240,16 @@
     (d/transact! conn [{:message-id id
                         :subject    subject
                         :references refs
+                        :private?   (not (nil? private?))
                         :from       (:address (first from))
+                        :username   (:name (first from))
                         :date       (java.util.Date.)
                         :backrefs   1}])
+    ;; Also return the username as we use it in `report!`
     (d/touch (d/entity db [:message-id id]))))
+
+(defn add-mail-private [msg]
+  (add-mail msg :private))
 
 (defn update-person [{:keys [email username role aliases]}]
   (let [timestamp (java.util.Date.)
@@ -271,6 +278,18 @@
    :announcement #{"Canceled"}
    :release      #{"Canceled"}})
 
+(def admin-strings
+  {:admin       #{"Add admin" "Remove admin" "Remove maintainer"}
+   :maintainer  #{"Maintainance" "Add maintainer" "Ban" "Unban" "Cancel reports by"}
+   :contributor #{"Notifications"}})
+
+(def admin-strings-re
+  (let [{:keys [admin maintainer contributor]} admin-strings]
+    (->> (concat admin maintainer contributor)
+         (string/join "|")
+         (format "(%s): ([^\\s]+).*")
+         re-pattern)))
+
 (defn report-strings-all [report-type]
   (let [report-do   (report-type report-strings)
         report-undo (map #(string/capitalize (str "Un" %)) report-do)]
@@ -283,7 +302,7 @@
     (->> all
          (string/join "|")
          (format "(%s)[;,:.].*")
-         (re-pattern))))
+         re-pattern)))
 
 (defn is-in-a-known-thread? [references]
   (doseq [i (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db))
@@ -291,10 +310,10 @@
     (let [backrefs (:backrefs (d/entity db [:message-id i]))]
       (d/transact! conn [{:message-id i :backrefs (inc backrefs)}]))))
 
-(defn is-report-update? [report-type body-woof-lines references]
+(defn is-report-update? [report-type body-report references]
   ;; Is there a known action (e.g. "Canceled") for this report type
   ;; in the body of the email?
-  (when-let [action (some (report-strings-all report-type) body-woof-lines)]
+  (when-let [action (some (report-strings-all report-type) body-report)]
     ;; Is this action against a known report, and if so, which one?
     (when-let [e (-> #(ffirst (d/q `[:find ?e
                                      :where
@@ -412,6 +431,38 @@
   (when-let [m (re-matches #"^\[RELEASE\s*([^]]+)].*$" (:subject msg))]
     (peek m)))
 
+;; FIXME: Todo
+(defn add-admin [v] v)
+(defn remove-admin [v] v)
+(defn add-maintainer [v] v)
+(defn remove-maintainer [v] v)
+(defn toggle-maintenance [v] v)
+(defn ban [v] v)
+(defn unban [v] v)
+(defn cancel-by [v] v)
+
+(defn admin-report! [{:keys [commands msg]}]
+  (add-mail-private msg)
+  (doseq [[cmd cmd-val] commands]
+    (condp = cmd
+      "Add admin"         (add-admin cmd-val)
+      "Remove admin"      (remove-admin cmd-val)
+      "Remove maintainer" (remove-maintainer cmd-val))))
+
+(defn maintainer-report! [{:keys [commands msg]}]
+  (add-mail-private msg)
+  (doseq [[cmd cmd-val] commands]
+    (condp = cmd
+      "Maintenance"       (toggle-maintenance cmd-val)
+      "Add maintainer"    (add-maintainer cmd-val)
+      "Ban"               (ban cmd-val)
+      "Unban"             (unban cmd-val)
+      "Cancel reports by" (cancel-by cmd-val))))
+
+;; FIXME: Todo
+(defn toggle-email-notifications [from status]
+  (println from status))
+
 (defn report! [action & status]
   (let [action-type   (cond (:bug action)          :bug
                             (:patch action)        :patch
@@ -429,6 +480,7 @@
         report-msg    (when status
                         (->> status first (get action) (d/entity db) d/touch))
         from          (or (:from report-msg) op-from)
+        username      (or (:username report-msg) from)
         msgid         (or (:message-id report-msg) op-msgid)
         msg           {:id   msgid :subject    (:subject report-msg)
                        :from from  :references (:references report-msg)}
@@ -439,6 +491,9 @@
         admin-or-maintainer?
         (or (:admin (d/entity db [:email from]))
             (:maintainer (d/entity db [:email from])))]
+
+    ;; Possibly add a new person
+    (update-person {:email from :username username})
 
     ;; Add or retract status
     (if-let [m (when (not-empty status-string)
@@ -498,41 +553,36 @@
     (doseq [r changes-to-unrelease]
       (d/transact! conn [[:db/retract r :released]]))))
 
-(defn process-incoming-message [msg]
-  (let [{:keys [X-Original-To X-BeenThere To References]}
+(defn process-incoming-message [{:keys [from] :as msg}]
+  (let [{:keys [To X-Original-To References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         references   (when (not-empty References)
                        (->> (string/split References #"\s")
                             (keep not-empty)
                             (map get-id)))
-        from         (first (:from msg))
-        from-address (:address from)]
+        to           (when (string? To)
+                       (re-matches #"[^<@\s;,]+@[^>@\s;,]+" To))
+        from         (:address (first from))
+        admins       (get-admins)
+        maintainers  (get-maintainers)
+        contributors (get-contributors)]
 
     ;; Only process emails if they are sent directly from the release
     ;; manager or from the mailing list.
     (when (and
            ;; Ignore messages from banned persons
-           (not (some (get-banned) (list from-address)))
+           (not (some (get-banned) (list from)))
            ;; Always process messages from admin
            (or (= from (:admin-address config/woof))
                ;; Check relevant "To" headers
-               (some (->>
-                      (list X-Original-To X-BeenThere
-                            (when (string? To)
-                              (re-seq #"[^<@\s;,]+@[^>@\s;,]+" To)))
-                      flatten
-                      (remove nil?)
-                      (into #{}))
+               (some #{to X-Original-To}
                      (list (:mailing-list-address config/woof)))))
-
-      ;; Possibly add a new person
-      (update-person {:email from-address :username (:name from)})
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
 
-      ;; Detect a new bug/patch/request
       (cond
+        ;; Detect a new bug/patch/request/announcement
         (new-patch? msg)
         (report! {:patch (:db/id (add-mail msg))})
 
@@ -546,19 +596,20 @@
         (report! {:announcement (:db/id (add-mail msg))})
 
         :else
-        ;; Or detect a new change or a new release
+        ;; Or detect new release/change
         (or
-         ;; Only allow maintainers to push changes
-         (if-not (some (get-maintainers) (list from-address))
+         ;; Only maintainers can push changes and releases
+         (if-not (some maintainers (list from))
            (timbre/warn
             (format "%s tried to update a change/release while not a maintainer"
-                    from-address))
+                    from))
            (do
              (when-let [version (new-change? msg)]
                (if (some (get-all-releases) (list version))
                  (timbre/error
                   (format "%s tried to announce a change against released version %s"
-                          from-address version))
+                          from version))
+
                  (report! {:change  (:db/id (add-mail msg))
                            :version version})))
 
@@ -568,69 +619,94 @@
                            :version version})
                  (release-changes! version release-id)))))
 
-         ;; Or detect new actions
-         (when (not-empty references)
-           (let [body-parts (if (:multipart? msg) (:body msg) (list (:body msg)))
-                 body-seq
-                 (map
-                  #(condp
-                       (fn [a b] (re-matches (re-pattern (str "text/" a ".*")) b))
-                       (:content-type %)
-                     "plain" (:body %)
-                     "html"  (parser/html->text (:body %)))
-                  body-parts)]
+         ;; Or detect admin commands or new actions against known reports
+         (let [body-parts
+               (if (:multipart? msg) (:body msg) (list (:body msg)))
+               body-seq
+               (->> body-parts
+                    (map #(condp (fn [a b]
+                                   (re-matches
+                                    (re-pattern (str "text/" a ".*")) b))
+                              (:content-type %)
+                            "plain" (:body %)
+                            "html"  (parser/html->text (:body %))))
+                    (string/join "\n")
+                    string/split-lines
+                    (map string/trim)
+                    (filter not-empty))]
+
+           (if (empty? references)
+             ;; Check whether this is a maintainer report sent to the admin
+             (when-let [cmds
+                        (->> body-seq
+                             (map #(when-let [m (re-matches admin-strings-re %)]
+                                     (rest m)))
+                             (remove nil?))]
+               (when (some admins (list from))
+                 (admin-report! {:commands cmds :msg msg}))
+
+               (when (some maintainers (list from))
+                 (maintainer-report! {:commands cmds :msg msg}))
+
+               (when (some contributors (list from))
+                 ;; The only action accessible for contributors
+                 (toggle-email-notifications from (second (first cmds))))
+               (when-not (some (into #{} (concat admins maintainers contributors))
+                               (list from))
+                 (timbre/error
+                  (format "%s (unknown) tried this command: %s"
+                          from (second (first cmds))))))
+
+             ;; Or a report against a known patch, bug, etc
              (when-let
-                 [body-woof-lines
-                  (->>
-                   (map
-                    #(when-let [m (re-matches report-strings-re %)] (peek m))
-                    (->> body-seq
-                         (string/join "\n")
-                         string/split-lines
-                         (map string/trim)
-                         (filter not-empty)))
-                   (remove nil?))]
+                 [body-report
+                  (->> body-seq
+                       (map #(when-let [m (re-matches report-strings-re %)]
+                               (peek m)))
+                       (remove nil?))]
 
                (or
-                ;; New action against a known patch?
+                ;; New action against a known patch
                 (when-let [{:keys [report-eid status]}
-                           (is-report-update? :patch body-woof-lines references)]
+                           (is-report-update? :patch body-report references)]
                   (report! {:patch report-eid status (:db/id (add-mail msg))}
                            status))
 
-                ;; New action against a known bug?
+                ;; New action against a known bug
                 (when-let [{:keys [report-eid status]}
-                           (is-report-update? :bug body-woof-lines references)]
+                           (is-report-update? :bug body-report references)]
                   (report! {:bug report-eid status (:db/id (add-mail msg))}
                            status))
 
-                ;; New action against a known help request?
+                ;; New action against a known help request
                 (when-let [{:keys [report-eid status]}
-                           (is-report-update? :request body-woof-lines references)]
+                           (is-report-update? :request body-report references)]
                   (report! {:request report-eid status (:db/id (add-mail msg))}
                            status))
 
-                ;; New action against a known announcement?
+                ;; New action against a known announcement
                 (when-let [{:keys [report-eid status]}
-                           (is-report-update? :announcement body-woof-lines references)]
+                           (is-report-update? :announcement body-report references)]
                   (report! {:announcement report-eid status (:db/id (add-mail msg))}
                            status))
 
-                ;; Maintainers can also perform actions against changes/releases
-                (if-not (some (get-maintainers) (list from-address))
+                ;; Finally, maintainers can perform actions against
+                ;; existing changes/releases
+                (if-not (some maintainers (list from))
                   (timbre/warn
-                   (format "%s tried to update a change/release while not a maintainer"
-                           from-address))
-                  (do 
+                   (format
+                    "%s tried to update a change/release while not a maintainer"
+                    from))
+                  (do
                     ;; New action against a known change announcement?
                     (when-let [{:keys [report-eid status]}
-                               (is-report-update? :change body-woof-lines references)]
+                               (is-report-update? :change body-report references)]
                       (report! {:change report-eid status (:db/id (add-mail msg))}
                                status))
 
                     ;; New action against a known release announcement?
                     (when-let [{:keys [report-eid status]}
-                               (is-report-update? :release body-woof-lines references)]
+                               (is-report-update? :release body-report references)]
                       (report! {:release report-eid status (:db/id (add-mail msg))}
                                status)
                       (unrelease-changes! report-eid)))))))))))))
