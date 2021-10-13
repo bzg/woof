@@ -58,6 +58,8 @@
       (string/replace #" *\([^)]+\)" "")
       (string/trim)))
 
+;; Main reports functions
+
 (defn- get-reports [report-type]
   (->> (d/q `[:find ?e :where [?e ~report-type ?msg-eid]] db)
        (map first)
@@ -192,6 +194,36 @@
     (get-announcements)
     (get-releases))))
 
+;; Main admin functions
+
+(defn- get-persons []
+  (->> (d/q '[:find ?p :where [?p :email ?_]] db)
+       (map first)
+       (map #(d/pull db '[*] %))))
+
+(defn get-contributors []
+  (->> (filter :contributor (get-persons))
+       (remove :banned)
+       (map :email)
+       (into #{})))
+
+(defn get-admins []
+  (->> (filter :admin (get-persons))
+       (remove :banned)
+       (map :email)
+       (into #{})))
+
+(defn get-maintainers []
+  (->> (filter :admin (get-persons))
+       (remove :banned)
+       (map :email)
+       (into #{})))
+
+(defn get-banned []
+  (->> (filter :banned (get-persons))
+       (map :email)
+       (into #{})))
+
 ;; Core db functions to add and update entities
 
 (defn add-log [date msg]
@@ -213,11 +245,20 @@
     (d/touch (d/entity db [:message-id id]))))
 
 (defn update-person [{:keys [email username role aliases]}]
-  (let [role (or role :contributor)]
-    (d/transact! conn [{:email    email
-                        :username username
-                        role      (java.util.Date.)
-                        :aliases  (or aliases #{})}])
+  (let [timestamp (java.util.Date.)
+        username  (or username email)
+        roles     (condp = role
+                    :maintainer {:contributor timestamp
+                                 :maintainer  timestamp}
+                    :admin      {:contributor timestamp
+                                 :maintainer  timestamp
+                                 :admin       timestamp}
+                    {:contributor timestamp})
+        person    (merge {:email    email
+                          :username username
+                          :aliases  (or aliases #{})}
+                         roles)]
+    (d/transact! conn [person])
     (d/touch (d/entity db [:email email]))))
 
 ;; Check whether a report is an action against a known entity
@@ -469,19 +510,23 @@
 
     ;; Only process emails if they are sent directly from the release
     ;; manager or from the mailing list.
-    (when (or (= from (:admin-address config/woof))
-              (some (->>
-                     (list X-Original-To X-BeenThere
-                           (when (string? To)
-                             (re-seq #"[^<@\s;,]+@[^>@\s;,]+" To)))
-                     flatten
-                     (remove nil?)
-                     (into #{}))
-                    (into #{} (list (:mailing-list-address config/woof)))))
+    (when (and
+           ;; Ignore messages from banned persons
+           (not (some (get-banned) (list from-address)))
+           ;; Always process messages from admin
+           (or (= from (:admin-address config/woof))
+               ;; Check relevant "To" headers
+               (some (->>
+                      (list X-Original-To X-BeenThere
+                            (when (string? To)
+                              (re-seq #"[^<@\s;,]+@[^>@\s;,]+" To)))
+                      flatten
+                      (remove nil?)
+                      (into #{}))
+                     (list (:mailing-list-address config/woof)))))
 
       ;; Possibly add a new person
-      (update-person {:email    from-address
-                      :username (or (not-empty (:name from)) from-address)})
+      (update-person {:email from-address :username (:name from)})
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
@@ -501,21 +546,27 @@
         (report! {:announcement (:db/id (add-mail msg))})
 
         :else
-        ;; Or detect a new announcement, change and release
+        ;; Or detect a new change or a new release
         (or
-         (when-let [version (new-change? msg)]
-           (if (some (get-all-releases) (into #{} (list version)))
-             (timbre/error
-              (format "%s tried to announce a change against released version %s"
-                      from-address version))
-             (report! {:change  (:db/id (add-mail msg))
-                       :version version})))
+         ;; Only allow maintainers to push changes
+         (if-not (some (get-maintainers) (list from-address))
+           (timbre/warn
+            (format "%s tried to update a change/release while not a maintainer"
+                    from-address))
+           (do
+             (when-let [version (new-change? msg)]
+               (if (some (get-all-releases) (list version))
+                 (timbre/error
+                  (format "%s tried to announce a change against released version %s"
+                          from-address version))
+                 (report! {:change  (:db/id (add-mail msg))
+                           :version version})))
 
-         (when-let [version (new-release? msg)]
-           (let [release-id (:db/id (add-mail msg))]
-             (report! {:release release-id
-                       :version version})
-             (release-changes! version release-id)))
+             (when-let [version (new-release? msg)]
+               (let [release-id (:db/id (add-mail msg))]
+                 (report! {:release release-id
+                           :version version})
+                 (release-changes! version release-id)))))
 
          ;; Or detect new actions
          (when (not-empty references)
@@ -559,24 +610,30 @@
                   (report! {:request report-eid status (:db/id (add-mail msg))}
                            status))
 
-                ;; New action against a known change announcement?
-                (when-let [{:keys [report-eid status]}
-                           (is-report-update? :change body-woof-lines references)]
-                  (report! {:change report-eid status (:db/id (add-mail msg))}
-                           status))
-
                 ;; New action against a known announcement?
                 (when-let [{:keys [report-eid status]}
                            (is-report-update? :announcement body-woof-lines references)]
                   (report! {:announcement report-eid status (:db/id (add-mail msg))}
                            status))
 
-                ;; New action against a known release announcement?
-                (when-let [{:keys [report-eid status]}
-                           (is-report-update? :release body-woof-lines references)]
-                  (report! {:release report-eid status (:db/id (add-mail msg))}
-                           status)
-                  (unrelease-changes! report-eid)))))))))))
+                ;; Maintainers can also perform actions against changes/releases
+                (if-not (some (get-maintainers) (list from-address))
+                  (timbre/warn
+                   (format "%s tried to update a change/release while not a maintainer"
+                           from-address))
+                  (do 
+                    ;; New action against a known change announcement?
+                    (when-let [{:keys [report-eid status]}
+                               (is-report-update? :change body-woof-lines references)]
+                      (report! {:change report-eid status (:db/id (add-mail msg))}
+                               status))
+
+                    ;; New action against a known release announcement?
+                    (when-let [{:keys [report-eid status]}
+                               (is-report-update? :release body-woof-lines references)]
+                      (report! {:release report-eid status (:db/id (add-mail msg))}
+                               status)
+                      (unrelease-changes! report-eid)))))))))))))
 
 ;;; Inbox monitoring
 

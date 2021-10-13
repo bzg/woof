@@ -202,8 +202,7 @@
   (let [admin-address (:admin-address config/woof)]
     (tt/start!)
     (core/update-person {:email    admin-address
-                         :username (or (:admin-username config/woof)
-                                       admin-address)
+                         :username (:admin-username config/woof)
                          :role     :admin})
     (core/start-mail-loop!)
     (mount/start #'core/woof-manager #'woof-server)))
