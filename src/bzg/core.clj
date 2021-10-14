@@ -270,33 +270,26 @@
 
 ;; Check whether a report is an action against a known entity
 
-(def report-strings
-  {:bug          #{"Confirmed" "Canceled" "Fixed"}
-   :patch        #{"Approved" "Canceled" "Applied"}
-   :request      #{"Handled" "Canceled" "Done"}
-   :change       #{"Canceled"}
-   :announcement #{"Canceled"}
-   :release      #{"Canceled"}})
-
-(def admin-strings
-  {:admin       #{"Add admin" "Remove admin" "Remove maintainer"}
-   :maintainer  #{"Maintainance" "Add maintainer" "Ban" "Unban" "Cancel reports by"}
-   :contributor #{"Notifications"}})
-
 (def admin-strings-re
-  (let [{:keys [admin maintainer contributor]} admin-strings]
+  (let [{:keys [admin maintainer contributor]} config/permissions]
     (->> (concat admin maintainer contributor)
+         (map #(% config/admin-report-strings))
          (string/join "|")
          (format "(%s): ([^\\s]+).*")
          re-pattern)))
 
 (defn report-strings-all [report-type]
-  (let [report-do   (report-type report-strings)
+  (let [report-do   (map #(% config/report-strings)
+                         (report-type config/reports))
         report-undo (map #(string/capitalize (str "Un" %)) report-do)]
     (into #{} (concat report-do report-undo))))
 
 (def report-strings-re
-  (let [all-do   (into #{} (flatten (map concat (map val report-strings))))
+  (let [all-do   (->> config/reports
+                      (map val)
+                      (map concat)
+                      flatten
+                      (map #(% config/report-strings)))
         all-undo (map #(string/capitalize (str "Un" %)) all-do)
         all      (into #{} (concat all-do all-undo))]
     (->> all

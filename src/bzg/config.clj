@@ -16,12 +16,13 @@
    :mailing-list-address (System/getenv "WOOF_MAILING_LIST_ADDRESS")
    :base-url             (or (System/getenv "WOOF_BASE_URL")
                              "https://localhost:3000")
+
    ;; Configuration to send notification emails
-   :smtp-host            (System/getenv "WOOF_SMTP_HOST")
-   :smtp-login           (System/getenv "WOOF_SMTP_LOGIN")
-   :smtp-password        (System/getenv "WOOF_SMTP_PASSWORD")
-   :mail-url-format      (System/getenv "WOOF_MAIL_URL_FORMAT")
-   
+   :smtp-host       (System/getenv "WOOF_SMTP_HOST")
+   :smtp-login      (System/getenv "WOOF_SMTP_LOGIN")
+   :smtp-password   (System/getenv "WOOF_SMTP_PASSWORD")
+   :mail-url-format (System/getenv "WOOF_MAIL_URL_FORMAT")
+
    ;; Configuring the HTML page
    :theme            (or (System/getenv "WOOF_THEME") "default")
    :title            (System/getenv "WOOF_TITLE")
@@ -32,6 +33,43 @@
    :feed-title       (System/getenv "WOOF_FEED_TITLE")
    :feed-description (System/getenv "WOOF_FEED_DESCRIPTION")
    })
+
+(def report-strings
+  {:applied   "Applied"
+   :approved  "Approved"
+   :canceled  "Canceled"
+   :confirmed "Confirmed"
+   :done      "Done"
+   :fixed     "Fixed"
+   :handled   "Handled"})
+
+(def admin-report-strings
+  {;; Contributors actions
+   :notifications     "Notifications"
+   ;; Maintainers actions
+   :add-maintainer    "Add maintainer"
+   :ban               "Ban"
+   :maintenance       "Maintenance"
+   ;; Admin actions
+   :add-admin         "Add admin"
+   :cancel-reports-by "Cancel reports by"
+   :remove-admin      "Remove admin"
+   :remove-maintainer "Remove maintainer"
+   :unban             "Unban"})
+
+(def reports
+  {:bug          #{:confirmed :canceled :fixed}
+   :patch        #{:approved :canceled :applied}
+   :request      #{:handled :canceled :done}
+   :change       #{:canceled}
+   :announcement #{:canceled}
+   :release      #{:canceled}})
+
+(def permissions
+  {:admin       #{:add-admin :remove-admin :remove-maintainer
+                  :unban :cancel-reports-by}
+   :maintainer  #{:maintainance :add-maintainer :ban}
+   :contributor #{:notifications}})
 
 (defn format-email-notification
   [{:keys [notification-type
