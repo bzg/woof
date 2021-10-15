@@ -40,7 +40,7 @@
    :release      {:db/valueType :db.type/ref
                   :db/unique    :db.unique/identity}})
 
-(def conn (d/get-conn (:db-dir config/woof) schema))
+(def conn (d/get-conn (:db-dir config/env) schema))
 
 (def db (d/db conn))
 
@@ -342,16 +342,16 @@
   :appenders
   {:datalevin-appender (datalevin-appender)
    :println            (appenders/println-appender {:stream :auto})
-   :spit               (appenders/spit-appender {:fname (:log-file config/woof)})
+   :spit               (appenders/spit-appender {:fname (:log-file config/env)})
    :postal             (merge (postal-appender/postal-appender ;; :min-level :warn
-                               ^{:host (:smtp-host config/woof)
-                                 :user (:smtp-login config/woof)
-                                 :pass (:smtp-password config/woof)
+                               ^{:host (:smtp-host config/env)
+                                 :user (:smtp-login config/env)
+                                 :pass (:smtp-password config/env)
                                  :tls  true}
-                               {:from (:smtp-login config/woof)
+                               {:from (:smtp-login config/env)
                                 :to   (make-to
-                                       (:admin-username config/woof)
-                                       (:admin-address config/woof))})
+                                       (:admin-username config/env)
+                                       (:admin-address config/env))})
                               {:min-level :warn})}})
 
 ;; Email notifications
@@ -363,16 +363,16 @@
     (try
       (when-let
           [res (postal/send-message
-                {:host (:smtp-host config/woof)
+                {:host (:smtp-host config/env)
                  :port 587
                  ;; FIXME: Always assume a tls connection (or configure)?
                  :tls  true
-                 :user (:smtp-login config/woof)
-                 :pass (:smtp-password config/woof)}
-                {:from        (:smtp-login config/woof)
-                 :message-id  #(postal.support/message-id (:base-url config/woof))
-                 :reply-to    (make-to (:admin-username config/woof)
-                                       (:admin-address config/woof))
+                 :user (:smtp-login config/env)
+                 :pass (:smtp-password config/env)}
+                {:from        (:smtp-login config/env)
+                 :message-id  #(postal.support/message-id (:base-url config/env))
+                 :reply-to    (make-to (:admin-username config/env)
+                                       (:admin-address config/env))
                  :references  (string/join " " (remove nil? (list references id)))
                  :in-reply-to id
                  :to          to
@@ -650,10 +650,10 @@
            ;; Ignore messages from banned persons
            (not (some (get-banned) (list from)))
            ;; Always process messages from admin
-           (or (= from (:admin-address config/woof))
+           (or (= from (:admin-address config/env))
                ;; Check relevant "To" headers
                (some #{to X-Original-To}
-                     (list (:mailing-list-address config/woof)))))
+                     (list (:mailing-list-address config/env)))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
@@ -794,10 +794,10 @@
    woof-inbox-monitor
    (let [session      (mail/get-session "imaps")
          mystore      (mail/store "imaps" session
-                                  (:inbox-server config/woof)
-                                  (:inbox-user config/woof)
-                                  (:inbox-password config/woof))
-         folder       (mail/open-folder mystore (:inbox-folder config/woof)
+                                  (:inbox-server config/env)
+                                  (:inbox-user config/env)
+                                  (:inbox-password config/env))
+         folder       (mail/open-folder mystore (:inbox-folder config/env)
                                         :readonly)
          idle-manager (events/new-idle-manager session)]
      (events/add-message-count-listener

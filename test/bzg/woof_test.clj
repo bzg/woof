@@ -46,105 +46,105 @@
 
 (deftest configuration
   (testing "Testing configuration"
-    (is (spec/valid? ::config config/woof))))
+    (is (spec/valid? ::config config/env))))
 
 (def test-data
   {:msg1  {:id        "id1"
            :subject   "[BUG] Confirmed bug"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-27T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"X-Woof-Bug" "confirmed"}]}
    :msg2  {:id        "id2"
            :subject   "[FIXED] Fixed bug"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-27T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"References" "id1"}
                        {"X-Woof-Bug" "fixed"}]}
    :msg3  {:id        "id3"
            :subject   "Incompatible change for 8.3"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-27T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"X-Woof-Change" "8.3"}]}
    :msg4  {:id        "id4"
            :subject   "Release 8.3"
-           :from      (list {:address (:admin config/woof)})
+           :from      (list {:address (:admin config/env)})
            :date-sent #inst "2020-05-27T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"X-Woof-Release" "8.3"}]}
    :msg5  {:id        "id5"
            :subject   "Release 8.4"
-           :from      (list {:address (:admin config/woof)})
+           :from      (list {:address (:admin config/env)})
            :date-sent #inst "2020-05-28T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"X-Woof-Release" "8.4"}]}
    :msg6  {:id        "id6"
            :subject   "[BUG] Bug in release 8.3"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-28T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"References" "id4 id0"}
                        {"X-Woof-Bug" "confirmed"}]}
    :msg7  {:id        "id7"
            :subject   "Fix for bug wrt release 8.3"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-28T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"References" "id4"}
                        {"X-Woof-Bug" "fixed"}]}
    :msg8  {:id        "id8"
            :subject   "A call for help"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-28T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"References" "id7"}
                        {"X-Woof-Help" "true"}]}
    :msg9  {:id        "id9"
            :subject   "Resolved (was: A call for help)"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-28T00:14:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"References" "id8"}
                        {"X-Woof-Help" "done"}]}
    :msg10 {:id        "id10"
            :subject   "Incompatible change for 8.4"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-06-27T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"X-Woof-Change" "8.4"}]}
    :msg11 {:id        "id11"
            :subject   "A call for help, with an annotation from the header"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-28T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"References" "id7"}
                        {"X-Woof-Help" "This is a call for help."}]}
    :msg12 {:id        "id12"
            :subject   "[BUG] Confirmed bug"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-27T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"X-Woof-Bug" "This is the annotation for this bug."}]}
    :msg13 {:id        "id13"
            :subject   "[PATCH] A patch with a header"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-28T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"X-Woof-Patch" "true"}]}
    :msg14 {:id        "id14"
            :subject   "Re: [PATCH] A patch with a header"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-28T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"References" "id13"}
                        {"X-Woof-Patch" "applied"}]}
    :msg15 {:id        "id15"
            :subject   "Re: [PATCH] A patch with a header"
-           :from      (list {:address (:user config/woof)})
+           :from      (list {:address (:user config/env)})
            :date-sent #inst "2020-05-28T00:13:11.037044Z"
-           :headers   [{"X-Original-To" (:mailing-list config/woof)}
+           :headers   [{"X-Original-To" (:mailing-list config/env)}
                        {"References" "id13"}]
            :body      {:body "Applied"}}})
 

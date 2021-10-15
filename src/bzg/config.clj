@@ -1,6 +1,6 @@
 (ns bzg.config)
 
-(def woof
+(def env
   {;; Configure the mailbox to monitor
    :inbox-user     (System/getenv "WOOF_INBOX_USER")
    :inbox-server   (System/getenv "WOOF_INBOX_SERVER")
@@ -89,9 +89,9 @@
      :action-op
      (format "%s marked your %s as %s.\n\n"
              from action-string status-string))
-   (when-let [link-format (not-empty (:mail-url-format woof))]
+   (when-let [link-format (not-empty (:mail-url-format env))]
      (format "You can find your email here:\n%s\n\n"
              (format link-format id)))
-   (when-let [contribute-url (not-empty (:contribute-url woof))]
+   (when-let [contribute-url (not-empty (:contribute-url env))]
      (format "More on how to contribute to %s:\n%s"
-             (:project-name woof) contribute-url))))
+             (:project-name env) contribute-url))))

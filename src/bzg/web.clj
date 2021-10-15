@@ -21,8 +21,8 @@
 
 (defn- db-format [{:keys [db s sorting-by]}]
   (let [linkify-maybe
-        (if (not-empty (:mail-url-format config/woof))
-          #(assoc-in % [:link] (format (:mail-url-format config/woof)
+        (if (not-empty (:mail-url-format config/env))
+          #(assoc-in % [:link] (format (:mail-url-format config/env)
                                        (:message-id %)))
           identity)]
     (->>
@@ -33,11 +33,11 @@
      (map linkify-maybe))))
 
 (def html-defaults
-  {:title          (:title config/woof)
-   :project-name   (:project-name config/woof)
-   :project-url    (:project-url config/woof)
-   :contribute-url (:contribute-url config/woof)
-   :contribute-cta (:contribute-cta config/woof)})
+  {:title          (:title config/env)
+   :project-name   (:project-name config/env)
+   :project-url    (:project-url config/env)
+   :contribute-url (:contribute-url config/env)
+   :contribute-cta (:contribute-cta config/env)})
 
 (defn get-homepage [{:keys [query-params]}]
   (let [s (get query-params "s")]
@@ -45,7 +45,7 @@
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme config/woof) "/index.html"))
+      (io/resource (str "html/" (:theme config/env) "/index.html"))
       (merge html-defaults
              {:releases
               (db-format
@@ -67,7 +67,7 @@
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme config/woof) "/bugs.html"))
+      (io/resource (str "html/" (:theme config/env) "/bugs.html"))
       (merge html-defaults
              {:unconfirmed-bugs
               (db-format
@@ -83,7 +83,7 @@
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme config/woof) "/mails.html"))
+      (io/resource (str "html/" (:theme config/env) "/mails.html"))
       (merge html-defaults
              {:mails
               (db-format
@@ -96,7 +96,7 @@
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme config/woof) "/requests.html"))
+      (io/resource (str "html/" (:theme config/env) "/requests.html"))
       (merge html-defaults
              {:unhandled-requests
               (db-format (merge {:db (core/get-unhandled-requests)}
@@ -112,7 +112,7 @@
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme config/woof) "/patches.html"))
+      (io/resource (str "html/" (:theme config/env) "/patches.html"))
       (merge html-defaults
              {:approved-patches
               (db-format (merge {:db (core/get-approved-patches)}
@@ -134,7 +134,7 @@
               {:status  200
                :headers {"Content-Type" "text/html"}
                :body    (html/render-file
-                         (str "html/" (:theme config/woof) "/index.html")
+                         (str "html/" (:theme config/env) "/index.html")
                          (merge html-defaults
                                 {:howto (md/md-to-html-string
                                          (slurp (io/resource "md/howto.md")))}))})}]
@@ -193,16 +193,16 @@
 (mount/defstate ^{:on-reload :noop} woof-server
   ;; :start (server/run-server
   ;;         (reload/wrap-reload handler {:dirs ["src" "resources"]})
-  ;;         {:port (edn/read-string (:port config/woof))})
+  ;;         {:port (edn/read-string (:port config/env))})
   :start (server/run-server
-          handler {:port (edn/read-string (:port config/woof))})
+          handler {:port (edn/read-string (:port config/env))})
   :stop (when woof-server (woof-server :timeout 100)))
 
 (defn -main []
-  (let [admin-address (:admin-address config/woof)]
+  (let [admin-address (:admin-address config/env)]
     (tt/start!)
     (core/update-person {:email    admin-address
-                         :username (:admin-username config/woof)
+                         :username (:admin-username config/env)
                          :role     :admin})
     (core/start-mail-loop!)
     (mount/start #'core/woof-manager #'woof-server)))

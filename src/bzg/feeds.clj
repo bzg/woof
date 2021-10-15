@@ -11,14 +11,14 @@
         msgid (:message-id msg)]
     (format
      "<![CDATA[ %s ]]>"
-     (if-let [mail-url-format (not-empty (:mail-url-format config/woof))]
+     (if-let [mail-url-format (not-empty (:mail-url-format config/env))]
        (html/render-file
-        (io/resource (str "html/" (:theme config/woof) "/link.html"))
+        (io/resource (str "html/" (:theme config/env) "/link.html"))
         (assoc msg :link (format mail-url-format msgid) :what what))
        (str msgid (format " (%s)" what))))))
 
 (defn feed-item [{:keys [message-id subject date from] :as msg} what]
-  (let [link (format (:mail-url-format config/woof) message-id)]
+  (let [link (format (:mail-url-format config/env) message-id)]
     {:title       subject
      :link        link
      :description (feed-description msg what)
@@ -31,11 +31,11 @@
    :headers {"Content-Type" "application/xml"}
    :body
    (rss/channel-xml
-    {:title       (str (:feed-title config/woof) " - " path)
+    {:title       (str (:feed-title config/env) " - " path)
      :link        (string/replace
-                   (:base-url config/woof)
+                   (:base-url config/env)
                    #"([^/])/*$" (str "$1" path))
-     :description (str (:feed-description config/woof) " - " path)}
+     :description (str (:feed-description config/env) " - " path)}
     items)})
 
 (defn feed-updates [_]
