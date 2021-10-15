@@ -46,6 +46,8 @@
 
 ;; Small utility functions
 
+(def email-re #"[^<@\s;,]+@[^>@\s;,]+")
+
 (defn make-to [username address]
   (str username " <" address ">"))
 
@@ -61,10 +63,11 @@
 ;; Main reports functions
 
 (defn- get-reports [report-type]
-  (->> (d/q `[:find ?e :where [?e ~report-type ?msg-eid]] db)
+  (->> (d/q `[:find ?e :where [?e ~report-type _]] db)
        (map first)
        (map #(d/pull db '[*] %))
        ;; Always remove canceled reports, we never need them
+       (remove :ignored)
        (remove :canceled)))
 
 (defn- get-reports-msgs [report-type reports]
@@ -75,7 +78,8 @@
   (->> (d/q `[:find ?e :where [?e :message-id _]] db)
        (map first)
        (map #(d/pull db '[*] %))
-       (remove :private?)
+       (remove :private)
+       (remove :ignored)
        (sort-by :date)
        ;; FIXME: Allow to configure?
        (take 100)))
@@ -231,7 +235,7 @@
   (d/transact! conn [{:log date :msg msg}])
   (d/touch (d/entity db [:log date])))
 
-(defn add-mail [{:keys [id from subject] :as msg} & private?]
+(defn add-mail [{:keys [id from subject] :as msg} & private]
   (let [headers     (walk/keywordize-keys (apply conj (:headers msg)))
         id          (get-id id)
         refs-string (:References headers)
@@ -240,7 +244,7 @@
     (d/transact! conn [{:message-id id
                         :subject    subject
                         :references refs
-                        :private?   (not (nil? private?))
+                        :private    (not (nil? private))
                         :from       (:address (first from))
                         :username   (:name (first from))
                         :date       (java.util.Date.)
@@ -249,9 +253,10 @@
     (d/touch (d/entity db [:message-id id]))))
 
 (defn add-mail-private [msg]
-  (add-mail msg :private))
+  (add-mail msg (java.util.Date.)))
 
-(defn update-person [{:keys [email username role aliases]}]
+(defn update-person [{:keys [email username role aliases]} & [action]]
+  ;; An email is enough to update a person
   (let [timestamp (java.util.Date.)
         username  (or username email)
         roles     (condp = role
@@ -264,6 +269,7 @@
         person    (merge {:email    email
                           :username username
                           :aliases  (or aliases #{})}
+                         action
                          roles)]
     (d/transact! conn [person])
     (d/touch (d/entity db [:email email]))))
@@ -425,36 +431,114 @@
     (peek m)))
 
 ;; FIXME: Todo
-(defn add-admin [v] v)
-(defn remove-admin [v] v)
-(defn add-maintainer [v] v)
-(defn remove-maintainer [v] v)
-(defn toggle-maintenance [v] v)
-(defn ban [v] v)
-(defn unban [v] v)
-(defn cancel-by [v] v)
+(defn add-admin [email]
+  (let [person    (into {} (d/touch (d/entity db [:email email])))
+        as-banned (conj person [:admin (java.util.Date.)])]
+    (when-let [output (d/transact! conn [as-banned])]
+      (timbre/info (format "%s has been granted admin permissions" email))
+      output)))
+
+(defn remove-admin [email]
+  (when-let [output
+             (d/transact!
+              conn [(d/retract (d/entity db [:email email]) :admin)])]
+    (timbre/info (format "%s has been removed admin permissions" email))
+    output))
+
+(defn add-maintainer [email]
+  (let [person    (into {} (d/touch (d/entity db [:email email])))
+        as-banned (conj person [:maintainer (java.util.Date.)])]
+    (when-let [output (d/transact! conn [as-banned])]
+      (timbre/info (format "%s has been granted maintainer permissions" email))
+      output)))
+
+(defn remove-maintainer [email]
+  (when-let [output
+             (d/transact!
+              conn [(d/retract (d/entity db [:email email]) :maintainer)])]
+    (timbre/info (format "%s has been removed maintainer permissions" email))
+    output))
+
+(defn unban [email]
+  (when-let [output
+             (d/transact!
+              conn [(d/retract (d/entity db [:email email]) :banned)])]
+    (timbre/info (format "%s has been unbanned" email))
+    output))
+
+(defn ban [email]
+  (let [person    (into {} (d/touch (d/entity db [:email email])))
+        as-banned (conj person [:banned (java.util.Date.)])]
+    (when-let [output (d/transact! conn [as-banned])]
+      (timbre/info (format "%s has been banned" email))
+      output)))
+
+(defn ignore [email]
+  (let [reports
+        (->> (map
+              #(d/q `[:find ?mail-id :where
+                      [?report-id ~% ?mail-id]
+                      [?mail-id :from ~email]]
+                    db)
+              ;; Ignore all but changes and releases, even if the
+              ;; email being ignored is from a maintainer
+              [:bug :patch :request :announcement])
+             (map concat) flatten)]
+    (when (seq reports)
+      (doseq [r reports]
+        (d/transact! conn [{:db/id r :ignored (java.util.Date.)}]))
+      (timbre/info (format "Past mail from %s are ignored" email))
+      true)))
+
+(defn unignore [email]
+  (let [reports
+        (->> (map
+              #(d/q `[:find ?mail-id
+                      :where
+                      [?report-id ~% ?mail-id]
+                      [?mail-id :ignored _]
+                      [?mail-id :from ~email]]
+                    db)
+              [:bug :patch :request :announcement])
+             (map concat) flatten)]
+    (when (seq reports)
+      (doseq [r reports]
+        (d/transact! conn [[:db/retract r :ignored]]))
+      (timbre/info (format "Past mails from %s are not ignored anymore" email))
+      true)))
 
 (defn admin-report! [{:keys [commands msg]}]
-  (add-mail-private msg)
-  (doseq [[cmd cmd-val] commands]
-    (condp = cmd
-      "Add admin"         (add-admin cmd-val)
-      "Remove admin"      (remove-admin cmd-val)
-      "Remove maintainer" (remove-maintainer cmd-val))))
-
-(defn maintainer-report! [{:keys [commands msg]}]
-  (add-mail-private msg)
-  (doseq [[cmd cmd-val] commands]
-    (condp = cmd
-      "Maintenance"       (toggle-maintenance cmd-val)
-      "Add maintainer"    (add-maintainer cmd-val)
-      "Ban"               (ban cmd-val)
-      "Unban"             (unban cmd-val)
-      "Cancel reports by" (cancel-by cmd-val))))
+  (let [from (:address (first (:from msg)))]
+    (doseq [[cmd cmd-val] commands]
+      (let [err (format "%s could not run \"%s: %s\""
+                        from cmd cmd-val)]
+        (if-not (re-matches email-re cmd-val)
+          (timbre/error
+           (format "%s tried a command with an ill-formatted email: %s"
+                   from cmd-val))
+          (when (condp some (list from)
+                  (get-admins)
+                  (condp = cmd
+                    "Add admin"         (add-admin cmd-val)
+                    "Add maintainer"    (add-maintainer cmd-val)
+                    "Ban"               (ban cmd-val)
+                    "Ignore"            (ignore cmd-val)
+                    "Remove admin"      (remove-admin cmd-val)
+                    "Remove maintainer" (remove-maintainer cmd-val)
+                    "Unban"             (unban cmd-val)
+                    "Unignore"          (unignore cmd-val)
+                    (timbre/error err))
+                  (get-maintainers)
+                  (condp = cmd
+                    "Add maintainer" (add-maintainer cmd-val)
+                    "Ban"            (ban cmd-val)
+                    "Ignore"         (ignore cmd-val)
+                    (timbre/error err)))
+            (add-mail-private msg)))))))
 
 ;; FIXME: Todo
-(defn toggle-email-notifications [from status]
-  (println from status))
+;; (defn toggle-email-notifications [from status]
+;;   (println from status))
 
 (defn report! [action & status]
   (let [action-type   (cond (:bug action)          :bug
@@ -473,7 +557,8 @@
         report-msg    (when status
                         (->> status first (get action) (d/entity db) d/touch))
         from          (or (:from report-msg) op-from)
-        username      (or (:username report-msg) from)
+        username      (or (:username report-msg)
+                          (:username op-report-msg) from)
         msgid         (or (:message-id report-msg) op-msgid)
         msg           {:id   msgid :subject    (:subject report-msg)
                        :from from  :references (:references report-msg)}
@@ -553,8 +638,7 @@
                        (->> (string/split References #"\s")
                             (keep not-empty)
                             (map get-id)))
-        to           (when (string? To)
-                       (re-matches #"[^<@\s;,]+@[^>@\s;,]+" To))
+        to           (when (string? To) (re-matches email-re To))
         from         (:address (first from))
         admins       (get-admins)
         maintainers  (get-maintainers)
@@ -635,17 +719,14 @@
                              (map #(when-let [m (re-matches admin-strings-re %)]
                                      (rest m)))
                              (remove nil?))]
-               (when (some admins (list from))
+               (when (some (into #{} (concat admins maintainers)) (list from))
                  (admin-report! {:commands cmds :msg msg}))
 
-               (when (some maintainers (list from))
-                 (maintainer-report! {:commands cmds :msg msg}))
-
-               (when (some contributors (list from))
-                 ;; The only action accessible for contributors
-                 (toggle-email-notifications from (second (first cmds))))
-               (when-not (some (into #{} (concat admins maintainers contributors))
-                               (list from))
+               ;; (when (some contributors (list from))
+               ;;   ;; The only action accessible for contributors
+               ;;   (toggle-email-notifications from (second (first cmds))))
+               
+               (when-not (some contributors (list from))
                  (timbre/error
                   (format "%s (unknown) tried this command: %s"
                           from (second (first cmds))))))

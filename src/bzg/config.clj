@@ -52,10 +52,11 @@
    :maintenance       "Maintenance"
    ;; Admin actions
    :add-admin         "Add admin"
-   :cancel-reports-by "Cancel reports by"
+   :ignore            "Ignore"
    :remove-admin      "Remove admin"
    :remove-maintainer "Remove maintainer"
-   :unban             "Unban"})
+   :unban             "Unban"
+   :unignore          "Unignore"})
 
 (def reports
   {:bug          #{:confirmed :canceled :fixed}
@@ -67,8 +68,11 @@
 
 (def permissions
   {:admin       #{:add-admin :remove-admin :remove-maintainer
-                  :unban :cancel-reports-by}
-   :maintainer  #{:maintainance :add-maintainer :ban}
+                  :unban :unignore}
+   :maintainer  #{
+                  ;; FIXME: Todo
+                  ;; :maintainance
+                  :add-maintainer :ban :ignore}
    :contributor #{:notifications}})
 
 (defn format-email-notification
