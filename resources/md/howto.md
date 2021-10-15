@@ -3,171 +3,117 @@
 
 # What is Woof! and how to use it?
 
-Woof! monitors updates sent to a mailing list.
+Woof! monitors updates sent to a mailbox and exposes them on the web.
 
-Plug Woof! to a mailbox subscribed to a mailing list, and Woof! will
-monitor updates about user-significant *changes*, *help requests*, *bugs*,
-*patches* and *new releases*.
+Typically, this mailbox is subscribed to a mailing list with a public
+archive, so that Woof! can expose links to this archive.
 
-Subscribers of the list can trigger Woof! by using specific words
-either in the subject (for patches) or in the body (for bugs).
+Woof! tries to be **a good companion for free software maintainers** who
+work with mailing lists: it allows them to focus on *confirmed bugs* and
+*approved patches*.
 
-All updates (for bugs, patches, help requests and new releases) can be
-triggered by using specific `X-Woof-*` mail headers.
+It also tries to **make life easier for users** by pointing to important
+news such as upcoming changes.
 
 
-# Basic usage
+# Triggering a report
 
-Here are the triggers allows to manage bugs and patches:
+Woof! watches for triggers at the beginning of the subject line:
 
--   `Confirmed` in the body of the email registers a new bug.
--   `Fixed` in the body of an email marks the bug in the same thread as fixed.
--   `[PATCH]` or `[PATCH x/x]` in the subject of a new email registers a new patch.
--   `Applied` in the body of an email marks the patch in the same thread as applied.
+-   `[ANN]` : An annoucement
+-   `[BUG]` : A bug report
+-   `[HELP]` : A help request
 
-`Applied`, `Confirmed` and `Fixed` should be placed at the beginning of a
-line in a **plain-text email**.
+It also watches for patches:
 
+-   `[PATCH]` : A single patch
+-   `[PATCH n/m]` : A patch in a series
+-   A multipart mail with a `text/x-diff` or `text/x-patch` MIME part
 
-# Advanced usage
+Some triggers are special:
 
-You can control the Woof database entirely by adding headers in your
-replies to a mailing list.
+-   `[CHANGE x]` : Announce a change in the release `x`
+-   `[RELEASE x]` : Announce the release `x`
 
+The `x` part is mandatory for changes and releases and it should not
+contain any whitespace.
 
-## Woof headers
+Announcing a release `x` moves changes for `x` from the *Upcoming changes*
+section to the *Latest released changes* one.  Canceling a release moves
+the changes back to the *Upcoming changes* section.
 
--   **X-Woof-Bug:** Confirm a bug or close it.
--   **X-Woof-Patch:** Declare a patch or mark it as applied.
--   **X-Woof-Help:** Request help or cancel the request.
--   **X-Woof-Change:** Announce a change or dismiss it.
--   **X-Woof-Release:** Announce a release or dismiss it.
 
+# Updating a report
 
-## Announce a release
+After a bug, patch, announcement, change, release or help request has
+been monitored, replies to the original mail can trigger actions.
 
-    From: xxx@xxx.xx
-    X-Woof-Release: 10.2
-    ...
+Actions are declared at the beginning of a line in the reply.
 
-will declare `10.2` as a new release.
+-   For **bugs**:
+    -   `Confirmed.` : Confirm a bug.
+    -   `Fix.` : Mark a bug as fixed.
 
+-   For **patches**:
+    -   `Approved.` : Approve a patch.
+    -   `Applied.` : Mark a patch as applied.
 
-## Confirm a bug
+-   For **help requests**:
+    -   `Handled.` : Mark a request as currently handled.
+    -   `Done.` : Mark a task of helping as done.
 
-    From: xxx@xxx.xx
-    X-Woof-Bug: confirmed
-    ...
+For bugs, patches, requests, announcements, changes and releases, you
+can also cancel them:
 
-will mark a bug discussed in a thread as `confirmed` (see synonyms below.)
+-   `Canceled`. : Mark the bug, patch, request, announcement, change or
+    release as canceled.
 
+**Note**: A punctuation mark among `;:,.` is *mandatory* for these reports.
 
-## Mark a bug as fixed
 
-    From: xxx@xxx.xx
-    X-Woof-Bug: fixed
-    ...
+# Notifications
 
-will mark the bug discussed in a thread as `fixed` (see synonyms below.)
+Users receive a mail notification when they triggers a Woof! report.
 
+You can turn off notifications by replying to the Woof! mailbox with
+this command at the beginning of a line:
 
-## Mark a patch as applied
+-   `Notifications: false`
 
-Any email with a subject containing a substring like `[PATCH]` or
-`[PATCH x/x]` will be referenced as proposing a new patch, without
-requiring a specific Woof! header.
+Email notifications can be turned back on with:
 
-    From: xxx@xxx.xx
-    X-Woof-Patch: applied
-    ...
+-   `Notifications: true`
 
-will mark a patch as applied.
 
+# Admins and maintainers
 
-## Declare a patch
+Each Woof! instance comes with a default admin.
 
-If someone attaches a patch and forget to add `[PATCH]` at the beginning
-of the subject, you can forward the email to the Woof! mailbox and add
-this header:
+**Admins** can perform these actions:
 
-    X-Woof-Patch: confirmed
+-   `[Add|Remove] admin: woof@woof.io`
+-   `[Add|Remove] maintainer: woof@woof.io`
+-   `[Ban|Unban]: woof@woof.io`
+-   `[Ignore|Unignore]: woof@woof.io`
 
+Admins can also update the configuration:
 
-## Request help
+-   `Maintenance: [true|false]` : Put the website in maintenance mode
+-   `Notifications: [true|false]` : Enable/disable mail notifications
+-   `[Enable|Disable]: [feature]` : Enable or disable a feature
 
-    From: xxx@xxx.xx
-    X-Woof-Help: confirmed
-    ...
+`[...|...]` Stands for either `...` or `...` and `feature` can one of `bug`,
+`announcement`, `request`, `change`, `release` or `mail`.
 
-will add a request for help.
+**Maintainers** can perform these actions:
 
+-   `Add maintainer: woof@woof.io`
+-   `Ban: woof@woof.io`
+-   `Unban: woof@woof.io`
+-   `Ignore: woof@woof.io`
 
-## Cancel a help request
-
-    From: xxx@xxx.xx
-    X-Woof-Help: canceled
-    ...
-
-will cancel the help request from within this thread.
-
-
-## Announce a change
-
-    From: xxx@xxx.xx
-    X-Woof-Change: 8.4
-    ...
-
-will declare an upcoming change for the *future* release version `8.4`.
-When the `8.4` version is released, the change will not be advertized
-anymore.
-
-    From: xxx@xxx.xx
-    X-Woof-Change: 8.4.2 8.5 8.6
-    ...
-
-will declare an upcoming change for the *future* release versions
-`8.4.2`, `8.5` or `8.6`.  If, for any reason, version `8.4.2` is not
-released and version `8.5` or `8.6` is released instead, the change
-will not be advertized anymore.
-
-
-## Cancel a change announcement
-
-    From: xxx@xxx.xx
-    X-Woof-Change: cancel
-    ...
-
-will cancel the change that was announced within this thread.
-
-
-## Annotations for bugs and help requests
-
-By default, the summary for bugs and help requests is the subject of
-the email with the `X-Woof-Bug` or `X-Woof-Help` header.
-
-Sometimes, the subject of the email is not specific enough and you
-don't want to start a subthread by changing the subject while replying
-to a list.
-
-Instead, you can simply use the `X-Woof-Bug` or `X-Woof-Help` headers to
-add your summary.  For example:
-
-    From: xxx@xxx.xx
-    X-Woof-Bug: X does Y instead of doing Z, as expected.
-    ...
-
-will mark the bug discussed in a thread as `confirmed` and use `X does Y
-instead of doing Z, as expected.` as the summary for this bug.
-
-
-## Synonyms
-
-We encourage you to use `t` and `nil` in the `X-Woof-*` headers.  However,
-all headers support these synonymes:
-
--   `t`, `confirmed`, `true`.
--   `nil`, `canceled`, `cancelled`, `cancel`, `closed`, `close`, `done`,
-    `fix`, `fixed`, `applied`.
+They cannot remove admins or maintainers and they cannot unignore and
+unban other contributors.
 
 </div>
 
