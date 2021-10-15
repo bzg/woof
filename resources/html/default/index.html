@@ -9,8 +9,10 @@
       <div class="content">{{howto}}</div>
       {% endsafe %}
       {% else %}
+
       {% include "html/default/tabs.html" with active="home" action-path="/" %}
 
+      {% if config.features.change %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  {% ifequal changes|count 0 %}
@@ -64,7 +66,9 @@
 	  {% endifequal %}
 	</div>
       </section>
+      {% endif %}
 
+      {% if config.features.announcement %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  {% ifequal announcements|count 0 %}
@@ -91,7 +95,9 @@
 	  {% endifequal %}
 	</div>
       </section>
+      {% endif %}
 
+      {% if config.features.release %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  {% ifequal releases|count 0 %}
@@ -118,6 +124,7 @@
 	  {% endifequal %}
 	</div>
       </section>
+      {% endif %}
 
       {% endif %}
     </div>

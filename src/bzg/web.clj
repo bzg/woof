@@ -6,7 +6,7 @@
             [bzg.config :as config]
             [bzg.feeds :as feeds]
             [reitit.ring.middleware.muuntaja :as muuntaja]
-            ;; [ring.middleware.reload :as reload]
+            [ring.middleware.reload :as reload]
             [ring.middleware.params :as params]
             [muuntaja.core :as m]
             [reitit.ring.middleware.parameters :as parameters]
@@ -40,16 +40,16 @@
    :contribute-url (:contribute-url config/env)
    :contribute-cta (:contribute-cta config/env)})
 
-(defn get-homepage [{:keys [query-params]}]
+(defn get-page-index [{:keys [query-params]}]
   (let [s               (get query-params "s")
         config-defaults (d/entity core/db [:defaults "init"])]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme config/env) "/index.html"))
+      (io/resource (str "html/" (:theme config-defaults) "/index.html"))
       (merge html-defaults
-             {:theme (:theme config-defaults)}
+             {:config config-defaults}
              (when (-> config-defaults :features :bug)
                {:releases
                 (entries-format
@@ -81,9 +81,9 @@
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme config/env) "/bugs.html"))
+      (io/resource (str "html/" (:theme config-defaults) "/bugs.html"))
       (merge html-defaults
-             {:theme (:theme config-defaults)
+             {:config config-defaults
               :unconfirmed-bugs
               (entries-format
                (merge {:entries (core/get-unconfirmed-bugs)} format-params))
@@ -99,9 +99,9 @@
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme config/env) "/mails.html"))
+      (io/resource (str "html/" (:theme config-defaults) "/mails.html"))
       (merge html-defaults
-             {:theme (:theme config-defaults)
+             {:config config-defaults
               :mails
               (entries-format
                (merge {:entries (core/get-mails)} format-params))}))}))
@@ -114,9 +114,9 @@
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme config/env) "/requests.html"))
+      (io/resource (str "html/" (:theme config-defaults) "/requests.html"))
       (merge html-defaults
-             {:theme (:theme config-defaults)
+             {:config config-defaults
               :unhandled-requests
               (entries-format (merge {:entries (core/get-unhandled-requests)}
                                      format-params))
@@ -132,9 +132,9 @@
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme config/env) "/patches.html"))
+      (io/resource (str "html/" (:theme config-defaults) "/patches.html"))
       (merge html-defaults
-             {:theme (:theme config-defaults)
+             {:config config-defaults
               :approved-patches
               (entries-format (merge {:entries (core/get-approved-patches)}
                                      format-params))
@@ -145,7 +145,7 @@
 (def handler
   (ring/ring-handler
    (ring/router
-    [["/" {:get (fn [params] (get-homepage params))}]
+    [["/" {:get (fn [params] (get-page-index params))}]
      ["/bugs" {:get (fn [params] (get-page-bugs params))}]
      ["/mails" {:get (fn [params] (get-page-mails params))}]
      ["/patches" {:get (fn [params] (get-page-patches params))}]
@@ -212,11 +212,11 @@
 
 (def woof-server)
 (mount/defstate ^{:on-reload :noop} woof-server
-  ;; :start (server/run-server
-  ;;         (reload/wrap-reload handler {:dirs ["src" "resources"]})
-  ;;         {:port (edn/read-string (:port config/env))})
   :start (server/run-server
-          handler {:port (edn/read-string (:port config/env))})
+          (reload/wrap-reload handler {:dirs ["src" "resources"]})
+          {:port (edn/read-string (:port config/env))})
+  ;; :start (server/run-server
+  ;;         handler {:port (edn/read-string (:port config/env))})
   :stop (when woof-server (woof-server :timeout 100)))
 
 (defn -main []

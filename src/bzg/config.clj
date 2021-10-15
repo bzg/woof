@@ -35,9 +35,14 @@
    })
 
 (def defaults
-  {:features #{:bug :patch :request :announcement :change :release :mail}
-   :max      {:releases 4 :mails 100 :announcements 10}
-   :theme    (:theme env)})
+  {:theme          (:theme env)
+   :maintenance    false
+   :notifications  true
+   :features       {:bug    true :request true :announcement true
+                    :change true :release true :mail         true
+                    :patch  true}
+   :max            {:releases 4 :mails 100 :announcements 10}
+   :export-formats {:rss true :json true :org true :md true}})
 
 (def report-strings
   {:applied   "Applied"
