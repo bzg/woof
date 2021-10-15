@@ -1,16 +1,20 @@
 #+title: Woof! 🐕
 
-Woof! monitors updates sent to a mailing list.
+Woof! monitors updates sent to a mailbox and exposes them on the web.
 
-Plug Woof! to a mailbox subscribed to a mailing list, and Woof! will
-monitor updates about user-significant /changes/, /help requests/, /bugs/,
-/patches/ and /new releases/.
+Typically, this mailbox is subscribed to a mailing list with a public
+archive, so that Woof! can expose links to this archive.
 
-Subscribers of the list can trigger Woof! by using specific words
-either in the subject (for patches) or in the body (for bugs).
+Woof! tries to be *a good companion for free software maintainers* who
+work with mailing lists by allowing them to focus on /confirmed bugs/
+and /approved patches/.
 
-All updates (for bugs, patches, help requests and new releases) can be
-triggered by using specific =X-Woof-*= mail headers.
+It also tries to *make life easier for users* by pointing to important
+news such as upcoming changes.
+
+Woof! tries not to impose new constraints: just continue to work on
+your mailing list and with a minimalistic set of conventions, Woof!
+will extract what's important for users and maintainers.
 
 [[file:woof.png]]
 

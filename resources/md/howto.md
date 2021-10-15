@@ -9,11 +9,15 @@ Typically, this mailbox is subscribed to a mailing list with a public
 archive, so that Woof! can expose links to this archive.
 
 Woof! tries to be **a good companion for free software maintainers** who
-work with mailing lists: it allows them to focus on *confirmed bugs* and
-*approved patches*.
+work with mailing lists by allowing them to focus on *confirmed bugs*
+and *approved patches*.
 
 It also tries to **make life easier for users** by pointing to important
 news such as upcoming changes.
+
+Woof! tries not to impose new constraints: just continue to work on
+your mailing list and with a minimalistic set of conventions, Woof!
+will extract what's important for users and maintainers.
 
 
 # Triggering a report
@@ -75,14 +79,11 @@ can also cancel them:
 
 Users receive a mail notification when they triggers a Woof! report.
 
-You can turn off notifications by replying to the Woof! mailbox with
-this command at the beginning of a line:
+You can turn control notifications by writing to the Woof! mailbox
+with this command at the beginning of a line:
 
--   `Notifications: false`
-
-Email notifications can be turned back on with:
-
--   `Notifications: true`
+-   `Notifications: false` : To turn notifications off
+-   `Notifications: true` : To turn notifications on
 
 
 # Admins and maintainers
@@ -102,7 +103,7 @@ Admins can also update the configuration:
 -   `Notifications: [true|false]` : Enable/disable mail notifications
 -   `[Enable|Disable]: [feature]` : Enable or disable a feature
 
-`[...|...]` Stands for either `...` or `...` and `feature` can one of `bug`,
+`[...|...]` stands for either `...` or `...` and `feature` can be one of `bug`,
 `announcement`, `request`, `change`, `release` or `mail`.
 
 **Maintainers** can perform these actions:
