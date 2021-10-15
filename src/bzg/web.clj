@@ -16,18 +16,19 @@
             [tea-time.core :as tt]
             [selmer.parser :as html]
             [markdown.core :as md]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [datalevin.core :as d])
   (:gen-class))
 
-(defn- db-format [{:keys [db s sorting-by]}]
+(defn- entries-format [{:keys [entries s sorting-by]}]
   (let [linkify-maybe
         (if (not-empty (:mail-url-format config/env))
           #(assoc-in % [:link] (format (:mail-url-format config/env)
                                        (:message-id %)))
           identity)]
     (->>
-     db
-     (sort-by (if (= sorting-by "date") #(:date %) #(:backrefs %)))
+     entries
+     (sort-by (if (= sorting-by "date") :date :backrefs))
      reverse
      (filter #(re-find (re-pattern (str "(?i)" (or (not-empty s) ""))) (:subject %)))
      (map linkify-maybe))))
@@ -40,86 +41,106 @@
    :contribute-cta (:contribute-cta config/env)})
 
 (defn get-homepage [{:keys [query-params]}]
-  (let [s (get query-params "s")]
+  (let [s               (get query-params "s")
+        config-defaults (d/entity core/db [:defaults "init"])]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
       (io/resource (str "html/" (:theme config/env) "/index.html"))
       (merge html-defaults
-             {:releases
-              (db-format
-               {:db (->> (core/get-releases) (sort-by :data) reverse
-                         ;; FIXME: Allow to configure
-                         (take 3))
-                :s  s})
-              :changes
-              (db-format {:db (core/get-unreleased-changes) :s s})
-              :released-changes
-              (db-format {:db (core/get-latest-released-changes) :s s})
-              :announcements
-              (db-format {:db (core/get-announcements) :s s})}))}))
+             {:theme (:theme config-defaults)}
+             (when (-> config-defaults :features :bug)
+               {:releases
+                (entries-format
+                 {:entries    (->> (core/get-releases)
+                                   (take (-> config-defaults :max :releases)))
+                  :sorting-by "date"
+                  :s          s})})
+             (when (-> config-defaults :features :change)
+               {:changes
+                (entries-format {:entries    (core/get-unreleased-changes)
+                                 :sorting-by "date"
+                                 :s          s})})
+             (when (-> config-defaults :features :change)
+               {:released-changes
+                (entries-format {:entries    (core/get-latest-released-changes)
+                                 :sorting-by "date"
+                                 :s          s})})
+             (when (-> config-defaults :features :announcement)
+               {:announcements
+                (entries-format {:entries    (core/get-announcements)
+                                 :sorting-by "date"
+                                 :s          s})})))}))
 
 (defn get-page-bugs [{:keys [query-params]}]
-  (let [format-params {:s          (get query-params "s")
-                       :sorting-by (get query-params "sorting-by")}]
+  (let [format-params   {:s          (get query-params "s")
+                         :sorting-by (get query-params "sorting-by")}
+        config-defaults (d/entity core/db [:defaults "init"])]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
       (io/resource (str "html/" (:theme config/env) "/bugs.html"))
       (merge html-defaults
-             {:unconfirmed-bugs
-              (db-format
-               (merge {:db (core/get-unconfirmed-bugs)} format-params))
+             {:theme (:theme config-defaults)
+              :unconfirmed-bugs
+              (entries-format
+               (merge {:entries (core/get-unconfirmed-bugs)} format-params))
               :confirmed-bugs
-              (db-format
-               (merge {:db (core/get-confirmed-bugs)} format-params))}))}))
+              (entries-format
+               (merge {:entries (core/get-confirmed-bugs)} format-params))}))}))
 
 (defn get-page-mails [{:keys [query-params]}]
-  (let [format-params {:s          (get query-params "s")
-                       :sorting-by (get query-params "sorting-by")}]
+  (let [format-params   {:s          (get query-params "s")
+                         :sorting-by (get query-params "sorting-by")}
+        config-defaults (d/entity core/db [:defaults "init"])]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
       (io/resource (str "html/" (:theme config/env) "/mails.html"))
       (merge html-defaults
-             {:mails
-              (db-format
-               (merge {:db (core/get-mails)} format-params))}))}))
+             {:theme (:theme config-defaults)
+              :mails
+              (entries-format
+               (merge {:entries (core/get-mails)} format-params))}))}))
 
 (defn get-page-requests [{:keys [query-params]}]
-  (let [format-params {:s          (get query-params "s")
-                       :sorting-by (get query-params "sorting-by")}]
+  (let [format-params   {:s          (get query-params "s")
+                         :sorting-by (get query-params "sorting-by")}
+        config-defaults (d/entity core/db [:defaults "init"])]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
       (io/resource (str "html/" (:theme config/env) "/requests.html"))
       (merge html-defaults
-             {:unhandled-requests
-              (db-format (merge {:db (core/get-unhandled-requests)}
-                                format-params))
+             {:theme (:theme config-defaults)
+              :unhandled-requests
+              (entries-format (merge {:entries (core/get-unhandled-requests)}
+                                     format-params))
               :handled-requests
-              (db-format (merge {:db (core/get-handled-requests)}
-                                format-params))}))}))
+              (entries-format (merge {:entries (core/get-handled-requests)}
+                                     format-params))}))}))
 
 (defn get-page-patches [{:keys [query-params]}]
-  (let [format-params {:s          (get query-params "s")
-                       :sorting-by (get query-params "sorting-by")}]
+  (let [format-params   {:s          (get query-params "s")
+                         :sorting-by (get query-params "sorting-by")}
+        config-defaults (d/entity core/db [:defaults "init"])]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
       (io/resource (str "html/" (:theme config/env) "/patches.html"))
       (merge html-defaults
-             {:approved-patches
-              (db-format (merge {:db (core/get-approved-patches)}
-                                format-params))
+             {:theme (:theme config-defaults)
+              :approved-patches
+              (entries-format (merge {:entries (core/get-approved-patches)}
+                                     format-params))
               :unapproved-patches
-              (db-format (merge {:db (core/get-unapproved-patches)}
-                                format-params))}))}))
+              (entries-format (merge {:entries (core/get-unapproved-patches)}
+                                     format-params))}))}))
 
 (def handler
   (ring/ring-handler
@@ -201,6 +222,7 @@
 (defn -main []
   (let [admin-address (:admin-address config/env)]
     (tt/start!)
+    (core/set-defaults)
     (core/update-person {:email    admin-address
                          :username (:admin-username config/env)
                          :role     :admin})

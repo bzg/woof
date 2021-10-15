@@ -34,6 +34,11 @@
    :feed-description (System/getenv "WOOF_FEED_DESCRIPTION")
    })
 
+(def defaults
+  {:features #{:bug :patch :request :announcement :change :release :mail}
+   :max      {:releases 4 :mails 100 :announcements 10}
+   :theme    (:theme env)})
+
 (def report-strings
   {:applied   "Applied"
    :approved  "Approved"

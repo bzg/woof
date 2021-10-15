@@ -19,7 +19,8 @@
 ;; Set up the database
 
 (def schema
-  {:log          {:db/valueType :db.type/instant
+  {:defaults     {:db/unique :db.unique/identity}
+   :log          {:db/valueType :db.type/instant
                   :db/unique    :db.unique/identity}
    :message-id   {:db/valueType :db.type/string
                   :db/unique    :db.unique/identity}
@@ -43,6 +44,11 @@
 (def conn (d/get-conn (:db-dir config/env) schema))
 
 (def db (d/db conn))
+
+;; Set config defaults
+
+(defn set-defaults []
+  (d/transact! conn [(merge {:defaults "init"} config/defaults)]))
 
 ;; Small utility functions
 
@@ -72,7 +78,8 @@
 
 (defn- get-reports-msgs [report-type reports]
   (->> (map #(d/touch (d/entity db (:db/id (report-type %)))) reports)
-       (map #(dissoc (into {} %) :db/id))))
+       (map #(dissoc (into {} %) :db/id))
+       (remove :ignored)))
 
 (defn get-mails []
   (->> (d/q `[:find ?e :where [?e :message-id _]] db)
@@ -81,8 +88,7 @@
        (remove :private)
        (remove :ignored)
        (sort-by :date)
-       ;; FIXME: Allow to configure?
-       (take 100)))
+       (take (-> (d/entity db [:defaults "init"]) :max :mails))))
 
 (defn get-bugs [] (get-reports-msgs :bug (get-reports :bug)))
 (defn get-patches [] (get-reports-msgs :patch (get-reports :patch)))
@@ -103,8 +109,7 @@
   (->> (get-reports :announcement)
        (remove :canceled)
        (get-reports-msgs :announcement)
-       ;; FIXME: Allow to configure?
-       (take 10)))
+       (take (-> (d/entity db [:defaults "init"]) :max :announcements))))
 
 (defn get-confirmed-bugs []
   (->> (get-reports :bug)
@@ -430,7 +435,6 @@
   (when-let [m (re-matches #"^\[RELEASE\s*([^]]+)].*$" (:subject msg))]
     (peek m)))
 
-;; FIXME: Todo
 (defn add-admin [email]
   (let [person    (into {} (d/touch (d/entity db [:email email])))
         as-banned (conj person [:admin (java.util.Date.)])]
