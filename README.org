@@ -17,6 +17,14 @@ Woof! will extract what's important for everyone.
 
 See [[file:resources/md/howto.org][the howto]] for further instructions on how to use it.
 
+* Requisits
+
+You need Clojure and Java on the machine to deply this application.
+
+Run =~$ apt install clojure= or see [[https://clojure.org/guides/getting_started][this guide]].
+
+Run =~$ apt install default-jre= or refer to your distribution.
+
 * Configure
 
 You need to set some environment variables to let the application run.
