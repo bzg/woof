@@ -44,8 +44,12 @@
    :contribute-cta (:contribute-cta config/env)})
 
 (defn get-page-index [{:keys [query-params]}]
-  (let [s               (get query-params "s")
-        config-defaults (d/entity core/db [:defaults "init"])]
+  (let [format-params   {:s          (get query-params "s")
+                         :sorting-by (get query-params "sorting-by")}
+        defaults        (d/entity core/db [:defaults "init"])
+        news?           (true? (and (-> defaults :features :change)
+                                    (-> defaults :features :release)))
+        config-defaults (merge (into {} defaults) {:news news?})]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
@@ -56,25 +60,27 @@
              (when (-> config-defaults :features :bug)
                {:releases
                 (entries-format
-                 {:entries    (->> (core/get-releases)
-                                   (take (-> config-defaults :max :releases)))
-                  :sorting-by "date"
-                  :s          s})})
+                 (merge {:entries (->> (core/get-releases)
+                                       (take (-> config-defaults :max :releases)))}
+                        format-params))})
              (when (-> config-defaults :features :change)
                {:changes
-                (entries-format {:entries    (core/get-upcoming-changes)
-                                 :sorting-by "date"
-                                 :s          s})})
+                (entries-format (merge {:entries (core/get-upcoming-changes)}
+                                       format-params))})
              (when (-> config-defaults :features :change)
                {:released-changes
-                (entries-format {:entries    (core/get-latest-released-changes)
-                                 :sorting-by "date"
-                                 :s          s})})
+                (entries-format
+                 (merge {:entries (core/get-latest-released-changes)}
+                        format-params))})
              (when (-> config-defaults :features :announcement)
                {:announcements
-                (entries-format {:entries    (core/get-announcements)
-                                 :sorting-by "date"
-                                 :s          s})})))}))
+                (entries-format
+                 (merge {:entries (core/get-announcements)}
+                        format-params))})
+             (when (-> config-defaults :features :mail)
+               {:mails
+                (entries-format
+                 (merge {:entries (core/get-mails)} format-params))})))}))
 
 (defn get-page-bugs [{:keys [query-params]}]
   (let [format-params   {:s          (get query-params "s")
@@ -93,21 +99,6 @@
               :confirmed-bugs
               (entries-format
                (merge {:entries (core/get-confirmed-bugs)} format-params))}))}))
-
-(defn get-page-mails [{:keys [query-params]}]
-  (let [format-params   {:s          (get query-params "s")
-                         :sorting-by (get query-params "sorting-by")}
-        config-defaults (d/entity core/db [:defaults "init"])]
-    {:status  200
-     :headers {"Content-Type" "text/html"}
-     :body
-     (html/render-file
-      (io/resource (str "html/" (:theme config-defaults) "/mails.html"))
-      (merge html-defaults
-             {:config config-defaults
-              :mails
-              (entries-format
-               (merge {:entries (core/get-mails)} format-params))}))}))
 
 (defn get-page-requests [{:keys [query-params]}]
   (let [format-params   {:s          (get query-params "s")
@@ -165,7 +156,6 @@
    (ring/router
     [["/" {:get (fn [params] (get-page-index params))}]
      ["/bugs" {:get (fn [params] (get-page-bugs params))}]
-     ["/mails" {:get (fn [params] (get-page-mails params))}]
      ["/patches" {:get (fn [params] (get-page-patches params))}]
      ["/requests" {:get (fn [params] (get-page-requests params))}]
      ["/announcements" {:get (fn [params] (get-page-announcements params))}]
@@ -242,10 +232,10 @@
   (let [admin-address (:admin-address config/env)]
     (tt/start!)
     (core/set-defaults)
-    (core/update-person {:email    admin-address
-                         :username (or (:admin-username config/env)
-                                       admin-address)
-                         :role     :admin})
+    (core/update-person! {:email    admin-address
+                          :username (or (:admin-username config/env)
+                                        admin-address)
+                          :role     :admin})
     (core/start-mail-loop!)
     (mount/start #'core/woof-manager #'woof-server)))
 

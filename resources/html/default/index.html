@@ -10,6 +10,16 @@
       {% endsafe %}
       {% else %}
 
+      {% if config.maintenance %}
+      <div class="content colum is-size-1 is-offset-4 is-4 has-text-centered">
+	<p class="button is-size-4 is-info is-light">
+	  <a title="Send an email to the admin" href="mailto:{{config.admin}}">
+	    Under maintenance, sorry.
+	  </a>
+	</p>
+      </div>
+      {% else %}
+
       {% include "html/default/tabs.html" with active="home" action-path="/" %}
 
       {% if config.features.change %}
@@ -20,7 +30,7 @@
 	  {% else %}
 	  <h1 class="title is-size-4">
 	    <span>
-	      Upcoming changes
+	      {{changes|count}} upcoming change{{changes|pluralize}}
 	      <a class="tag is-info is-light" href="/changes.rss">RSS</a>
 	      <a class="tag is-success is-light" href="/changes.json">JSON</a>
 	    </span>
@@ -64,7 +74,7 @@
 	  {% else %}
 	  <h1 class="title is-size-4">
 	    <span>
-	      Latest released changes
+	      {{released-changes|count}} change{{released-changes|pluralize}} released
 	      <a class="tag is-info is-light" href="/released-changes.rss">RSS</a>
 	      <a class="tag is-success is-light" href="/released-changes.json">JSON</a>
 	    </span>
@@ -110,7 +120,7 @@
 	  {% else %}
 	  <h1 class="title is-size-4">
 	    <span>
-	      Latest releases
+	      {{releases|count}} release{{releases|pluralize}}
 	      <a class="tag is-info is-light" href="/releases.rss">RSS</a>
 	      <a class="tag is-success is-light" href="/releases.json">JSON</a>
 	    </span>
@@ -148,6 +158,57 @@
       </section>
       {% endif %}
 
+      {% if config.features.mail %}
+      <section class="section" style="padding: 1.5rem 1.0rem">
+	<div class="container">
+
+	  {% ifequal mails|count 0 %}
+	  <h1 class="title is-size-4">No received mail</h1>
+	  {% else %}
+	  <h1 class="title is-size-4">
+	    <span>
+	      {{mails|count}} mail{{mails|pluralize}} received
+	      <a class="tag is-info is-light" href="/mails.rss">RSS</a>
+	      <a class="tag is-success is-light" href="/mails.json">JSON</a>
+	    </span>
+	  </h1>
+	  <div class="table-container">
+	    <table class="table is-fullwidth">
+	      <thead>
+		<tr>
+		  <th>Subject</th>
+		  <th width="15%">User</th>
+		  <th width="15%"><a href="?sorting-by=date" title="Sort mails by date">Date</a></th>
+		  <th width="5%">
+		    <a href="?sorting-by=refs" title="Sort mails by number of references">Refs</a>
+		  </th>
+		</tr>
+	      </thead>
+	      <tbody>
+		{% for mail in mails %}
+		<tr>
+		  <td>
+		    {% if mail.link %}
+		    <a href="{{mail.link}}" target="_blank" title="Visit email sent by {{mail.from}} on {{mail.date}}">{{mail.subject}}</a>
+		    {% else %}
+		    {{mail.subject}}
+		    {% endif %}
+		  </td>
+		  <td>{{mail.username}}</td>
+		  <td>{{mail.date|date:shortDate}}</td>
+		  <td>{{mail.backrefs}}</td>
+		</tr>
+		{% endfor %}
+	      </tbody>
+	    </table>
+	  </div>
+	  {% endifequal %}
+
+	</div>
+      </section>
+      {% endif %}
+
+      {% endif %}
       {% endif %}
     </div>
     {% include "html/default/footer.html" %}

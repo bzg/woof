@@ -14,7 +14,8 @@
             [taoensso.timbre :as timbre]
             [taoensso.timbre.appenders.core :as appenders]
             [taoensso.timbre.appenders (postal :as postal-appender)]
-            [datalevin.core :as d]))
+            [datalevin.core :as d]
+            [clojure.edn :as edn]))
 
 ;; Set up the database
 
@@ -252,7 +253,7 @@
 (defn add-mail-private! [msg]
   (add-mail! msg (java.util.Date.)))
 
-(defn update-person [{:keys [email username role aliases]} & [action]]
+(defn update-person! [{:keys [email username role aliases]} & [action]]
   ;; An email is enough to update a person
   (let [timestamp (java.util.Date.)
         username  (or username email)
@@ -489,15 +490,27 @@
       (timbre/info (format "Past mails from %s are not ignored anymore" email))
       true)))
 
+(defn update-maintenance! [status]
+  (d/transact! conn [{:defaults "init" :maintenance status}]))
+
+(defn update-notifications! [status & email]
+  (if-let [address (first email)]
+    (update-person! {:email address} [:notifications status])
+    (d/transact! conn [{:defaults      "init"
+                        :notifications status}])))
+
 (defn admin-report! [{:keys [commands msg]}]
   (let [from (:address (first (:from msg)))]
     (doseq [[cmd cmd-val] commands]
       (let [err (format "%s could not run \"%s: %s\""
                         from cmd cmd-val)]
-        (if-not (re-matches email-re cmd-val)
+        (if-not (or (re-matches
+                     #"(Maintenance|Notifications): (true|false).*"
+                     (str cmd ": " cmd-val))
+                    (re-matches email-re cmd-val))
           (timbre/error
-           (format "%s tried a command with an ill-formatted email: %s"
-                   from cmd-val))
+           (format "%s sent an ill-formatted command: %s: %s"
+                   from cmd cmd-val))
           (when (condp some (list from)
                   (get-admins)
                   (condp = cmd
@@ -506,6 +519,10 @@
                     "Ignore"            (ignore! cmd-val)
                     "Remove admin"      (remove-admin! cmd-val)
                     "Remove maintainer" (remove-maintainer! cmd-val)
+                    "Maintenance"       (update-maintenance!
+                                         (edn/read-string cmd-val))
+                    "Notifications"     (update-notifications!
+                                         (edn/read-string cmd-val))
                     "Unignore"          (unignore! cmd-val)
                     (timbre/error err))
                   (get-maintainers)
@@ -514,10 +531,6 @@
                     "Ignore"         (ignore! cmd-val)
                     (timbre/error err)))
             (add-mail-private! msg)))))))
-
-;; FIXME: Todo
-;; (defn toggle-email-notifications [from status]
-;;   (println from status))
 
 (defn report! [action & status]
   (let [action-type   (cond (:bug action)          :bug
@@ -550,7 +563,7 @@
             (:maintainer (d/entity db [:email from])))]
 
     ;; Possibly add a new person
-    (update-person {:email from :username username})
+    (update-person! {:email from :username username})
 
     ;; Add or retract status
     (if-let [m (when (not-empty status-string)
@@ -627,11 +640,14 @@
     ;; Only process emails if they are sent directly from the release
     ;; manager or from the mailing list.
     (when
-        ;; Always process messages from admin
+        ;; Always process messages from the admin
         (or (= from (:admin-address config/env))
-            ;; Check relevant "To" headers
-            (some #{to X-Original-To}
-                  (list (:mailing-list-address config/env))))
+            (and
+             ;; Don't process anything when under maintenance
+             (not (:maintenance defaults))
+             ;; Check relevant "To" headers
+             (some #{to X-Original-To}
+                   (list (:mailing-list-address config/env)))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
@@ -692,7 +708,7 @@
                     (map string/trim)
                     (filter not-empty))]
 
-           (if (empty? references)
+           (if (empty? references) ;; FIXME: Needed?
              ;; Check whether this is a maintainer report sent to the admin
              (when-let [cmds
                         (->> body-seq
@@ -702,9 +718,9 @@
                (when (some (into #{} (concat admins maintainers)) (list from))
                  (admin-report! {:commands cmds :msg msg}))
 
-               ;; (when (some contributors (list from))
-               ;;   ;; The only action accessible for contributors
-               ;;   (toggle-email-notifications from (second (first cmds))))
+               (when (some contributors (list from))
+                 ;; Updating notifications is the only action for contributors
+                 (update-notifications! from (second (first cmds))))
                
                (when-not (some contributors (list from))
                  (timbre/error

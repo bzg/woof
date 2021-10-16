@@ -46,20 +46,23 @@
 
 (def defaults
   {:theme          (:theme env)
+   :admin          (:admin-address env)
    :maintenance    false
    :notifications  true
-   :features       {:announcement true
+   :features       {;; Each feature with a dedicated tab
+                    :announcement true
                     :bug          true
-                    :change       true
-                    :mail         true
                     :patch        true
+                    ;; Features on the homepage
+                    :change       true
                     :release      true
-                    :request      true}
-   :max            {;; Show only x latest releases
-                    :releases      4
-                    ;; Show only x latest mails
+                    :request      true
+                    ;; Also on the homepage, mostly for testing puropse
+                    :mail         false
+                    }
+   ;; Show only x latest releases/mails/announcements
+   :max            {:releases      4
                     :mails         100
-                    ;; Show only x latest announcements
                     :announcements 10}
    :export-formats {:rss  true
                     :json true

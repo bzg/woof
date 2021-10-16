@@ -29,12 +29,6 @@
     </li>
     {% endif %}
 
-    {% if config.features.mail %}
-    <li {% ifequal active "mails" %}class="is-active"{% endifequal %}>
-      <a title="Mails that triggered an action" href="/mails">Mails</a>
-    </li>
-    {% endif %}
-
   </ul>
   <div class="level">
     <form action="{{action-path}}" class="level-item">

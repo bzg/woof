@@ -5,6 +5,7 @@
     {% include "html/default/hero.html"%}
     <div class="container">
       {% include "html/default/tabs.html" with active="mails" action-path="/mails" %}
+
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 
@@ -13,7 +14,7 @@
 	  {% else %}
 	  <h1 class="title is-size-4">
 	    <span>
-	      Mails sent ({{mails|count}}) (max 100)
+	      {{mails|count}} mail{{mails|pluralize}} received
 	      <a class="tag is-info is-light" href="/mails.rss">RSS</a>
 	      <a class="tag is-success is-light" href="/mails.json">JSON</a>
 	    </span>
