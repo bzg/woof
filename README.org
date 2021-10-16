@@ -34,19 +34,29 @@ other configuration variables.
 
 Run this to check your configuration:
 
-: ~$ cd woof/
 : ~$ clj -M:test
 
-* Run
+* With deps.edn
 
-: ~$ cd woof/
+Run with:
+
 : ~$ clj -M:run
 
-* Deploy
+Deploy with:
 
-: ~$ cd woof/
 : ~$ clj -M:uberdeps
 : ~$ java -cp target/woof.jar clojure.main -m bzg.web
+
+* With leiningen
+
+Run with:
+
+: ~$ lein run
+
+Depuis with:
+
+: ~$ lein uberjar
+: ~$ java -jar target/woof.jar
 
 * Contribute
 
