@@ -96,17 +96,17 @@
    :maintenance       "Maintenance"
    ;; Admin actions
    :add-admin         "Add admin"
-   :ignore            "Ignore"
+   :delete            "Delete"
    :remove-admin      "Remove admin"
    :remove-maintainer "Remove maintainer"
-   :unignore          "Unignore"})
+   :undelete          "Undelete"})
 
 ;; Admin permissions include maintainer permissions which include
 ;; contributors ones.
 (def permissions
   {:admin       #{:add-admin :remove-admin
-                  :remove-maintainer :unignore}
-   :maintainer  #{:maintenance :add-maintainer :ignore}
+                  :remove-maintainer :undelete}
+   :maintainer  #{:maintenance :add-maintainer :delete}
    :contributor #{:notifications}})
 
 (defn format-email-notification

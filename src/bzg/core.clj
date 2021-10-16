@@ -74,20 +74,20 @@
        (map first)
        (map #(d/pull db '[*] %))
        ;; Always remove canceled reports, we never need them
-       (remove :ignored)
+       (remove :deleted)
        (remove :canceled)))
 
 (defn- get-reports-msgs [report-type reports]
   (->> (map #(d/touch (d/entity db (:db/id (report-type %)))) reports)
        (map #(dissoc (into {} %) :db/id))
-       (remove :ignored)))
+       (remove :deleted)))
 
 (defn get-mails []
   (->> (d/q `[:find ?e :where [?e :message-id _]] db)
        (map first)
        (map #(d/pull db '[*] %))
        (remove :private)
-       (remove :ignored)
+       (remove :deleted)
        (sort-by :date)
        (take (-> (d/entity db [:defaults "init"]) :max :mails))))
 
@@ -456,38 +456,38 @@
     (timbre/info (format "%s has been removed maintainer permissions" email))
     output))
 
-(defn ignore! [email]
+(defn delete! [email]
   (let [reports
         (->> (map
               #(d/q `[:find ?mail-id :where
                       [?report-id ~% ?mail-id]
                       [?mail-id :from ~email]]
                     db)
-              ;; Ignore all but changes and releases, even if the
-              ;; email being ignored is from a maintainer
+              ;; Delete all but changes and releases, even if the
+              ;; email being deleted is from a maintainer
               [:bug :patch :request :announcement])
              (map concat) flatten)]
     (when (seq reports)
       (doseq [r reports]
-        (d/transact! conn [{:db/id r :ignored (java.util.Date.)}]))
-      (timbre/info (format "Past mails from %s are now ignored" email))
+        (d/transact! conn [{:db/id r :deleted (java.util.Date.)}]))
+      (timbre/info (format "Past mails from %s are now deleted" email))
       true)))
 
-(defn unignore! [email]
+(defn undelete! [email]
   (let [reports
         (->> (map
               #(d/q `[:find ?mail-id
                       :where
                       [?report-id ~% ?mail-id]
-                      [?mail-id :ignored _]
+                      [?mail-id :deleted _]
                       [?mail-id :from ~email]]
                     db)
               [:bug :patch :request :announcement])
              (map concat) flatten)]
     (when (seq reports)
       (doseq [r reports]
-        (d/transact! conn [[:db/retract r :ignored]]))
-      (timbre/info (format "Past mails from %s are not ignored anymore" email))
+        (d/transact! conn [[:db/retract r :deleted]]))
+      (timbre/info (format "Past mails from %s are not deleted anymore" email))
       true)))
 
 (defn update-maintenance! [status]
@@ -516,19 +516,19 @@
                   (condp = cmd
                     "Add admin"         (add-admin! cmd-val)
                     "Add maintainer"    (add-maintainer! cmd-val)
-                    "Ignore"            (ignore! cmd-val)
+                    "Delete"            (delete! cmd-val)
                     "Remove admin"      (remove-admin! cmd-val)
                     "Remove maintainer" (remove-maintainer! cmd-val)
                     "Maintenance"       (update-maintenance!
                                          (edn/read-string cmd-val))
                     "Notifications"     (update-notifications!
                                          (edn/read-string cmd-val))
-                    "Unignore"          (unignore! cmd-val)
+                    "Undelete"          (undelete! cmd-val)
                     (timbre/error err))
                   (get-maintainers)
                   (condp = cmd
                     "Add maintainer" (add-maintainer! cmd-val)
-                    "Ignore"         (ignore! cmd-val)
+                    "Delete"         (delete! cmd-val)
                     (timbre/error err)))
             (add-mail-private! msg)))))))
 

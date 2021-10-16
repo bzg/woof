@@ -92,8 +92,8 @@ Each Woof! instance comes with a default admin.
 - =Remove admin: woof@woof.io=
 - =Add maintainer: woof@woof.io=
 - =Remove maintainer: woof@woof.io=
-- =Ignore: woof@woof.io=
-- =Unignore: woof@woof.io=
+- =Delete: woof@woof.io=
+- =Undelete: woof@woof.io=
 
 Admins can also update the configuration:
 
@@ -109,10 +109,10 @@ Admins can also update the configuration:
 *Maintainers* can perform these actions:
 
 - =Add maintainer: woof@woof.io=
-- =Ignore: woof@woof.io=
+- =Delete: woof@woof.io=
 
-They cannot remove admins or maintainers and they cannot unignore
-other contributors.
+Maintainers cannot remove admins or other maintainers and they cannot
+undelete mails from other contributors.
 
 * Woof without a mailing list
 
