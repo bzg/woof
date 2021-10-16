@@ -123,7 +123,7 @@ moderating users instead of ignoring them.
 -   `Ignore: woof@woof.io`
 
 Maintainers cannot remove admins or other maintainers.  They cannot
-undelete mails from other contributors or ignore contributors.
+undelete mails or unignore contributors.
 
 Admins and maintainers can send several commands in a mail, with each
 starting at the beginning of a line.
