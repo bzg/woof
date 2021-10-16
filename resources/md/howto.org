@@ -5,20 +5,17 @@
 * What is Woof! and how to use it?
 
 Woof! monitors updates sent to a mailbox and exposes them on the web.
-
 Typically, this mailbox is subscribed to a mailing list with a public
-archive, so that Woof! can expose links to this archive.
+online archive so that Woof! reports can link to it.
 
 Woof! tries to be *a good companion for free software maintainers* who
-work with mailing lists by allowing them to focus on /confirmed bugs/
-and /approved patches/.
-
-It also tries to *make life easier for users* by pointing to important
+work with mailing lists by allowing them to focus on /bugs/ and /patches/.
+It also aims at *making life easier for users* by pointing at important
 news such as upcoming changes.
 
-Woof! tries not to impose new constraints: just continue to work on
-your mailing list and with a minimalistic set of conventions, Woof!
-will extract what's important for users and maintainers.
+Woof! does not change the way maintainers use a mailing list for the
+development of their projects: with a minimalistic set of conventions,
+Woof! will extract what's important for everyone.
 
 * Triggering a report
 
@@ -112,6 +109,13 @@ Admins can also update the configuration:
 
 They cannot remove admins or maintainers and they cannot unignore and
 unban other contributors.
+
+* Woof without a mailing list
+
+Woof! can monitor a mailbox that is not subscribed to a public list.
+In that case, the webpage exposes reports as texts with no links.  But
+you can check reports by using their =json= export: it will give you the
+=Message-Id= of each report, allowing to find the corresponding email.
 
 #+html: </div>
 
