@@ -504,8 +504,23 @@
       (timbre/info (format "Mails from %s will now be ignored" email))
       output)))
 
+(defn enable! [feature & disable?]
+  (let [defaults     (d/entity db [:defaults "init"])
+        new-defaults (update-in
+                      defaults
+                      [:features (keyword feature)] (fn [_] (empty? disable?)))]
+    (when (d/transact! conn [new-defaults])
+      (timbre/info
+       (format "Feature \"%s\" is %s"
+               feature
+               (if disable? "disabled" "enabled"))))))
+
+(defn disable! [feature]
+  (enable! feature true))
+
 (defn update-maintenance! [status]
-  (d/transact! conn [{:defaults "init" :maintenance status}]))
+  (d/transact! conn [{:defaults "init" :maintenance status}])
+  (timbre/info (format "Maintenance mode is now: %s" status)))
 
 (defn update-notifications! [status & email]
   (if-let [address (first email)]
@@ -523,6 +538,9 @@
                  (re-matches
                   #"(Maintenance|Notifications): (true|false).*"
                   (str cmd ": " cmd-val))
+                 (re-matches
+                  #"(Disable|Enable): (bug|request|patch|announcement|change|release|mail).*"
+                  (str cmd ": " cmd-val))
                  ;; The command's value is an email address
                  (re-matches email-re cmd-val))
           (timbre/error
@@ -535,6 +553,8 @@
                     "Add maintainer"    (add-maintainer! cmd-val)
                     "Delete"            (delete! cmd-val)
                     "Ignore"            (ignore! cmd-val)
+                    "Enable"            (enable! cmd-val)
+                    "Disable"           (disable! cmd-val)
                     "Remove admin"      (remove-admin! cmd-val)
                     "Remove maintainer" (remove-maintainer! cmd-val)
                     "Undelete"          (undelete! cmd-val)

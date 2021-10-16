@@ -97,6 +97,9 @@
    ;; Admin actions
    :add-admin         "Add admin"
    :delete            "Delete"
+   :ignore            "Ignore"
+   :enable            "Enable"
+   :disable           "Disable"
    :remove-admin      "Remove admin"
    :remove-maintainer "Remove maintainer"
    :undelete          "Undelete"})
@@ -104,9 +107,9 @@
 ;; Admin permissions include maintainer permissions which include
 ;; contributors ones.
 (def permissions
-  {:admin       #{:add-admin :remove-admin
-                  :remove-maintainer :undelete}
-   :maintainer  #{:maintenance :add-maintainer :delete}
+  {:admin       #{:add-admin :remove-admin :enable :disable
+                  :remove-maintainer :undelete :unignore}
+   :maintainer  #{:maintenance :add-maintainer :delete :ignore}
    :contributor #{:notifications}})
 
 (defn format-email-notification
