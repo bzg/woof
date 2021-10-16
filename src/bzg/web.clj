@@ -46,7 +46,7 @@
    :contribute-url (:contribute-url config/env)
    :contribute-cta (:contribute-cta config/env)})
 
-(defn get-page-index [{:keys [query-params]}]
+(defn- get-page-index [{:keys [query-params]}]
   (let [format-params   {:s          (get query-params "s")
                          :sorting-by (get query-params "sorting-by")}
         defaults        (d/entity core/db [:defaults "init"])
@@ -85,7 +85,7 @@
                 (entries-format
                  (merge {:entries (core/get-mails)} format-params))})))}))
 
-(defn get-page-bugs [{:keys [query-params]}]
+(defn- get-page-bugs [{:keys [query-params]}]
   (let [format-params   {:s          (get query-params "s")
                          :sorting-by (get query-params "sorting-by")}
         config-defaults (d/entity core/db [:defaults "init"])]
@@ -103,7 +103,7 @@
               (entries-format
                (merge {:entries (core/get-confirmed-bugs)} format-params))}))}))
 
-(defn get-page-requests [{:keys [query-params]}]
+(defn- get-page-requests [{:keys [query-params]}]
   (let [format-params   {:s          (get query-params "s")
                          :sorting-by (get query-params "sorting-by")}
         config-defaults (d/entity core/db [:defaults "init"])]
@@ -121,7 +121,7 @@
               (entries-format (merge {:entries (core/get-handled-requests)}
                                      format-params))}))}))
 
-(defn get-page-announcements [{:keys [query-params]}]
+(defn- get-page-announcements [{:keys [query-params]}]
   (let [format-params   {:s          (get query-params "s")
                          :sorting-by (get query-params "sorting-by")}
         config-defaults (d/entity core/db [:defaults "init"])]
@@ -136,7 +136,7 @@
               (entries-format (merge {:entries (core/get-announcements)}
                                      format-params))}))}))
 
-(defn get-page-patches [{:keys [query-params]}]
+(defn- get-page-patches [{:keys [query-params]}]
   (let [format-params   {:s          (get query-params "s")
                          :sorting-by (get query-params "sorting-by")}
         config-defaults (d/entity core/db [:defaults "init"])]

@@ -55,13 +55,13 @@
 
 (def email-re #"[^<@\s;,]+@[^>@\s;,]+")
 
-(defn make-to [username address]
+(defn- make-to [username address]
   (str username " <" address ">"))
 
-(defn get-id [^String id]
+(defn- get-id [^String id]
   (peek (re-matches #"^<?(.+[^>])>?$" id)))
 
-(defn get-subject [^String s]
+(defn- get-subject [^String s]
   (-> s
       (string/replace #"^(R[Ee] ?: ?)+" "")
       (string/replace #" *\([^)]+\)" "")
@@ -212,28 +212,28 @@
        (map first)
        (map #(d/pull db '[*] %))))
 
-(defn get-contributors []
+(defn- get-contributors []
   (->> (filter :contributor (get-persons))
        (map :email)
        (into #{})))
 
-(defn get-admins []
+(defn- get-admins []
   (->> (filter :admin (get-persons))
        (map :email)
        (into #{})))
 
-(defn get-maintainers []
+(defn- get-maintainers []
   (->> (filter :admin (get-persons))
        (map :email)
        (into #{})))
 
 ;; Core db functions to add and update entities
 
-(defn add-log! [date msg]
+(defn- add-log! [date msg]
   (d/transact! conn [{:log date :msg msg}])
   (d/touch (d/entity db [:log date])))
 
-(defn add-mail! [{:keys [id from subject] :as msg} & private]
+(defn- add-mail! [{:keys [id from subject] :as msg} & private]
   (let [headers     (walk/keywordize-keys (apply conj (:headers msg)))
         id          (get-id id)
         refs-string (:References headers)
@@ -250,7 +250,7 @@
     ;; Also return the username as we use it in `report!`
     (d/touch (d/entity db [:message-id id]))))
 
-(defn add-mail-private! [msg]
+(defn- add-mail-private! [msg]
   (add-mail! msg (java.util.Date.)))
 
 (defn update-person! [{:keys [email username role aliases]} & [action]]
@@ -282,7 +282,7 @@
          (format "(%s): ([^\\s]+).*")
          re-pattern)))
 
-(defn report-strings-all [report-type]
+(defn- report-strings-all [report-type]
   (let [report-do   (map #(% config/report-strings)
                          (report-type config/reports))
         report-undo (map #(string/capitalize (str "Un" %)) report-do)]
@@ -301,13 +301,13 @@
          (format "(%s)[;,:.].*")
          re-pattern)))
 
-(defn is-in-a-known-thread? [references]
+(defn- is-in-a-known-thread? [references]
   (doseq [i (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db))
                     references)]
     (let [backrefs (:backrefs (d/entity db [:message-id i]))]
       (d/transact! conn [{:message-id i :backrefs (inc backrefs)}]))))
 
-(defn is-report-update? [report-type body-report references]
+(defn- is-report-update? [report-type body-report references]
   ;; Is there a known action (e.g. "Canceled") for this report type
   ;; in the body of the email?
   (when-let [action (some (report-strings-all report-type) body-report)]
@@ -325,7 +325,7 @@
 
 ;; Setup logging
 
-(defn datalevin-appender []
+(defn- datalevin-appender []
   {:enabled?   true
    :async?     false
    :min-level  :info
@@ -354,7 +354,7 @@
 
 ;; Email notifications
 
-(defn send-email [{:keys [msg body purpose]}]
+(defn- send-email [{:keys [msg body purpose]}]
   (let  [{:keys [id from subject references]}
          msg
          to (make-to (:username (d/entity db [:email from])) from)]
@@ -390,7 +390,7 @@
 
 (def mail-chan (async/chan))
 
-(defn mail [msg body purpose]
+(defn- mail [msg body purpose]
   (if (:notifications (d/entity db [:defaults "init"]))
     (async/put! mail-chan {:msg msg :body body :purpose purpose})
     (timbre/info "Notifications are disabled, do not send email")))
@@ -430,33 +430,33 @@
   (when-let [m (re-matches #"^\[RELEASE\s*([^]]+)].*$" (:subject msg))]
     (peek m)))
 
-(defn add-admin! [email]
+(defn- add-admin! [email]
   (let [person (into {} (d/touch (d/entity db [:email email])))]
     (when-let [output (d/transact! conn [person])]
       (timbre/info (format "%s has been granted admin permissions" email))
       output)))
 
-(defn remove-admin! [email]
+(defn- remove-admin! [email]
   (when-let [output
              (d/transact!
               conn [(d/retract (d/entity db [:email email]) :admin)])]
     (timbre/info (format "%s has been removed admin permissions" email))
     output))
 
-(defn add-maintainer! [email]
+(defn- add-maintainer! [email]
   (let [person (into {} (d/touch (d/entity db [:email email])))]
     (when-let [output (d/transact! conn [person])]
       (timbre/info (format "%s has been granted maintainer permissions" email))
       output)))
 
-(defn remove-maintainer! [email]
+(defn- remove-maintainer! [email]
   (when-let [output
              (d/transact!
               conn [(d/retract (d/entity db [:email email]) :maintainer)])]
     (timbre/info (format "%s has been removed maintainer permissions" email))
     output))
 
-(defn delete! [email]
+(defn- delete! [email]
   (let [reports
         (->> (map
               #(d/q `[:find ?mail-id :where
@@ -473,7 +473,7 @@
       (timbre/info (format "Past mails from %s are now deleted" email))
       true)))
 
-(defn undelete! [email]
+(defn- undelete! [email]
   (let [reports
         (->> (map
               #(d/q `[:find ?mail-id
@@ -490,21 +490,21 @@
       (timbre/info (format "Past mails from %s are not deleted anymore" email))
       true)))
 
-(defn unignore! [email]
+(defn- unignore! [email]
   (when-let [output
              (d/transact!
               conn [(d/retract (d/entity db [:email email]) :ignored)])]
     (timbre/info (format "Mails from %s won't be ignored anymore" email))
     output))
 
-(defn ignore! [email]
+(defn- ignore! [email]
   (let [person     (into {} (d/touch (d/entity db [:email email])))
         as-ignored (conj person [:ignored (java.util.Date.)])]
     (when-let [output (d/transact! conn [as-ignored])]
       (timbre/info (format "Mails from %s will now be ignored" email))
       output)))
 
-(defn add-feature! [feature & disable?]
+(defn- add-feature! [feature & disable?]
   (let [defaults     (d/entity db [:defaults "init"])
         new-defaults (update-in
                       defaults
@@ -515,10 +515,10 @@
                feature
                (if disable? "disabled" "enabled"))))))
 
-(defn remove-feature! [feature]
+(defn- remove-feature! [feature]
   (add-feature! feature :disable))
 
-(defn add-export-format! [export-format & remove?]
+(defn- add-export-format! [export-format & remove?]
   (let [defaults     (d/entity db [:defaults "init"])
         new-defaults (update-in
                       defaults
@@ -529,27 +529,27 @@
                export-format
                (if remove? "removed" "added"))))))
 
-(defn remove-export-format! [export-format]
+(defn- remove-export-format! [export-format]
   (add-export-format! export-format :remove))
 
-(defn set-theme! [theme]
+(defn- set-theme! [theme]
   (let [defaults     (d/entity db [:defaults "init"])
         new-defaults (assoc defaults :theme theme)]
     (when (d/transact! conn [new-defaults])
       (timbre/info
        (format "Now using theme \"%s\"" theme)))))
 
-(defn update-maintenance! [status]
+(defn- update-maintenance! [status]
   (d/transact! conn [{:defaults "init" :maintenance status}])
   (timbre/info (format "Maintenance mode is now: %s" status)))
 
-(defn update-notifications! [status & email]
+(defn- update-notifications! [status & email]
   (if-let [address (first email)]
     (update-person! {:email address} [:notifications status])
     (d/transact! conn [{:defaults      "init"
                         :notifications status}])))
 
-(defn admin-report! [{:keys [commands msg]}]
+(defn- admin-report! [{:keys [commands msg]}]
   (let [from (:address (first (:from msg)))]
     (doseq [[cmd cmd-val] commands]
       (let [err (format "%s could not run \"%s: %s\""
@@ -598,7 +598,7 @@
                     (timbre/error err)))
             (add-mail-private! msg)))))))
 
-(defn report! [action & status]
+(defn- report! [action & status]
   (let [action-type   (cond (:bug action)          :bug
                             (:patch action)        :patch
                             (:request action)      :request
@@ -673,7 +673,7 @@
                 :ack-op)
           (timbre/info "Skipping email ack for admin or maintainer"))))))
 
-(defn release-changes! [version release-id]
+(defn- release-changes! [version release-id]
   (let [changes-reports
         (->> (filter #(= version (:version %))
                      (get-reports :change))
@@ -681,7 +681,7 @@
     (doseq [r changes-reports]
       (d/transact! conn [{:db/id r :released release-id}]))))
 
-(defn unrelease-changes! [release-id]
+(defn- unrelease-changes! [release-id]
   (let [changes-to-unrelease
         (->> (filter #(= release-id (:released %))
                      (get-reports :change))
@@ -689,7 +689,7 @@
     (doseq [r changes-to-unrelease]
       (d/transact! conn [[:db/retract r :released]]))))
 
-(defn process-incoming-message [{:keys [from] :as msg}]
+(defn- process-incoming-message [{:keys [from] :as msg}]
   (let [{:keys [To X-Original-To References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         references   (when (not-empty References)
