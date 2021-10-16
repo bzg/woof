@@ -77,21 +77,6 @@
    :fixed     "Fixed"
    :handled   "Handled"})
 
-(def admin-report-strings
-  {;; Contributors actions
-   :notifications     "Notifications"
-   ;; Maintainers actions
-   :add-maintainer    "Add maintainer"
-   :ban               "Ban"
-   :maintenance       "Maintenance"
-   ;; Admin actions
-   :add-admin         "Add admin"
-   :ignore            "Ignore"
-   :remove-admin      "Remove admin"
-   :remove-maintainer "Remove maintainer"
-   :unban             "Unban"
-   :unignore          "Unignore"})
-
 (def reports
   {:bug          #{:confirmed :canceled :fixed}
    :patch        #{:approved :canceled :applied}
@@ -100,13 +85,25 @@
    :announcement #{:canceled}
    :release      #{:canceled}})
 
+(def admin-report-strings
+  {;; Contributors actions
+   :notifications     "Notifications"
+   ;; Maintainers actions
+   :add-maintainer    "Add maintainer"
+   :maintenance       "Maintenance"
+   ;; Admin actions
+   :add-admin         "Add admin"
+   :ignore            "Ignore"
+   :remove-admin      "Remove admin"
+   :remove-maintainer "Remove maintainer"
+   :unignore          "Unignore"})
+
 ;; Admin permissions include maintainer permissions which include
 ;; contributors ones.
 (def permissions
   {:admin       #{:add-admin :remove-admin
-                  :remove-maintainer
-                  :unban :unignore}
-   :maintainer  #{:maintenance :add-maintainer :ban :ignore}
+                  :remove-maintainer :unignore}
+   :maintainer  #{:maintenance :add-maintainer :ignore}
    :contributor #{:notifications}})
 
 (defn format-email-notification

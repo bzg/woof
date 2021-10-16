@@ -174,13 +174,13 @@
       (reset! core/db {}))
     (testing "Add a change without a commit"
       (core/process-incoming-message (:msg10 test-data))
-      (is (= 1 (count (core/get-unreleased-changes @core/db))))
+      (is (= 1 (count (core/get-upcoming-changes @core/db))))
       (reset! core/db {}))
     (testing "Add a release wrt to a change"
       (core/process-incoming-message (:msg3 test-data))
-      (is (= 1 (count (core/get-unreleased-changes @core/db))))
+      (is (= 1 (count (core/get-upcoming-changes @core/db))))
       (core/process-incoming-message (:msg4 test-data))
-      (is (= 0 (count (core/get-unreleased-changes @core/db))))
+      (is (= 0 (count (core/get-upcoming-changes @core/db))))
       (reset! core/db {}))
     (testing "Fix a bug a release wrt to a change"
       (core/process-incoming-message (:msg4 test-data))

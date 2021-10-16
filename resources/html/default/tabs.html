@@ -5,12 +5,6 @@
       <a title="Important news to be aware of" href="/">News</a>
     </li>
 
-    {% if config.features.request %}
-    <li {% ifequal active "requests" %}class="is-active"{% endifequal %}>
-      <a title="Where contributors ask for help" href="/requests">Requests</a>
-    </li>
-    {% endif %}
-
     {% if config.features.bug %}
     <li {% ifequal active "bugs" %}class="is-active"{% endifequal %}>
       <a title="Confirmed bugs" href="/bugs">Bugs</a>
@@ -20,6 +14,18 @@
     {% if config.features.patch %}
     <li {% ifequal active "patches" %}class="is-active"{% endifequal %}>
       <a title="Patches" href="/patches">Patches</a>
+    </li>
+    {% endif %}
+
+    {% if config.features.request %}
+    <li {% ifequal active "requests" %}class="is-active"{% endifequal %}>
+      <a title="Where contributors ask for help" href="/requests">Requests</a>
+    </li>
+    {% endif %}
+
+    {% if config.features.announcement %}
+    <li {% ifequal active "announcements" %}class="is-active"{% endifequal %}>
+      <a title="Where contributors ask for help" href="/announcements">Announcements</a>
     </li>
     {% endif %}
 

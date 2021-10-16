@@ -62,7 +62,7 @@
                   :s          s})})
              (when (-> config-defaults :features :change)
                {:changes
-                (entries-format {:entries    (core/get-unreleased-changes)
+                (entries-format {:entries    (core/get-upcoming-changes)
                                  :sorting-by "date"
                                  :s          s})})
              (when (-> config-defaults :features :change)
@@ -127,6 +127,21 @@
               (entries-format (merge {:entries (core/get-handled-requests)}
                                      format-params))}))}))
 
+(defn get-page-announcements [{:keys [query-params]}]
+  (let [format-params   {:s          (get query-params "s")
+                         :sorting-by (get query-params "sorting-by")}
+        config-defaults (d/entity core/db [:defaults "init"])]
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body
+     (html/render-file
+      (io/resource (str "html/" (:theme config-defaults) "/announcements.html"))
+      (merge html-defaults
+             {:config config-defaults
+              :announcements
+              (entries-format (merge {:entries (core/get-announcements)}
+                                     format-params))}))}))
+
 (defn get-page-patches [{:keys [query-params]}]
   (let [format-params   {:s          (get query-params "s")
                          :sorting-by (get query-params "sorting-by")}
@@ -153,6 +168,7 @@
      ["/mails" {:get (fn [params] (get-page-mails params))}]
      ["/patches" {:get (fn [params] (get-page-patches params))}]
      ["/requests" {:get (fn [params] (get-page-requests params))}]
+     ["/announcements" {:get (fn [params] (get-page-announcements params))}]
      ["/howto"
       {:get (fn [_]
               {:status  200

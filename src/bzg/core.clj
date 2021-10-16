@@ -161,7 +161,7 @@
        (remove :done)
        (get-reports-msgs :request)))
 
-(defn get-unreleased-changes []
+(defn get-upcoming-changes []
   (->> (get-reports :change)
        (remove :released)
        (get-reports-msgs :change)))
@@ -197,10 +197,10 @@
 (defn get-updates []
   (flatten
    (list
-    (get-bugs)
-    (get-patches)
-    (get-requests)
-    (get-changes)
+    (get-confirmed-bugs)
+    (get-approved-patches)
+    (get-unhandled-requests)
+    (get-upcoming-changes)
     (get-announcements)
     (get-releases))))
 
@@ -213,24 +213,16 @@
 
 (defn get-contributors []
   (->> (filter :contributor (get-persons))
-       (remove :banned)
        (map :email)
        (into #{})))
 
 (defn get-admins []
   (->> (filter :admin (get-persons))
-       (remove :banned)
        (map :email)
        (into #{})))
 
 (defn get-maintainers []
   (->> (filter :admin (get-persons))
-       (remove :banned)
-       (map :email)
-       (into #{})))
-
-(defn get-banned []
-  (->> (filter :banned (get-persons))
        (map :email)
        (into #{})))
 
@@ -438,9 +430,8 @@
     (peek m)))
 
 (defn add-admin! [email]
-  (let [person    (into {} (d/touch (d/entity db [:email email])))
-        as-banned (conj person [:admin (java.util.Date.)])]
-    (when-let [output (d/transact! conn [as-banned])]
+  (let [person (into {} (d/touch (d/entity db [:email email])))]
+    (when-let [output (d/transact! conn [person])]
       (timbre/info (format "%s has been granted admin permissions" email))
       output)))
 
@@ -452,9 +443,8 @@
     output))
 
 (defn add-maintainer! [email]
-  (let [person    (into {} (d/touch (d/entity db [:email email])))
-        as-banned (conj person [:maintainer (java.util.Date.)])]
-    (when-let [output (d/transact! conn [as-banned])]
+  (let [person (into {} (d/touch (d/entity db [:email email])))]
+    (when-let [output (d/transact! conn [person])]
       (timbre/info (format "%s has been granted maintainer permissions" email))
       output)))
 
@@ -464,20 +454,6 @@
               conn [(d/retract (d/entity db [:email email]) :maintainer)])]
     (timbre/info (format "%s has been removed maintainer permissions" email))
     output))
-
-(defn unban! [email]
-  (when-let [output
-             (d/transact!
-              conn [(d/retract (d/entity db [:email email]) :banned)])]
-    (timbre/info (format "%s has been unbanned" email))
-    output))
-
-(defn ban! [email]
-  (let [person    (into {} (d/touch (d/entity db [:email email])))
-        as-banned (conj person [:banned (java.util.Date.)])]
-    (when-let [output (d/transact! conn [as-banned])]
-      (timbre/info (format "%s has been banned" email))
-      output)))
 
 (defn ignore! [email]
   (let [reports
@@ -527,17 +503,14 @@
                   (condp = cmd
                     "Add admin"         (add-admin! cmd-val)
                     "Add maintainer"    (add-maintainer! cmd-val)
-                    "Ban"               (ban! cmd-val)
                     "Ignore"            (ignore! cmd-val)
                     "Remove admin"      (remove-admin! cmd-val)
                     "Remove maintainer" (remove-maintainer! cmd-val)
-                    "Unban"             (unban! cmd-val)
                     "Unignore"          (unignore! cmd-val)
                     (timbre/error err))
                   (get-maintainers)
                   (condp = cmd
                     "Add maintainer" (add-maintainer! cmd-val)
-                    "Ban"            (ban! cmd-val)
                     "Ignore"         (ignore! cmd-val)
                     (timbre/error err)))
             (add-mail-private! msg)))))))
@@ -653,14 +626,12 @@
 
     ;; Only process emails if they are sent directly from the release
     ;; manager or from the mailing list.
-    (when (and
-           ;; Ignore messages from banned persons
-           (not (some (get-banned) (list from)))
-           ;; Always process messages from admin
-           (or (= from (:admin-address config/env))
-               ;; Check relevant "To" headers
-               (some #{to X-Original-To}
-                     (list (:mailing-list-address config/env)))))
+    (when
+        ;; Always process messages from admin
+        (or (= from (:admin-address config/env))
+            ;; Check relevant "To" headers
+            (some #{to X-Original-To}
+                  (list (:mailing-list-address config/env))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)

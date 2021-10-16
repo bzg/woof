@@ -25,14 +25,33 @@
 	      <a class="tag is-success is-light" href="/changes.json">JSON</a>
 	    </span>
 	  </h1>
-	  <div class="content">
-	    {% for change in changes %}
-	    {% if change.link %}
-	    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
-	    {% else %}
-	    {{change.subject}} by {{change.username}}
-	    {% endif %}
-	    {% endfor %}
+	  <div class="table-container">
+	    <table class="table is-fullwidth">
+	      <thead>
+		<tr>
+		  <th>Subject</th>
+		  <th width="15%">User</th>
+		  <th width="15%"><a href="?sorting-by=date" title="Sort by date">Date</a></th>
+		  <th width="5%"><a href="?sorting-by=refs" title="Sort by refs">Refs</a></th>
+		</tr>
+	      </thead>
+	      <tbody>
+		{% for change in changes %}
+		<tr>
+		  <td>
+		    {% if change.link %}
+		    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
+		    {% else %}
+		    {{change.subject}}
+		    {% endif %}
+		  </td>
+		  <td>{{change.username}}</td>
+		  <td>{{change.date|date:shortDate}}</td>
+		  <td>{{change.backrefs}}</td>
+		</tr>
+		{% endfor %}
+	      </tbody>
+	    </table>
 	  </div>
 	  {% endifequal %}
 	</div>
@@ -50,41 +69,33 @@
 	      <a class="tag is-success is-light" href="/released-changes.json">JSON</a>
 	    </span>
 	  </h1>
-	  <div class="content">
-	    {% for change in released-changes %}
-	    {% if change.link %}
-	    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
-	    {% else %}
-	    {{change.subject}} by {{change.username}}
-	    {% endif %}
-	    {% endfor %}
-	  </div>
-	  {% endifequal %}
-	</div>
-      </section>
-      {% endif %}
-
-      {% if config.features.announcement %}
-      <section class="section" style="padding: 1.5rem 1.0rem">
-	<div class="container">
-	  {% ifequal announcements|count 0 %}
-	  <h1 class="title is-size-4">No community announcement</h1>
-	  {% else %}
-	  <h1 class="title is-size-4">
-	    <span>
-	      Community announcements
-	      <a class="tag is-info is-light" href="/announcements.rss">RSS</a>
-	      <a class="tag is-success is-light" href="/announcements.json">JSON</a>
-	    </span>
-	  </h1>
-	  <div class="content">
-	    {% for announcement in announcements %}
-	    {% if announcement.link %}
-	    <a href="{{announcement.link}}" target="_blank" title="Visit email sent by {{announcement.from}} on {{announcement.date}}">{{announcement.subject}}</a>
-	    {% else %}
-	    {{announcement.subject}} by {{announcement.username}}
-	    {% endif %}
-	    {% endfor %}
+	  <div class="table-container">
+	    <table class="table is-fullwidth">
+	      <thead>
+		<tr>
+		  <th>Subject</th>
+		  <th width="15%">User</th>
+		  <th width="15%"><a href="?sorting-by=date" title="Sort by date">Date</a></th>
+		  <th width="5%"><a href="?sorting-by=refs" title="Sort by refs">Refs</a></th>
+		</tr>
+	      </thead>
+	      <tbody>
+		{% for change in released-changes %}
+		<tr>
+		  <td>
+		    {% if change.link %}
+		    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
+		    {% else %}
+		    {{change.subject}}
+		    {% endif %}
+		  </td>
+		  <td>{{change.username}}</td>
+		  <td>{{change.date|date:shortDate}}</td>
+		  <td>{{change.backrefs}}</td>
+		</tr>
+		{% endfor %}
+	      </tbody>
+	    </table>
 	  </div>
 	  {% endifequal %}
 	</div>
@@ -104,14 +115,33 @@
 	      <a class="tag is-success is-light" href="/releases.json">JSON</a>
 	    </span>
 	  </h1>
-	  <div class="content">
-	    {% for release in releases %}
-	    {% if release.link %}
-	    <a href="{{release.link}}" target="_blank" title="Visit email sent by {{release.from}} on {{release.date}}">{{release.subject}}</a> by {{release.username}}
-	    {% else %}
-	    {{release.subject}} by {{release.username}}
-	    {% endif %}
-	    {% endfor %}
+	  <div class="table-container">
+	    <table class="table is-fullwidth">
+	      <thead>
+		<tr>
+		  <th>Subject</th>
+		  <th width="15%">User</th>
+		  <th width="15%"><a href="?sorting-by=date" title="Sort by date">Date</a></th>
+		  <th width="5%"><a href="?sorting-by=refs" title="Sort by refs">Refs</a></th>
+		</tr>
+	      </thead>
+	      <tbody>
+		{% for release in releases %}
+		<tr>
+		  <td>
+		    {% if release.link %}
+		    <a href="{{release.link}}" target="_blank" title="Visit email sent by {{release.from}} on {{release.date}}">{{release.subject}}</a>
+		    {% else %}
+		    {{release.subject}}
+		    {% endif %}
+		  </td>
+		  <td>{{release.username}}</td>
+		  <td>{{release.date|date:shortDate}}</td>
+		  <td>{{release.backrefs}}</td>
+		</tr>
+		{% endfor %}
+	      </tbody>
+	    </table>
 	  </div>
 	  {% endifequal %}
 	</div>

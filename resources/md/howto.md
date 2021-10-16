@@ -1,5 +1,7 @@
 <div class="container">
 
+**NOTE: Do not deploy this version as it is still a work in progress.**
+
 
 # What is Woof! and how to use it?
 
@@ -90,15 +92,10 @@ Each Woof! instance comes with a default admin.
 **Admins** can perform these actions:
 
 -   `Add admin: woof@woof.io`
--   `Add maintainer: woof@woof.io`
--   `Ban: woof@woof.io`
--   `Ignore: woof@woof.io`
-
-You can also use `Remove` instead of `Add` and `Unban` and `Unignore`:
-
 -   `Remove admin: woof@woof.io`
+-   `Add maintainer: woof@woof.io`
 -   `Remove maintainer: woof@woof.io`
--   `Unban: woof@woof.io`
+-   `Ignore: woof@woof.io`
 -   `Unignore: woof@woof.io`
 
 Admins can also update the configuration:
@@ -115,12 +112,10 @@ Admins can also update the configuration:
 **Maintainers** can perform these actions:
 
 -   `Add maintainer: woof@woof.io`
--   `Ban: woof@woof.io`
--   `Unban: woof@woof.io`
 -   `Ignore: woof@woof.io`
 
-They cannot remove admins or maintainers and they cannot unignore and
-unban other contributors.
+They cannot remove admins or maintainers and they cannot unignore
+other contributors.
 
 
 # Woof without a mailing list

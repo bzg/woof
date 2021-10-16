@@ -17,7 +17,7 @@
            :approved-patches   (core/get-approved-patches)
            :patches            (core/get-unapplied-patches)
            :mails              (core/get-mails)
-           :changes            (core/get-unreleased-changes)
+           :changes            (core/get-upcoming-changes)
            :released-changes   (core/get-latest-released-changes)
            :announcements      (core/get-announcements)
            :releases           (core/get-releases)
