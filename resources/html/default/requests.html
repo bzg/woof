@@ -23,6 +23,7 @@
 	      <thead>
 		<tr>
 		  <th>Subject</th>
+		  <th width="15%"><a href="?sorting-by=user" title="Sort requests by user">User</a></th>
 		  <th width="15%">
 		    <a href="?sorting-by=date" title="Sort help requests by date">Date</a>
 		  </th>
@@ -35,20 +36,15 @@
 		{% for request in unhandled-requests %}
 		<tr>
 		  <td>
-		    <p>
-		      {% if request.link %}
-		      <a href="{{request.link}}" target="_blank" title="Visit email sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>
-		      {% else %}
-		      {{request.subject}}
-		      {% endif %}
-		    </p>
+		    {% if request.link %}
+		    <a href="{{request.link}}" target="_blank" title="Visit email sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>
+		    {% else %}
+		    {{request.subject}}
+		    {% endif %}
 		  </td>
-		  <td>
-		    <p>{{request.date|date:shortDate}}</p>
-		  </td>
-		  <td>
-		    <p>{{request.backrefs}}</p>
-		  </td>
+		  <td>{{request.username}}</td>
+		  <td>{{request.date|date:shortDate}}</td>
+		  <td>{{request.backrefs}}</td>
 		</tr>
 		{% endfor %}
 	      </tbody>
@@ -70,6 +66,7 @@
 	    <table class="table is-hoverable is-fullwidth is-striped">
 	      <thead>
 		<tr>
+		  <th width="15%"><a href="?sorting-by=user" title="Sort request by user">User</a></th>
 		  <th>Subject</th>
 		  <th width="15%">
 		    <a href="?sorting-by=date" title="Sort help requests by date">Date</a>
@@ -82,21 +79,16 @@
 	      <tbody>
 		{% for request in handled-requests %}
 		<tr>
+		  <td>{{request.username}}</td>
 		  <td>
-		    <p>
-		      {% if request.link %}
-		      <a href="{{request.link}}" target="_blank" title="Visit email sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>
-		      {% else %}
-		      {{request.subject}}
-		      {% endif %}
-		    </p>
+		    {% if request.link %}
+		    <a href="{{request.link}}" target="_blank" title="Visit email sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>
+		    {% else %}
+		    {{request.subject}}
+		    {% endif %}
 		  </td>
-		  <td>
-		    <p>{{request.date|date:shortDate}}</p>
-		  </td>
-		  <td>
-		    <p>{{request.backrefs}}</p>
-		  </td>
+		  <td>{{request.date|date:shortDate}}</td>
+		  <td>{{request.backrefs}}</td>
 		</tr>
 		{% endfor %}
 	      </tbody>

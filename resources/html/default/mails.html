@@ -23,6 +23,7 @@
 	      <thead>
 		<tr>
 		  <th>Subject</th>
+		  <th width="15%"><a href="?sorting-by=user" title="Sort mails by user">User</a></th>
 		  <th width="15%"><a href="?sorting-by=date" title="Sort mails by date">Date</a></th>
 		  <th width="5%">
 		    <a href="?sorting-by=refs" title="Sort mails by number of references">Refs</a>
@@ -33,16 +34,15 @@
 		{% for mail in mails %}
 		<tr>
 		  <td>
-		    <p>
-		      {% if mail.link %}
-		      <a href="{{mail.link}}" target="_blank" title="Visit email sent by {{mail.from}} on {{mail.date}}">{{mail.subject}}</a>
-		      {% else %}
-		      {{mail.subject}}
-		      {% endif %}
-		    </p>
+		    {% if mail.link %}
+		    <a href="{{mail.link}}" target="_blank" title="Visit email sent by {{mail.from}} on {{mail.date}}">{{mail.subject}}</a>
+		    {% else %}
+		    {{mail.subject}}
+		    {% endif %}
 		  </td>
-		  <td><p>{{mail.date|date:shortDate}}</p></td>
-		  <td><p>{{mail.backrefs}}</p></td>
+		  <td>{{mail.username}}</td>
+		  <td>{{mail.date|date:shortDate}}</td>
+		  <td>{{mail.backrefs}}</td>
 		</tr>
 		{% endfor %}
 	      </tbody>

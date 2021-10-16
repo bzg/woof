@@ -27,13 +27,11 @@
 	  </h1>
 	  <div class="content">
 	    {% for change in changes %}
-	    <p>
-	      {% if change.link %}
-	      <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
-	      {% else %}
-	      {{change.subject}}
-	      {% endif %}
-	    </p>
+	    {% if change.link %}
+	    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
+	    {% else %}
+	    {{change.subject}} by {{change.username}}
+	    {% endif %}
 	    {% endfor %}
 	  </div>
 	  {% endifequal %}
@@ -54,13 +52,11 @@
 	  </h1>
 	  <div class="content">
 	    {% for change in released-changes %}
-	    <p>
-	      {% if change.link %}
-	      <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
-	      {% else %}
-	      {{change.subject}}
-	      {% endif %}
-	    </p>
+	    {% if change.link %}
+	    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
+	    {% else %}
+	    {{change.subject}} by {{change.username}}
+	    {% endif %}
 	    {% endfor %}
 	  </div>
 	  {% endifequal %}
@@ -83,13 +79,11 @@
 	  </h1>
 	  <div class="content">
 	    {% for announcement in announcements %}
-	    <p>
-	      {% if announcement.link %}
-	      <a href="{{announcement.link}}" target="_blank" title="Visit email sent by {{announcement.from}} on {{announcement.date}}">{{announcement.subject}}</a>
-	      {% else %}
-	      {{announcement.subject}}
-	      {% endif %}
-	    </p>
+	    {% if announcement.link %}
+	    <a href="{{announcement.link}}" target="_blank" title="Visit email sent by {{announcement.from}} on {{announcement.date}}">{{announcement.subject}}</a>
+	    {% else %}
+	    {{announcement.subject}} by {{announcement.username}}
+	    {% endif %}
 	    {% endfor %}
 	  </div>
 	  {% endifequal %}
@@ -112,13 +106,11 @@
 	  </h1>
 	  <div class="content">
 	    {% for release in releases %}
-	    <p>
-	      {% if release.link %}
-	      <a href="{{release.link}}" target="_blank" title="Visit email sent by {{release.from}} on {{release.date}}">{{release.subject}}</a>
-	      {% else %}
-	      {{release.subject}}
-	      {% endif %}
-	    </p>
+	    {% if release.link %}
+	    <a href="{{release.link}}" target="_blank" title="Visit email sent by {{release.from}} on {{release.date}}">{{release.subject}}</a> by {{release.username}}
+	    {% else %}
+	    {{release.subject}} by {{release.username}}
+	    {% endif %}
 	    {% endfor %}
 	  </div>
 	  {% endifequal %}

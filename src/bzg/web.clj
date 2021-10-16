@@ -28,7 +28,10 @@
           identity)]
     (->>
      entries
-     (sort-by (if (= sorting-by "date") :date :backrefs))
+     (sort-by (condp = sorting-by
+                "date" :date
+                "user" :username
+                :backrefs))
      reverse
      (filter #(re-find (re-pattern (str "(?i)" (or (not-empty s) ""))) (:subject %)))
      (map linkify-maybe))))
