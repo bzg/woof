@@ -78,8 +78,8 @@ can also cancel them:
 
 Users receive a mail notification when they triggers a Woof! report.
 
-You can turn control notifications by writing to the Woof! mailbox
-with this command at the beginning of a line:
+Every user can turn notifications on or off by writing to the Woof!
+mailbox with this command at the beginning of a line:
 
 -   `Notifications: false` : To turn notifications off
 -   `Notifications: true` : To turn notifications on
@@ -89,33 +89,36 @@ with this command at the beginning of a line:
 
 Each Woof! instance comes with a default admin.
 
-**Admins** can perform these actions:
-
--   `Add admin: woof@woof.io`
--   `Remove admin: woof@woof.io`
--   `Add maintainer: woof@woof.io`
--   `Remove maintainer: woof@woof.io`
--   `Delete: woof@woof.io`
--   `Undelete: woof@woof.io`
-
-Admins can also update the configuration:
+**Admins** can update the main configuration:
 
 -   `Maintenance: true` : Put the website in maintenance mode
 -   `Notifications: true` : Enable/disable mail notifications
 -   `Theme: my_theme` : Use `my_theme` for the interface
--   `Enable: feature` : Enable a feature
--   `Disable: feature` : Disable a feature
+-   `Enable: [feature]` : Enable a feature
+-   `Disable: [feature]` : Disable a feature
 
-`feature` can be one of `bug`, `announcement`, `request`, `change`, `release` or
+`[feature]` can be one of `bug`, `announcement`, `request`, `change`, `release` or
 `mail` and truth values can be negated as `false`.
+
+Admins can also *delete* past reports and *ignore* future mails:
+
+-   `Delete: woof@woof.io`
+-   `Undelete: woof@woof.io`
+-   `Ignore: woof@woof.io`
+-   `Unignore: woof@woof.io`
+
+Remember: deletion is for cleaning up past reports, ignoring is about
+future emails.  When plugging Woof! to a mailing list, first consider
+moderating users instead of ignoring them.
 
 **Maintainers** can perform these actions:
 
 -   `Add maintainer: woof@woof.io`
 -   `Delete: woof@woof.io`
+-   `Ignore: woof@woof.io`
 
-Maintainers cannot remove admins or other maintainers and they cannot
-undelete mails from other contributors.
+Maintainers cannot remove admins or other maintainers.  They cannot
+undelete mails from other contributors or ignore contributors.
 
 
 # Woof without a mailing list

@@ -490,6 +490,20 @@
       (timbre/info (format "Past mails from %s are not deleted anymore" email))
       true)))
 
+(defn unignore! [email]
+  (when-let [output
+             (d/transact!
+              conn [(d/retract (d/entity db [:email email]) :ignored)])]
+    (timbre/info (format "Mails from %s won't be ignored anymore" email))
+    output))
+
+(defn ignore! [email]
+  (let [person     (into {} (d/touch (d/entity db [:email email])))
+        as-ignored (conj person [:ignored (java.util.Date.)])]
+    (when-let [output (d/transact! conn [as-ignored])]
+      (timbre/info (format "Mails from %s will now be ignored" email))
+      output)))
+
 (defn update-maintenance! [status]
   (d/transact! conn [{:defaults "init" :maintenance status}]))
 
@@ -504,10 +518,13 @@
     (doseq [[cmd cmd-val] commands]
       (let [err (format "%s could not run \"%s: %s\""
                         from cmd cmd-val)]
-        (if-not (or (re-matches
-                     #"(Maintenance|Notifications): (true|false).*"
-                     (str cmd ": " cmd-val))
-                    (re-matches email-re cmd-val))
+        (if-not (or
+                 ;; This is an admin toggle command
+                 (re-matches
+                  #"(Maintenance|Notifications): (true|false).*"
+                  (str cmd ": " cmd-val))
+                 ;; The command's value is an email address
+                 (re-matches email-re cmd-val))
           (timbre/error
            (format "%s sent an ill-formatted command: %s: %s"
                    from cmd cmd-val))
@@ -517,18 +534,21 @@
                     "Add admin"         (add-admin! cmd-val)
                     "Add maintainer"    (add-maintainer! cmd-val)
                     "Delete"            (delete! cmd-val)
+                    "Ignore"            (ignore! cmd-val)
                     "Remove admin"      (remove-admin! cmd-val)
                     "Remove maintainer" (remove-maintainer! cmd-val)
+                    "Undelete"          (undelete! cmd-val)
+                    "Unignore"          (unignore! cmd-val)
                     "Maintenance"       (update-maintenance!
                                          (edn/read-string cmd-val))
                     "Notifications"     (update-notifications!
                                          (edn/read-string cmd-val))
-                    "Undelete"          (undelete! cmd-val)
                     (timbre/error err))
                   (get-maintainers)
                   (condp = cmd
                     "Add maintainer" (add-maintainer! cmd-val)
                     "Delete"         (delete! cmd-val)
+                    "Ignore"         (ignore! cmd-val)
                     (timbre/error err)))
             (add-mail-private! msg)))))))
 
@@ -640,14 +660,17 @@
     ;; Only process emails if they are sent directly from the release
     ;; manager or from the mailing list.
     (when
-        ;; Always process messages from the admin
-        (or (= from (:admin-address config/env))
-            (and
-             ;; Don't process anything when under maintenance
-             (not (:maintenance defaults))
-             ;; Check relevant "To" headers
-             (some #{to X-Original-To}
-                   (list (:mailing-list-address config/env)))))
+        (and
+         ;; First check whether this user should be ignored
+         (not (:ignored (d/entity db [:email from])))
+         ;; Always process messages from the admin
+         (or (= from (:admin-address config/env))
+             (and
+              ;; Don't process anything when under maintenance
+              (not (:maintenance defaults))
+              ;; Check relevant "To" headers
+              (some #{to X-Original-To}
+                    (list (:mailing-list-address config/env))))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
