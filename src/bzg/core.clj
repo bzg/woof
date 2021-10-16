@@ -504,7 +504,7 @@
       (timbre/info (format "Mails from %s will now be ignored" email))
       output)))
 
-(defn enable! [feature & disable?]
+(defn add-feature! [feature & disable?]
   (let [defaults     (d/entity db [:defaults "init"])
         new-defaults (update-in
                       defaults
@@ -515,8 +515,29 @@
                feature
                (if disable? "disabled" "enabled"))))))
 
-(defn disable! [feature]
-  (enable! feature true))
+(defn remove-feature! [feature]
+  (add-feature! feature :disable))
+
+(defn add-export-format! [export-format & remove?]
+  (let [defaults     (d/entity db [:defaults "init"])
+        new-defaults (update-in
+                      defaults
+                      [:export (keyword export-format)] (fn [_] (empty? remove?)))]
+    (when (d/transact! conn [new-defaults])
+      (timbre/info
+       (format "Export format \"%s\" is %s"
+               export-format
+               (if remove? "removed" "added"))))))
+
+(defn remove-export-format! [export-format]
+  (add-export-format! export-format :remove))
+
+(defn set-theme! [theme]
+  (let [defaults     (d/entity db [:defaults "init"])
+        new-defaults (assoc defaults :theme theme)]
+    (when (d/transact! conn [new-defaults])
+      (timbre/info
+       (format "Now using theme \"%s\"" theme)))))
 
 (defn update-maintenance! [status]
   (d/transact! conn [{:defaults "init" :maintenance status}])
@@ -539,7 +560,11 @@
                   #"(Maintenance|Notifications): (true|false).*"
                   (str cmd ": " cmd-val))
                  (re-matches
-                  #"(Disable|Enable): (bug|request|patch|announcement|change|release|mail).*"
+                  #"(Add|Remove) export: (rss|json|org|md).*"
+                  (str cmd ": " cmd-val))
+                 (re-matches #"Set theme: .*" (str cmd ": " cmd-val))
+                 (re-matches
+                  #"(Add|Remove) feature: (bug|request|patch|announcement|change|release|mail).*"
                   (str cmd ": " cmd-val))
                  ;; The command's value is an email address
                  (re-matches email-re cmd-val))
@@ -550,19 +575,20 @@
                   (get-admins)
                   (condp = cmd
                     "Add admin"         (add-admin! cmd-val)
+                    "Add export"        (add-export-format! cmd-val)
                     "Add maintainer"    (add-maintainer! cmd-val)
                     "Delete"            (delete! cmd-val)
+                    "Remove feature"    (remove-feature! cmd-val)
+                    "Add feature"       (add-feature! cmd-val)
                     "Ignore"            (ignore! cmd-val)
-                    "Enable"            (enable! cmd-val)
-                    "Disable"           (disable! cmd-val)
+                    "Maintenance"       (update-maintenance! (edn/read-string cmd-val))
+                    "Notifications"     (update-notifications! (edn/read-string cmd-val))
                     "Remove admin"      (remove-admin! cmd-val)
+                    "Remove export"     (remove-export-format! cmd-val)
                     "Remove maintainer" (remove-maintainer! cmd-val)
+                    "Set theme"         (set-theme! cmd-val)
                     "Undelete"          (undelete! cmd-val)
                     "Unignore"          (unignore! cmd-val)
-                    "Maintenance"       (update-maintenance!
-                                         (edn/read-string cmd-val))
-                    "Notifications"     (update-notifications!
-                                         (edn/read-string cmd-val))
                     (timbre/error err))
                   (get-maintainers)
                   (condp = cmd

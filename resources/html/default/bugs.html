@@ -14,8 +14,10 @@
 	  <h1 class="title is-size-4">
 	    <span>
 	      {{confirmed-bugs|count}} confirmed bug{{confirmed-bugs|pluralize}}
-	      <a class="tag is-info is-light" href="/confirmed-bugs.rss">RSS</a>
-	      <a class="tag is-success is-light" href="/confirmed-bugs.json">JSON</a>
+	      {% if config.export.rss %}<a class="tag is-info is-light" href="/confirmed-bugs.rss">RSS</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-info is-light" href="/confirmed-bugs.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-info is-light" href="/confirmed-bugs.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-info is-light" href="/confirmed-bugs.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
@@ -56,8 +58,10 @@
 	  <h1 class="title is-size-4">
 	    <span>
 	      {{unconfirmed-bugs|count}} unconfirmed bug{{unconfirmed-bugs|pluralize}}
-	      <a class="tag is-info is-light" href="/unconfirmed-bugs.rss">RSS</a>
-	      <a class="tag is-success is-light" href="/unconfirmed-bugs.json">JSON</a>
+	      {% if config.export.rss %}<a class="tag is-info is-light" href="/unconfirmed-bugs.rss">RSS</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-info is-light" href="/unconfirmed-bugs.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-info is-light" href="/unconfirmed-bugs.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-info is-light" href="/unconfirmed-bugs.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">

@@ -45,31 +45,30 @@
    })
 
 (def defaults
-  {:theme          (:theme env)
-   :admin          (:admin-address env)
-   :maintenance    false
-   :notifications  true
-   :features       {;; Each feature with a dedicated tab
-                    :announcement true
-                    :bug          true
-                    :patch        true
-                    ;; Features on the homepage
-                    :change       true
-                    :release      true
-                    :request      true
-                    ;; Also on the homepage, mostly for testing puropse
-                    :mail         false
-                    }
+  {:theme         (:theme env)
+   :admin         (:admin-address env)
+   :maintenance   false
+   :notifications true
+   :features      {;; Each feature with a dedicated tab
+                   :announcement true
+                   :bug          true
+                   :patch        true
+                   ;; Features on the homepage
+                   :change       true
+                   :release      true
+                   :request      true
+                   ;; Also on the homepage, mostly for testing puropse
+                   :mail         false
+                   }
    ;; Show only x latest releases/mails/announcements
-   :max            {:releases      4
-                    :mails         100
-                    :announcements 10}
-   :export-formats {:rss  true
-                    :json true
-                    ;; FIXME: Not implemented yet
-                    ;; :org  true
-                    ;; :md   true
-                    }})
+   :max           {:releases      4
+                   :mails         100
+                   :announcements 10}
+   :export        {:rss  true
+                   :json true
+                   :org  true
+                   :md   true
+                   }})
 
 (def report-strings
   {:applied   "Applied"
@@ -96,19 +95,25 @@
    :maintenance       "Maintenance"
    ;; Admin actions
    :add-admin         "Add admin"
+   :add-export        "Add export"
    :delete            "Delete"
+   :remove-feature    "Remove feature"
+   :add-feature       "Add feature"
    :ignore            "Ignore"
-   :enable            "Enable"
-   :disable           "Disable"
    :remove-admin      "Remove admin"
+   :remove-export     "Remove export"
    :remove-maintainer "Remove maintainer"
-   :undelete          "Undelete"})
+   :set-theme         "Set theme"
+   :undelete          "Undelete"
+   })
 
 ;; Admin permissions include maintainer permissions which include
 ;; contributors ones.
 (def permissions
-  {:admin       #{:add-admin :remove-admin :enable :disable
-                  :remove-maintainer :undelete :unignore}
+  {:admin       #{:add-admin :remove-admin
+                  :add-feature :remove-feature
+                  :remove-maintainer :undelete :unignore
+                  :add-export :remove-export :set-theme}
    :maintainer  #{:maintenance :add-maintainer :delete :ignore}
    :contributor #{:notifications}})
 

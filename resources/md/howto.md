@@ -94,11 +94,16 @@ Each Woof! instance comes with a default admin.
 -   `Maintenance: true` : Put the website in maintenance mode
 -   `Notifications: true` : Enable/disable mail notifications
 -   `Theme: my_theme` : Use `my_theme` for the interface
--   `Enable: [feature]` : Enable a feature
--   `Disable: [feature]` : Disable a feature
+-   `Add feature: [feature]` : Enable a feature
+-   `Remove feature: [feature]` : Disable a feature
+-   `Add export: [format]` : Add an export format
+-   `Remove export: [format]` : Remove an export format
 
-`[feature]` can be one of `bug`, `announcement`, `request`, `change`, `release` or
-`mail` and truth values can be negated as `false`.
+Truth values can be negated as `false`.
+
+`[feature]` can be `bug`, `announcement`, `request`, `change`, `release` or `mail`.
+
+`[format]` can be `rss`, `json`, `org` or `md`.
 
 Admins can also *delete* past reports and *ignore* future mails:
 

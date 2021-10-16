@@ -171,7 +171,8 @@
                          (merge html-defaults
                                 {:howto (md/md-to-html-string
                                          (slurp (io/resource "md/howto.md")))}))})}]
-     ;; json data
+     ;; FIXME: only expose enabled export formats?
+     ;; Json data
      ["/updates.json" {:get data/get-data-updates}]
      ["/mails.json" {:get data/get-data-mails}]
      ["/changes.json" {:get data/get-data-changes}]
@@ -182,31 +183,71 @@
      ["/bugs.json" {:get data/get-data-bugs}]
      ["/confirmed-bugs.json" {:get data/get-data-confirmed-bugs}]
      ["/unconfirmed-bugs.json" {:get data/get-data-unconfirmed-bugs}]
-     
+
      ["/patches.json" {:get data/get-data-patches}]
      ["/approved-patches.json" {:get data/get-data-approved-patches}]
      ["/unapproved-patches.json" {:get data/get-data-unapproved-patches}]
-     
+
      ["/requests.json" {:get data/get-data-requests}]
      ["/handled-requests.json" {:get data/get-data-handled-requests}]
      ["/unhandled-requests.json" {:get data/get-data-unhandled-requests}]
-     
-     ;; rss feeds
+
+     ;; Org data
+     ["/updates.org" {:get data/get-org-updates}]
+     ["/mails.org" {:get data/get-org-mails}]
+     ["/changes.org" {:get data/get-org-changes}]
+     ["/released-changes.org" {:get data/get-org-released-changes}]
+     ["/announcements.org" {:get data/get-org-announcements}]
+     ["/releases.org" {:get data/get-org-releases}]
+
+     ["/bugs.org" {:get data/get-org-bugs}]
+     ["/confirmed-bugs.org" {:get data/get-org-confirmed-bugs}]
+     ["/unconfirmed-bugs.org" {:get data/get-org-unconfirmed-bugs}]
+
+     ["/patches.org" {:get data/get-org-patches}]
+     ["/approved-patches.org" {:get data/get-org-approved-patches}]
+     ["/unapproved-patches.org" {:get data/get-org-unapproved-patches}]
+
+     ["/requests.org" {:get data/get-org-requests}]
+     ["/handled-requests.org" {:get data/get-org-handled-requests}]
+     ["/unhandled-requests.org" {:get data/get-org-unhandled-requests}]
+
+     ;; Markdown data
+     ["/updates.md" {:get data/get-md-updates}]
+     ["/mails.md" {:get data/get-md-mails}]
+     ["/changes.md" {:get data/get-md-changes}]
+     ["/released-changes.md" {:get data/get-md-released-changes}]
+     ["/announcements.md" {:get data/get-md-announcements}]
+     ["/releases.md" {:get data/get-md-releases}]
+
+     ["/bugs.md" {:get data/get-md-bugs}]
+     ["/confirmed-bugs.md" {:get data/get-md-confirmed-bugs}]
+     ["/unconfirmed-bugs.md" {:get data/get-md-unconfirmed-bugs}]
+
+     ["/patches.md" {:get data/get-md-patches}]
+     ["/approved-patches.md" {:get data/get-md-approved-patches}]
+     ["/unapproved-patches.md" {:get data/get-md-unapproved-patches}]
+
+     ["/requests.md" {:get data/get-md-requests}]
+     ["/handled-requests.md" {:get data/get-md-handled-requests}]
+     ["/unhandled-requests.md" {:get data/get-md-unhandled-requests}]
+
+     ;; RSS feeds
      ["/updates.rss" {:get feeds/feed-updates}]
      ["/mails.rss" {:get feeds/feed-mails}]
      ["/changes.rss" {:get feeds/feed-changes}]
      ["/released-changes.rss" {:get feeds/feed-released-changes}]
      ["/announcements.rss" {:get feeds/feed-announcements}]
      ["/releases.rss" {:get feeds/feed-releases}]
-     
+
      ["/bugs.rss" {:get feeds/feed-bugs}]
      ["/confirmed-bugs.rss" {:get feeds/feed-confirmed-bugs}]
      ["/unconfirmed-bugs.rss" {:get feeds/feed-unconfirmed-bugs}]
-     
+
      ["/patches.rss" {:get feeds/feed-patches}]
      ["/approved-patches.rss" {:get feeds/feed-approved-patches}]
      ["/unapproved-patches.rss" {:get feeds/feed-unapproved-patches}]
-     
+
      ["/requests.rss" {:get feeds/feed-requests}]
      ["/handled-requests.rss" {:get feeds/feed-handled-requests}]
      ["/unhandled-requests.rss" {:get feeds/feed-unhandled-requests}]

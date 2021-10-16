@@ -14,8 +14,10 @@
 	  <h1 class="title is-size-4">
 	    <span>
 	      {{approved-patches|count}} approved patch{{approved-patches|e-pluralize}}
-	      <a class="tag is-info is-light" href="/approved-patches.rss">RSS</a>
-	      <a class="tag is-success is-light" href="/approved-patches.json">JSON</a>
+	      {% if config.export.rss %}<a class="tag is-info is-light" href="/approved-patches.rss">RSS</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-info is-light" href="/approved-patches.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-info is-light" href="/approved-patches.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-info is-light" href="/approved-patches.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
@@ -55,8 +57,10 @@
 	  <h1 class="title is-size-4">
 	    <span>
 	      {{unapproved-patches|count}} patch{{unapproved-patches|e-pluralize}} to review
-	      <a class="tag is-info is-light" href="/unapproved-patches.rss">RSS</a>
-	      <a class="tag is-success is-light" href="/unapproved-patches.json">JSON</a>
+	      {% if config.export.rss %}<a class="tag is-info is-light" href="/unapproved-patches.rss">RSS</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-info is-light" href="/unapproved-patches.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-info is-light" href="/unapproved-patches.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-info is-light" href="/unapproved-patches.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
