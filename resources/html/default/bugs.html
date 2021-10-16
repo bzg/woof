@@ -13,7 +13,7 @@
 	  {% else %}
 	  <h1 class="title is-size-4">
 	    <span>
-	      Confirmed bugs ({{confirmed-bugs|count}})
+	      {{confirmed-bugs|count}} confirmed bug{{confirmed-bugs|pluralize}}
 	      <a class="tag is-info is-light" href="/confirmed-bugs.rss">RSS</a>
 	      <a class="tag is-success is-light" href="/confirmed-bugs.json">JSON</a>
 	    </span>
@@ -55,7 +55,7 @@
 	  {% else %}
 	  <h1 class="title is-size-4">
 	    <span>
-	      Unconfirmed bugs ({{unconfirmed-bugs|count}})
+	      {{unconfirmed-bugs|count}} unconfirmed bug{{unconfirmed-bugs|pluralize}}
 	      <a class="tag is-info is-light" href="/unconfirmed-bugs.rss">RSS</a>
 	      <a class="tag is-success is-light" href="/unconfirmed-bugs.json">JSON</a>
 	    </span>

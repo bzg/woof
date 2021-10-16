@@ -13,7 +13,7 @@
 	  {% else %}
 	  <h1 class="title is-size-4">
 	    <span>
-	      Community announcements ({{announcements|count}})
+	      {{announcements|count}} community announcement{{announcements|pluralize}}
 	      <a class="tag is-info is-light" href="/announcements.rss">RSS</a>
 	      <a class="tag is-success is-light" href="/announcements.json">JSON</a>
 	    </span>

@@ -13,7 +13,7 @@
 	  {% else %}
 	  <h1 class="title is-size-4">
 	    <span>
-	      Approved patched ({{approved-patches|count}})
+	      {{approved-patches|count}} approved patch{{approved-patches|e-pluralize}}
 	      <a class="tag is-info is-light" href="/approved-patches.rss">RSS</a>
 	      <a class="tag is-success is-light" href="/approved-patches.json">JSON</a>
 	    </span>
@@ -54,7 +54,7 @@
 	  {% else %}
 	  <h1 class="title is-size-4">
 	    <span>
-	      Patches to review ({{unapproved-patches|count}})
+	      {{unapproved-patches|count}} patch{{unapproved-patches|e-pluralize}} to review
 	      <a class="tag is-info is-light" href="/unapproved-patches.rss">RSS</a>
 	      <a class="tag is-success is-light" href="/unapproved-patches.json">JSON</a>
 	    </span>
