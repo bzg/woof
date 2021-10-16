@@ -1,6 +1,8 @@
-#+title: Woof! 🐕 howto
+#+title: 🐕 Woof! howto
 
 #+html: <div class="container">
+
+*NOTE: Do not deploy this version as it is still a work in progress.*
 
 * What is Woof! and how to use it?
 
