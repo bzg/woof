@@ -89,19 +89,28 @@ Each Woof! instance comes with a default admin.
 
 **Admins** can perform these actions:
 
--   `[Add|Remove] admin: woof@woof.io`
--   `[Add|Remove] maintainer: woof@woof.io`
--   `[Ban|Unban]: woof@woof.io`
--   `[Ignore|Unignore]: woof@woof.io`
+-   `Add admin: woof@woof.io`
+-   `Add maintainer: woof@woof.io`
+-   `Ban: woof@woof.io`
+-   `Ignore: woof@woof.io`
+
+You can also use `Remove` instead of `Add` and `Unban` and `Unignore`:
+
+-   `Remove admin: woof@woof.io`
+-   `Remove maintainer: woof@woof.io`
+-   `Unban: woof@woof.io`
+-   `Unignore: woof@woof.io`
 
 Admins can also update the configuration:
 
--   `Maintenance: [true|false]` : Put the website in maintenance mode
--   `Notifications: [true|false]` : Enable/disable mail notifications
--   `[Enable|Disable]: [feature]` : Enable or disable a feature
+-   `Maintenance: true` : Put the website in maintenance mode
+-   `Notifications: true` : Enable/disable mail notifications
+-   `Theme: my_theme` : Use `my_theme` for the interface
+-   `Enable: feature` : Enable a feature
+-   `Disable: feature` : Disable a feature
 
-`[...|...]` stands for either `...` or `...` and `feature` can be one of `bug`,
-`announcement`, `request`, `change`, `release` or `mail`.
+`feature` can be one of `bug`, `announcement`, `request`, `change`, `release` or
+`mail` and truth values can be negated as `false`.
 
 **Maintainers** can perform these actions:
 
