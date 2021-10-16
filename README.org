@@ -21,7 +21,8 @@ See [[file:resources/md/howto.org][the howto]] for further instructions on how t
 
 You need to set some environment variables to let the application run.
 
-See [[file:src/bzg/config.clj]] for the list of required variables.
+See [[file:src/bzg/config.clj]] for the list of environment variables and
+other configuration variables.
 
 Run this to check your configuration:
 
@@ -41,11 +42,14 @@ Run this to check your configuration:
 
 * Contribute
 
-Woof is alpha software.  It is being tested to advertize updates from
-[[https://updates.orgmode.org][Org-mode]] but you should be able to use it for any project, provided
-that the maintainers on a mailing list agree to use Woof headers.
+Feedback and contributions are welcome, you can e.g.:
 
-That said, contributions are welcome!
+- Write a HTML theme
+- Add more tests
+- Report bugs
+
+Woof! is alpha software.  One instance is used by the [[https://updates.orgmode.org][Org-mode]]
+community.
 
 * Support the Clojure(script) ecosystem
 

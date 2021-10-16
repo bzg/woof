@@ -224,7 +224,8 @@
     (tt/start!)
     (core/set-defaults)
     (core/update-person {:email    admin-address
-                         :username (:admin-username config/env)
+                         :username (or (:admin-username config/env)
+                                       admin-address)
                          :role     :admin})
     (core/start-mail-loop!)
     (mount/start #'core/woof-manager #'woof-server)))
