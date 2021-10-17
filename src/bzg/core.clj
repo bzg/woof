@@ -499,9 +499,11 @@
 (defn- ignore! [email]
   (let [person     (into {} (d/touch (d/entity db [:email email])))
         as-ignored (conj person [:ignored (java.util.Date.)])]
-    (when-let [output (d/transact! conn [as-ignored])]
-      (timbre/info (format "Mails from %s will now be ignored" email))
-      output)))
+    ;; Never ignore the root admin
+    (when-not (true? (:root person))
+      (when-let [output (d/transact! conn [as-ignored])]
+        (timbre/info (format "Mails from %s will now be ignored" email))
+        output))))
 
 (defn- add-feature! [feature & disable?]
   (let [defaults     (d/entity db [:defaults "init"])
