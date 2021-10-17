@@ -29,6 +29,12 @@
     </li>
     {% endif %}
 
+    {% if config.features.top %}
+    <li {% ifequal active "top" %}class="is-active"{% endifequal %}>
+      <a title="List top contributors" href="/top">Top</a>
+    </li>
+    {% endif %}
+
   </ul>
   <div class="level">
     <form action="{{action-path}}" class="level-item">

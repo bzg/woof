@@ -61,6 +61,7 @@
                    :change       true
                    :release      true
                    :request      true
+                   :top          true
                    ;; Also on the homepage, mostly for testing puropse
                    :mail         false
                    }

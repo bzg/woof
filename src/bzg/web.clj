@@ -158,11 +158,26 @@
               (entries-format (merge {:entries (core/get-unapproved-patches)}
                                      format-params))}))}))
 
+(defn- get-page-top [{:keys [query-params]}]
+  (let [format-params   {:search     (get query-params "search")
+                         :sorting-by (get query-params "sorting-by")}
+        config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
+                               format-params)]
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body
+     (html/render-file
+      (io/resource (str "html/" (:theme config-defaults) "/top.html"))
+      (merge html-defaults
+             {:config               config-defaults
+              :top-bug-contributors (core/get-top-bug-contributors)}))}))
+
 (def handler
   (ring/ring-handler
    (ring/router
     [["/" {:get (fn [params] (get-page-index params))}]
      ["/bugs" {:get (fn [params] (get-page-bugs params))}]
+     ["/top" {:get (fn [params] (get-page-top params))}]
      ["/patches" {:get (fn [params] (get-page-patches params))}]
      ["/requests" {:get (fn [params] (get-page-requests params))}]
      ["/announcements" {:get (fn [params] (get-page-announcements params))}]

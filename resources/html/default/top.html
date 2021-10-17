@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" class="has-navbar-fixed-top">
+  {% include "html/default/head.html" %}
+  <body>
+    {% include "html/default/hero.html"%}
+    <div class="container">
+      {% include "html/default/tabs.html" with active="bugs" action-path="/bugs" %}
+      <section class="section" style="padding: 1.5rem 1.0rem">
+	<div class="container">
+
+	  {% ifequal top-bug-contributors|count 0 %}
+	  <h1 id="top-bug-contributors|count" class="title is-size-4">No bug contributor</h1>
+	  {% else %}
+	  <h1 id="top-bug-contributors" class="title is-size-4">
+	    <span>
+	      Top bug contributor{{top-bug-contributors|pluralize}}
+	    </span>
+	  </h1>
+	  <ul>
+	    {% for top-bug-contributor in top-bug-contributors %}
+	    <li>{{top-bug-contributor.username}}</li>
+	    {% endfor %}
+	  </ul>
+	  {% endifequal %}
+
+	</div>
+      </section>
+    </div>
+    {% include "html/default/footer.html" %}
+  </body>
+</html>

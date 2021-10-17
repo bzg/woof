@@ -237,6 +237,42 @@
        (map :email)
        (into #{})))
 
+;; Top functions
+
+(defn- grouped-from-reports [reports]
+  (->> reports
+       flatten
+       (map #(d/pull db '[*] %))
+       (map :from)
+       (group-by identity)
+       (map (fn [[key val]] {:email    key
+                             :username (:username (d/entity db [:email key]))
+                             :cnt      (count val)}))
+       (sort-by :cnt)
+       reverse))
+
+(defn get-top-bug-contributors []
+  (let [bugs-confirmed
+        (d/q '[:find ?br ?r :where [?b :bug ?br] [?b :confirmed ?r]] db)
+        bugs-fixed
+        (d/q '[:find ?br ?r :where [?b :bug ?br] [?b :fixed ?r]] db)]
+    ;; FIXME: Factor out
+    (grouped-from-reports (concat bugs-confirmed bugs-fixed))))
+
+(defn get-top-patch-contributors []
+  (let [patches-approved
+        (d/q '[:find ?br ?r :where [?b :patch ?br] [?b :approved ?r]] db)
+        patches-applied
+        (d/q '[:find ?br ?r :where [?b :patch ?br] [?b :applied ?r]] db)]
+    (grouped-from-reports (concat patches-approved patches-applied))))
+
+(defn get-top-request-contributors []
+  (let [requests-handled
+        (d/q '[:find ?r :where [?b :request _] [?b :handled ?r]] db)
+        requests-done
+        (d/q '[:find ?r :where [?b :request _] [?b :done ?r]] db)]
+    (grouped-from-reports (concat requests-handled requests-done))))
+
 ;; Core db functions to add and update entities
 
 (defn- add-log! [date msg]
