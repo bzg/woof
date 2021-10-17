@@ -350,7 +350,7 @@
 
 ;; Email notifications
 
-(defn- send-email [{:keys [msg body purpose]}]
+(defn- send-email [{:keys [msg body purpose new-subject reply-to]}]
   (let  [{:keys [id from subject references]}
          msg
          to (make-to (:username (d/entity db [:email from])) from)]
@@ -363,22 +363,26 @@
                  :tls  true
                  :user (:smtp-login config/env)
                  :pass (:smtp-password config/env)}
-                {:from        (:smtp-login config/env)
-                 :message-id  #(postal.support/message-id (:base-url config/env))
-                 :reply-to    (make-to (:admin-username config/env)
-                                       (:admin-address config/env))
-                 :references  (string/join " " (remove nil? (list references id)))
-                 :in-reply-to id
-                 :to          to
-                 :subject     (str "Re: " (get-subject subject))
-                 :body        body})]
+                (merge
+                 {:from       (:smtp-login config/env)
+                  :message-id #(postal.support/message-id (:base-url config/env))
+                  :reply-to   (or reply-to (make-to (:admin-username config/env)
+                                                    (:admin-address config/env)))
+                  :to         to
+                  :subject    (or new-subject (str "Re: " (get-subject subject)))
+                  :body       body}
+                 (when references
+                   {:references (string/join " " (remove nil? (list references id)))})
+                 (when id {:in-reply-to id})))]
         (when (= (:error res) :SUCCESS)
           (timbre/info
            (format
             (condp = purpose
-              :ack-reporter    "Sent mail to %s: ack report against known report"
-              :ack-op-reporter "Sent mail to %s: ack report against initial report"
-              :ack-op          "Sent mail to %s: ack initial report")
+              :ack-reporter    "Sent mail to %s to ack report against known report"
+              :ack-op-reporter "Sent mail to %s to ack report against initial report"
+              :ack-op          "Sent mail to %s to ack initial report"
+              :add-admin       "Sent mail to %s to ack as admin"
+              :add-maintainer  "Sent mail to %s to ack as maintainer")
             to))))
       (catch Exception e
         (timbre/error (str "Cannot send email to %s: " to
@@ -386,9 +390,11 @@
 
 (def mail-chan (async/chan))
 
-(defn- mail [msg body purpose]
+(defn- mail [msg body purpose & new-msg]
   (if (:notifications (d/entity db [:defaults "init"]))
-    (async/put! mail-chan {:msg msg :body body :purpose purpose})
+    (async/put! mail-chan {:msg         msg :body body :purpose purpose
+                           :new-subject (first new-msg)
+                           :reply-to    (second new-msg)})
     (timbre/info "Notifications are disabled, do not send email")))
 
 (defn start-mail-loop! []
@@ -426,9 +432,18 @@
   (when-let [m (re-matches #"^\[RELEASE\s*([^]]+)].*$" (:subject msg))]
     (peek m)))
 
-(defn- add-admin! [email]
+(defn- add-admin! [email from]
   (let [person (into {} (d/touch (d/entity db [:email email])))]
     (when-let [output (d/transact! conn [person])]
+      (mail nil (format "Hi %s,\n\n%s added you as an admin.
+\nSee this page on how to use Woof! as an admin:\n%s/howto\n\nThanks!"
+                        (:username person)
+                        from
+                        (:base-url config/env))
+            :add-admin
+            (format "[%s] You are now a Woof! admin"
+                    (:project-name config/env))
+            from)
       (timbre/info (format "%s has been granted admin permissions" email))
       output)))
 
@@ -442,9 +457,18 @@
         (timbre/info (format "%s has been denied admin permissions" email))
         output))))
 
-(defn- add-maintainer! [email]
+(defn- add-maintainer! [email from]
   (let [person (into {} (d/touch (d/entity db [:email email])))]
     (when-let [output (d/transact! conn [person])]
+      (mail nil (format "Hi %s,\n\n%s added you as an maintainer.
+\nSee this page on how to use Woof! as an maintainer:\n%s/howto\n\nThanks!"
+                        (:username person)
+                        from
+                        (:base-url config/env))
+            :add-maintainer
+            (format "[%s] You are now a Woof! maintainer"
+                    (:project-name config/env))
+            from)
       (timbre/info (format "%s has been granted maintainer permissions" email))
       output)))
 
@@ -575,9 +599,9 @@
           (when (condp some (list from)
                   (get-admins)
                   (condp = cmd
-                    "Add admin"         (add-admin! cmd-val)
+                    "Add admin"         (add-admin! cmd-val from)
                     "Add export"        (add-export-format! cmd-val)
-                    "Add maintainer"    (add-maintainer! cmd-val)
+                    "Add maintainer"    (add-maintainer! cmd-val from)
                     "Delete"            (delete! cmd-val)
                     "Remove feature"    (remove-feature! cmd-val)
                     "Add feature"       (add-feature! cmd-val)
@@ -593,7 +617,7 @@
                     (timbre/error err))
                   (get-maintainers)
                   (condp = cmd
-                    "Add maintainer" (add-maintainer! cmd-val)
+                    "Add maintainer" (add-maintainer! cmd-val from)
                     "Delete"         (delete! cmd-val)
                     "Ignore"         (ignore! cmd-val)
                     (timbre/error err)))
