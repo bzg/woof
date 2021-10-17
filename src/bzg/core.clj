@@ -808,13 +808,9 @@
               ;; When not under maintenance, always process direct
               ;; mails from maintainers
               (or (some maintainers (list from))
-                  ;; Check relevant "To" headers
-                  (if-let [ml (:mailing-list-address config/env)]
-                    ;; A mailing list, only process mails sent there
-                    (some #{to X-Original-To} (list ml))
-                    ;; No mailing list, process emails sent to the
-                    ;; woof! monitored mailbox
-                    (= to (:inbox-user config/env)))))))
+                  ;; A mailing list, only process mails sent there
+                  (some #{to X-Original-To}
+                        (list (:mailing-list-address config/env)))))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
