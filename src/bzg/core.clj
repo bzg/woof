@@ -267,8 +267,13 @@
                     {:contributor timestamp})
         person    (merge {:email email :username username}
                          action roles)]
-    (d/transact! conn [person])
-    (d/touch (d/entity db [:email email]))))
+    (when (d/transact! conn [person])
+      (timbre/info
+       (if action
+         (format "Updated %s (%s) as %s: %s"
+                 username email (name role) (str action))
+         (str (format "Added %s (%s)" username email)
+              (when role (str " as " (name role)))))))))
 
 ;; Check whether a report is an action against a known entity
 
