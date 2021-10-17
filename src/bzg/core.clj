@@ -753,7 +753,7 @@
                     (some #{to X-Original-To} (list ml))
                     ;; No mailing list, process emails sent to the
                     ;; woof! monitored mailbox
-                    (= to (:inbox-user)))))))
+                    (= to (:inbox-user config/env)))))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
