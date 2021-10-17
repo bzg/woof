@@ -28,7 +28,6 @@
    :email        {:db/valueType :db.type/string
                   :db/unique    :db.unique/identity}
    :references   {:db/cardinality :db.cardinality/many}
-   :aliases      {:db/cardinality :db.cardinality/many}
    :bug          {:db/valueType :db.type/ref
                   :db/unique    :db.unique/identity}
    :patch        {:db/valueType :db.type/ref
@@ -253,7 +252,7 @@
 (defn- add-mail-private! [msg]
   (add-mail! msg (java.util.Date.)))
 
-(defn update-person! [{:keys [email username role aliases]} & [action]]
+(defn update-person! [{:keys [email username role]} & [action]]
   ;; An email is enough to update a person
   (let [timestamp (java.util.Date.)
         username  (or username email)
@@ -264,11 +263,8 @@
                                  :maintainer  timestamp
                                  :admin       timestamp}
                     {:contributor timestamp})
-        person    (merge {:email    email
-                          :username username
-                          :aliases  (or aliases #{})}
-                         action
-                         roles)]
+        person    (merge {:email email :username username}
+                         action roles)]
     (d/transact! conn [person])
     (d/touch (d/entity db [:email email]))))
 
