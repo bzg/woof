@@ -79,7 +79,7 @@
        (remove :canceled)))
 
 (defn- get-reports-msgs [report-type reports]
-  (->> (map #(d/touch (d/entity db (:db/id (report-type %)))) reports)
+  (->> (map #(d/entity db (:db/id (report-type %))) reports)
        (map #(dissoc (into {} %) :db/id))
        (remove :deleted)))
 
@@ -174,7 +174,7 @@
        (map #(d/pull db '[*] %))
        (remove :canceled)
        (map (juxt :release #(hash-map :version (:version %))))
-       (map (juxt #(select-keys (d/touch (d/entity db (:db/id (first %))))
+       (map (juxt #(select-keys (d/entity db (:db/id (first %)))
                                 [:date])
                   second))
        (map #(conj (first %) (second %)))
@@ -231,8 +231,7 @@
 ;; Core db functions to add and update entities
 
 (defn- add-log! [date msg]
-  (d/transact! conn [{:log date :msg msg}])
-  (d/touch (d/entity db [:log date])))
+  (d/transact! conn [{:log date :msg msg}]))
 
 (defn- add-mail! [{:keys [id from subject] :as msg} & private]
   (let [headers     (walk/keywordize-keys (apply conj (:headers msg)))
@@ -248,8 +247,7 @@
                         :username   (:name (first from))
                         :date       (java.util.Date.)
                         :backrefs   1}])
-    ;; Also return the username as we use it in `report!`
-    (d/touch (d/entity db [:message-id id]))))
+    (d/entity db [:message-id id])))
 
 (defn- add-mail-private! [msg]
   (add-mail! msg (java.util.Date.)))
@@ -324,7 +322,7 @@
                      (as-> refs (remove nil? refs))
                      first)]
       {:status     (keyword (string/lower-case action))
-       :report-eid (:db/id (report-type (d/touch (d/entity db e))))})))
+       :report-eid (:db/id (report-type (d/entity db e)))})))
 
 ;; Setup logging
 
@@ -440,7 +438,7 @@
     (peek m)))
 
 (defn- add-admin! [email from]
-  (let [person (into {} (d/touch (d/entity db [:email email])))]
+  (let [person (into {} (d/entity db [:email email]))]
     (when-let [output (d/transact! conn [person])]
       (mail nil (format "Hi %s,\n\n%s added you as an admin.
 \nSee this page on how to use Woof! as an admin:\n%s/howto\n\nThanks!"
@@ -465,7 +463,7 @@
         output))))
 
 (defn- add-maintainer! [email from]
-  (let [person (into {} (d/touch (d/entity db [:email email])))]
+  (let [person (into {} (d/entity db [:email email]))]
     (when-let [output (d/transact! conn [person])]
       (mail nil (format "Hi %s,\n\n%s added you as an maintainer.
 \nSee this page on how to use Woof! as an maintainer:\n%s/howto\n\nThanks!"
@@ -528,7 +526,7 @@
     output))
 
 (defn- ignore! [email]
-  (let [person     (into {} (d/touch (d/entity db [:email email])))
+  (let [person     (into {} (d/entity db [:email email]))
         as-ignored (conj person [:ignored (java.util.Date.)])]
     ;; Never ignore the root admin
     (when-not (true? (:root person))
@@ -640,12 +638,12 @@
         action-string (name action-type)
         status-string (when-let [s (first status)] (name s))
         ;; Get the original report db entity
-        op-report-msg (d/touch (d/entity db (action-type action)))
+        op-report-msg (d/entity db (action-type action))
         op-from       (:from op-report-msg)
         op-msgid      (:message-id op-report-msg)
         ;; Get the report entity from the new status
         report-msg    (when status
-                        (->> status first (get action) (d/entity db) d/touch))
+                        (->> status first (get action) (d/entity db)))
         from          (or (:from report-msg) op-from)
         username      (or (:username report-msg)
                           (:username op-report-msg) from)
