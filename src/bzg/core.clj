@@ -834,24 +834,19 @@
         ;; Or detect new release/change
         (or
          ;; Only maintainers can push changes and releases
-         (if-not (some maintainers (list from))
-           (timbre/warn
-            (format "%s tried to update a change/release while not a maintainer"
-                    from))
-           (do
-             (when (-> defaults :features :change)
-               (when-let [version (new-change? msg)]
-                 (if (some (get-all-releases) (list version))
-                   (timbre/error
-                    (format "%s tried to announce a change against released version %s"
-                            from version))
-
-                   (report! {:change (add-mail! msg) :version version}))))
-             (when (-> defaults :features :release)
-               (when-let [version (new-release? msg)]
-                 (let [release-id (add-mail! msg)]
-                   (report! {:release release-id :version version})
-                   (release-changes! version release-id))))))
+         (when (some maintainers (list from))
+           (when (-> defaults :features :change)
+             (when-let [version (new-change? msg)]
+               (if (some (get-all-releases) (list version))
+                 (timbre/error
+                  (format "%s tried to announce a change against released version %s"
+                          from version))
+                 (report! {:change (add-mail! msg) :version version}))))
+           (when (-> defaults :features :release)
+             (when-let [version (new-release? msg)]
+               (let [release-id (add-mail! msg)]
+                 (report! {:release release-id :version version})
+                 (release-changes! version release-id)))))
 
          ;; Or detect admin commands or new actions against known reports
          (let [body-parts
