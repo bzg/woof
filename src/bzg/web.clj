@@ -281,7 +281,9 @@
     (core/update-person! {:email    admin-address
                           :username (or (:admin-username config/env)
                                         admin-address)
-                          :role     :admin})
+                          :role     :admin}
+                         ;; The root admin cannot be removed
+                         {:root true})
     (core/start-mail-loop!)
     (mount/start #'core/woof-manager #'woof-server)))
 

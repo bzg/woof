@@ -437,11 +437,14 @@
       output)))
 
 (defn- remove-admin! [email]
-  (when-let [output
-             (d/transact!
-              conn [(d/retract (d/entity db [:email email]) :admin)])]
-    (timbre/info (format "%s has been removed admin permissions" email))
-    output))
+  (let [admin-entity (d/entity db [:email email])]
+    (if (true? (:root admin-entity))
+      (timbre/error "Trying to remove the root admin: ignore")
+      (when-let [output
+                 (d/transact!
+                  conn [(d/retract (d/entity db [:email email]) :admin)])]
+        (timbre/info (format "%s has been denied admin permissions" email))
+        output))))
 
 (defn- add-maintainer! [email]
   (let [person (into {} (d/touch (d/entity db [:email email])))]
