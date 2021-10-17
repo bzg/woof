@@ -45,6 +45,8 @@ Announcing a release =x= moves changes for =x= from the /Upcoming changes/
 section to the /Latest released changes/ one.  Canceling a release moves
 the changes back to the /Upcoming changes/ section.
 
+Note that the =[...]= is case-sensitive.
+
 * Updating a report
 
 After a bug, patch, announcement, change, release or help request has
@@ -52,17 +54,20 @@ been monitored, replies to the original mail can trigger actions.
 
 Actions are declared at the beginning of a line in the reply.
 
-- For *bugs*:
-  - =Confirmed.= : Confirm a bug.
-  - =Fix.= : Mark a bug as fixed.
+For *bugs*:
 
-- For *patches*:
-  - =Approved.= : Approve a patch.
-  - =Applied.= : Mark a patch as applied.
+- =Confirmed.= : Confirm a bug.
+- =Fix.= : Mark a bug as fixed.
 
-- For *help requests*:
-  - =Handled.= : Mark a request as currently handled.
-  - =Done.= : Mark a task of helping as done.
+For *patches*:
+
+- =Approved.= : Approve a patch.
+- =Applied.= : Mark a patch as applied.
+
+For *help requests*:
+
+- =Handled.= : Mark a request as currently handled.
+- =Done.= : Mark a task of helping as done.
 
 For bugs, patches, requests, announcements, changes and releases, you
 can also cancel them:
@@ -70,11 +75,14 @@ can also cancel them:
 - =Canceled=. : Mark the bug, patch, request, announcement, change or
   release as canceled.
 
-*Note*: A punctuation mark among =;:,.= is /mandatory/ for these reports.
+*Note*: A punctuation mark among =;:,.= is /mandatory/ for these reports and
+action words (=Confirmed=, =Approved=, etc.) are all case-sensitive.
 
 * Notifications
 
-Users receive a mail notification when they triggers a Woof! report.
+Users receive a mail notification when their original reports are
+detected (new bug, new request, etc.) and when these reports receive
+an important update (the bug get fixed, the request get handled, etc.)
 
 Every user can turn notifications on or off by writing to the Woof!
 mailbox with this command at the beginning of a line:
@@ -88,26 +96,22 @@ Each Woof! instance comes with a default admin.
 
 *Admins* can update the main configuration:
 
-- =Maintenance: true= : Put the website in maintenance mode
-- =Notifications: true= : Enable/disable mail notifications
-- =Theme: my_theme= : Use =my_theme= for the interface
-- =Add feature: [feature]= : Enable a feature
-- =Remove feature: [feature]= : Disable a feature
-- =Add export: [format]= : Add an export format
-- =Remove export: [format]= : Remove an export format
+- =Maintenance: [true|false]= : Put the website in maintenance mode
+- =Notifications: [true|false]= : Enable/disable mail notifications globally
+- =Set theme: my_theme= : Use =my_theme= for the interface
+- =[Add|Remove] admin: woof@woof.io= : Add or remove an admin
+- =[Add|Remove] feature: feature= : Add or remove a feature
+- =[Add|Remove] export: format= : Add or remove an export format
 
-Truth values can be negated as =false=.
+In these actions:
 
-=[feature]= can be =bug=, =announcement=, =request=, =change=, =release= or =mail=.
-
-=[format]= can be =rss=, =json=, =org= or =md=.
+- =feature= can be =bug=, =announcement=, =request=, =change=, =release= or =mail=.
+- =format= can be =rss=, =json=, =org= or =md=.
 
 Admins can also /delete/ past reports and /ignore/ future mails:
 
-- =Delete: woof@woof.io=
-- =Undelete: woof@woof.io=
-- =Ignore: woof@woof.io=
-- =Unignore: woof@woof.io=
+- =[Delete|Undelete]: woof@woof.io=
+- =[Ignore|Unignore]: woof@woof.io=
 
 Remember: deletion is for cleaning up past reports, ignoring is about
 future emails.  When plugging Woof! to a mailing list, first consider
@@ -119,11 +123,20 @@ moderating users instead of ignoring them.
 - =Delete: woof@woof.io=
 - =Ignore: woof@woof.io=
 
-Maintainers cannot remove admins or other maintainers.  They cannot
-undelete mails or unignore contributors.
+New maintainers receive a mail notification.
+
+Note that maintainers cannot remove admins or other maintainers and
+they cannot undelete mails or unignore contributors.
 
 Admins and maintainers can send several commands in a mail, with each
-starting at the beginning of a line.
+starting at the beginning of a line.  For example, an email with:
+
+: Set theme: my_theme
+: Add maintainer: my@friend.io
+: Ignore: my@enemy.io
+
+will set the theme "my_theme", add "my@friend.io" as a new maintainer
+and ignore future reports by "my@enemy.io".
 
 * Woof without a mailing list
 
