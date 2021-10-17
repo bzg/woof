@@ -316,14 +316,14 @@
     (when (d/transact! conn [person])
       (when-not existing-person
         (timbre/info
-         (format "Added %s (%s) as %s" username email (name role))))
+         (format "Added %s (%s): %s" username email new-role)))
       (when role
         (timbre/info
-         (format "Updated %s (%s) as %s" username email (name role))))
+         (format "Updated %s (%s): %s" username email new-role)))
       (when action
         (timbre/info
-         (format "Updated %s (%s) as %s with %s"
-                 username email (name role) action))))))
+         (format "Updated %s (%s): %s and %s"
+                 username email new-role action))))))
 
 ;; Check whether a report is an action against a known entity
 
