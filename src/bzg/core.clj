@@ -20,10 +20,19 @@
 ;; Set up the database
 
 (def schema
-  {:defaults     {:db/valueType :db.type/string
-                  :db/unique    :db.unique/identity}
-   :log          {:db/valueType :db.type/instant
-                  :db/unique    :db.unique/identity}
+  {:defaults {:db/valueType :db.type/string
+              :db/unique    :db.unique/identity}
+   :log      {:db/valueType :db.type/instant
+              :db/unique    :db.unique/identity}
+
+   :confirmed {:db/valueType :db.type/ref}
+   :canceled  {:db/valueType :db.type/ref}
+   :applied   {:db/valueType :db.type/ref}
+   :approved  {:db/valueType :db.type/ref}
+   :done      {:db/valueType :db.type/ref}
+   :fixed     {:db/valueType :db.type/ref}
+   :handled   {:db/valueType :db.type/ref}
+
    :message-id   {:db/valueType :db.type/string
                   :db/unique    :db.unique/identity}
    :email        {:db/valueType :db.type/string
@@ -254,24 +263,31 @@
 
 (defn update-person! [{:keys [email username role]} & [action]]
   ;; An email is enough to update a person
-  (let [timestamp (java.util.Date.)
-        username  (or username email)
-        roles     (condp = role
-                    :maintainer {:contributor timestamp
-                                 :maintainer  timestamp}
-                    :admin      {:contributor timestamp
-                                 :maintainer  timestamp
-                                 :admin       timestamp}
-                    {:contributor timestamp})
-        person    (merge {:email email :username username}
-                         action roles)]
+  (let [existing-person (d/entity db [:email email])
+        timestamp       (java.util.Date.)
+        username        (or username email)
+        new-role        (condp = role
+                          :maintainer {:contributor timestamp
+                                       :maintainer  timestamp}
+                          :admin      {:contributor timestamp
+                                       :maintainer  timestamp
+                                       :admin       timestamp}
+                          {:contributor
+                           (or (:contributor existing-person) timestamp)})
+        person          (merge {:email email :username username}
+                               new-role action)]
+    ;; FIXME: Clumsy
     (when (d/transact! conn [person])
-      (timbre/info
-       (if action
-         (format "Updated %s (%s) as %s: %s"
-                 username email (name role) (str action))
-         (str (format "Added %s (%s)" username email)
-              (when role (str " as " (name role)))))))))
+      (when-not existing-person
+        (timbre/info
+         (format "Added %s (%s) as %s" username email (name role))))
+      (when role
+        (timbre/info
+         (format "Updated %s (%s) as %s" username email (name role))))
+      (when action
+        (timbre/info
+         (format "Updated %s (%s) as %s with %s"
+                 username email (name role) action))))))
 
 ;; Check whether a report is an action against a known entity
 
@@ -322,7 +338,7 @@
                      (as-> refs (remove nil? refs))
                      first)]
       {:status     (keyword (string/lower-case action))
-       :report-eid (:db/id (report-type (d/entity db e)))})))
+       :report-eid (report-type (d/entity db e))})))
 
 ;; Setup logging
 
@@ -439,7 +455,7 @@
 
 (defn- add-admin! [email from]
   (let [person (into {} (d/entity db [:email email]))]
-    (when-let [output (d/transact! conn [person])]
+    (when-let [output (d/transact! conn [(conj person [:role :admin])])]
       (mail nil (format "Hi %s,\n\n%s added you as an admin.
 \nSee this page on how to use Woof! as an admin:\n%s/howto\n\nThanks!"
                         (:username person)
@@ -464,7 +480,7 @@
 
 (defn- add-maintainer! [email from]
   (let [person (into {} (d/entity db [:email email]))]
-    (when-let [output (d/transact! conn [person])]
+    (when-let [output (d/transact! conn [(conj person [:role :maintainer])])]
       (mail nil (format "Hi %s,\n\n%s added you as an maintainer.
 \nSee this page on how to use Woof! as an maintainer:\n%s/howto\n\nThanks!"
                         (:username person)
@@ -628,30 +644,43 @@
                     (timbre/error err)))
             (add-mail-private! msg)))))))
 
-(defn- report! [action & status]
-  (let [action-type   (cond (:bug action)          :bug
-                            (:patch action)        :patch
-                            (:request action)      :request
-                            (:change action)       :change
-                            (:announcement action) :announcement
-                            (:release action)      :release)
+(defn- report! [action]
+  (let [action-type   (condp #(%1 %2) action
+                        :bug          :bug
+                        :patch        :patch
+                        :request      :request
+                        :change       :change
+                        :announcement :announcement
+                        :release      :release
+                        (timbre/error "Cannot get report type"))
+        action-status (condp #(%1 %2) action
+                        :confirmed :confirmed
+                        :canceled  :canceled
+                        :applied   :applied
+                        :approved  :approved
+                        :done      :done
+                        :fixed     :fixed
+                        :handled   :handled
+                        nil)
         action-string (name action-type)
-        status-string (when-let [s (first status)] (name s))
-        ;; Get the original report db entity
-        op-report-msg (d/entity db (action-type action))
+        status-string (when action-status (name action-status))
+
+        ;; Get the original report
+        op-report-msg (d/entity db (:db/id (action-type action)))
         op-from       (:from op-report-msg)
         op-msgid      (:message-id op-report-msg)
-        ;; Get the report entity from the new status
-        report-msg    (when status
-                        (->> status first (get action) (d/entity db)))
+        op-msg        {:id   op-msgid :subject    (:subject op-report-msg)
+                       :from op-from  :references (:references op-report-msg)}
+        ;; Get the report against an existing one
+        report-msg    (when action-status
+                        (d/entity db (:db/id (action-status action))))
         from          (or (:from report-msg) op-from)
-        username      (or (:username report-msg)
-                          (:username op-report-msg) from)
         msgid         (or (:message-id report-msg) op-msgid)
         msg           {:id   msgid :subject    (:subject report-msg)
                        :from from  :references (:references report-msg)}
-        op-msg        {:id   op-msgid :subject    (:subject op-report-msg)
-                       :from op-from  :references (:references op-report-msg)}
+        ;; Get other info
+        username      (or (:username report-msg)
+                          (:username op-report-msg) from)
         action-status {:action-string action-string
                        :status-string status-string}
         admin-or-maintainer?
@@ -664,10 +693,8 @@
     ;; Add or retract status
     (if-let [m (when (not-empty status-string)
                  (re-matches #"un(.+)" status-string))]
-      (d/transact! conn [[:db/retract
-                          (:db/id (d/entity db [action-type (action-type action)]))
-                          (keyword (peek m))]])
-      (d/transact! conn [action]))
+      (d/transact! conn [[:db/retract (:db/id report-msg) (keyword (peek m))]])
+      (d/transact! conn [(into {} (map (fn [[k v]] [k (:db/id v)]) action))]))
 
     (if status-string
       ;; Report against a known entry
@@ -759,17 +786,17 @@
       (cond
         ;; Detect a new bug/patch/request/announcement
         (and (-> defaults :features :patch) (new-patch? msg))
-        (report! {:patch (:db/id (add-mail! msg))})
+        (report! {:patch (add-mail! msg)})
 
         (and (-> defaults :features :bug) (new-bug? msg))
-        (report! {:bug (:db/id (add-mail! msg))})
+        (report! {:bug (add-mail! msg)})
 
         (and (-> defaults :features :request) (new-request? msg))
-        (report! {:request (:db/id (add-mail! msg))})
+        (report! {:request (add-mail! msg)})
 
         (and (-> defaults :features :announcement)
              (new-announcement? msg))
-        (report! {:announcement (:db/id (add-mail! msg))})
+        (report! {:announcement (add-mail! msg)})
 
         :else
         ;; Or detect new release/change
@@ -787,13 +814,11 @@
                     (format "%s tried to announce a change against released version %s"
                             from version))
 
-                   (report! {:change  (:db/id (add-mail! msg))
-                             :version version}))))
+                   (report! {:change (add-mail! msg) :version version}))))
              (when (-> defaults :features :release)
                (when-let [version (new-release? msg)]
-                 (let [release-id (:db/id (add-mail! msg))]
-                   (report! {:release release-id
-                             :version version})
+                 (let [release-id (add-mail! msg)]
+                   (report! {:release release-id :version version})
                    (release-changes! version release-id))))))
 
          ;; Or detect admin commands or new actions against known reports
@@ -844,29 +869,25 @@
                 (when (-> defaults :features :patch)
                   (when-let [{:keys [report-eid status]}
                              (is-report-update? :patch body-report references)]
-                    (report! {:patch report-eid status (:db/id (add-mail! msg))}
-                             status)))
+                    (report! {:patch report-eid status (add-mail! msg)})))
 
                 ;; New action against a known bug
                 (when (-> defaults :features :bug)
                   (when-let [{:keys [report-eid status]}
                              (is-report-update? :bug body-report references)]
-                    (report! {:bug report-eid status (:db/id (add-mail! msg))}
-                             status)))
+                    (report! {:bug report-eid status (add-mail! msg)})))
 
                 ;; New action against a known help request
                 (when  (-> defaults :features :request)
                   (when-let [{:keys [report-eid status]}
                              (is-report-update? :request body-report references)]
-                    (report! {:request report-eid status (:db/id (add-mail! msg))}
-                             status)))
+                    (report! {:request report-eid status (add-mail! msg)})))
 
                 ;; New action against a known announcement
                 (when  (-> defaults :features :announcement)
                   (when-let [{:keys [report-eid status]}
                              (is-report-update? :announcement body-report references)]
-                    (report! {:announcement report-eid status (:db/id (add-mail! msg))}
-                             status)))
+                    (report! {:announcement report-eid status (add-mail! msg)})))
 
                 ;; Finally, maintainers can perform actions against
                 ;; existing changes/releases
@@ -880,15 +901,13 @@
                     (when (-> defaults :features :change)
                       (when-let [{:keys [report-eid status]}
                                  (is-report-update? :change body-report references)]
-                        (report! {:change report-eid status (:db/id (add-mail! msg))}
-                                 status)))
+                        (report! {:change report-eid status (add-mail! msg)})))
 
                     ;; New action against a known release announcement?
                     (when (-> defaults :features :release)
                       (when-let [{:keys [report-eid status]}
                                  (is-report-update? :release body-report references)]
-                        (report! {:release report-eid status (:db/id (add-mail! msg))}
-                                 status)
+                        (report! {:release report-eid status (add-mail! msg)})
                         (unrelease-changes! report-eid))))))))))))))
 
 ;;; Inbox monitoring
