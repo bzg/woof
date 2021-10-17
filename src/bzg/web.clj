@@ -44,7 +44,9 @@
    :project-name   (:project-name config/env)
    :project-url    (:project-url config/env)
    :contribute-url (:contribute-url config/env)
-   :contribute-cta (:contribute-cta config/env)})
+   :contribute-cta (:contribute-cta config/env)
+   :support-url    (:support-url config/env)
+   :support-cta    (:support-cta config/env)})
 
 (defn- get-page-index [{:keys [query-params]}]
   (let [format-params   {:search     (get query-params "search")

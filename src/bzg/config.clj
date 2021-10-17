@@ -34,14 +34,18 @@
    :smtp-password (System/getenv "WOOF_SMTP_PASSWORD")
 
    ;; Configure HTML and RSS contents
-   :theme            (or (System/getenv "WOOF_THEME") "default")
-   :title            (System/getenv "WOOF_TITLE")
-   :project-name     (System/getenv "WOOF_PROJECT_NAME")
-   :project-url      (System/getenv "WOOF_PROJECT_URL")
-   :contribute-url   (System/getenv "WOOF_CONTRIBUTE_URL")
-   :contribute-cta   (System/getenv "WOOF_CONTRIBUTE_CTA")
-   :feed-title       (System/getenv "WOOF_FEED_TITLE")
-   :feed-description (System/getenv "WOOF_FEED_DESCRIPTION")
+   :theme                (or (System/getenv "WOOF_THEME") "default")
+   :title                (System/getenv "WOOF_TITLE")
+   :project-name         (System/getenv "WOOF_PROJECT_NAME")
+   :project-url          (System/getenv "WOOF_PROJECT_URL")
+   :contribute-url       (System/getenv "WOOF_CONTRIBUTE_URL")
+   :contribute-cta       (System/getenv "WOOF_CONTRIBUTE_CTA")
+   :contribute-cta-email (System/getenv "WOOF_CONTRIBUTE_CTA_EMAIL")
+   :support-url          (System/getenv "WOOF_SUPPORT_URL")
+   :support-cta          (System/getenv "WOOF_SUPPORT_CTA")
+   :support-cta-email    (System/getenv "WOOF_SUPPORT_CTA_EMAIL")
+   :feed-title           (System/getenv "WOOF_FEED_TITLE")
+   :feed-description     (System/getenv "WOOF_FEED_DESCRIPTION")
    })
 
 (def defaults
@@ -118,22 +122,35 @@
    :contributor #{:notifications}})
 
 (defn format-email-notification
-  [{:keys [notification-type
-           from id
+  [{:keys [notification-type from id
            action-string status-string]}]
   (str
    (condp = notification-type
      :new
-     (format "Thanks for sharing this %s!\n\n" action-string)
+     (str (format "Thanks for sharing this %s!\n\n" action-string)
+          (when (and (:support-url env)
+                     (some #{"bug" "request"} (list action-string)))
+            (str (or (:support-cta-email env)
+                     (:support-cta env)
+                     "Please support this project")
+                 ":\n"
+                 (:support-url env)
+                 "\n\n")))
      :action-reporter
      (format "Thanks for marking this %s as %s.\n\n"
              action-string status-string)
      :action-op
      (format "%s marked your %s as %s.\n\n"
              from action-string status-string))
+
    (when-let [link-format (not-empty (:mail-url-format env))]
      (format "You can find your email here:\n%s\n\n"
              (format link-format id)))
+
    (when-let [contribute-url (not-empty (:contribute-url env))]
-     (format "More on how to contribute to %s:\n%s"
-             (:project-name env) contribute-url))))
+     (str (or (:contribute-cta-email env)
+              (:contribute-cta env)
+              (format "Please contribute to %s"
+                      (:project-name env)))
+          ":\n"
+          contribute-url))))
