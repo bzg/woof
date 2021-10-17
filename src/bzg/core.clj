@@ -20,14 +20,16 @@
 ;; Set up the database
 
 (def schema
-  {:defaults     {:db/unique :db.unique/identity}
+  {:defaults     {:db/valueType :db.type/string
+                  :db/unique    :db.unique/identity}
    :log          {:db/valueType :db.type/instant
                   :db/unique    :db.unique/identity}
    :message-id   {:db/valueType :db.type/string
                   :db/unique    :db.unique/identity}
    :email        {:db/valueType :db.type/string
                   :db/unique    :db.unique/identity}
-   :references   {:db/cardinality :db.cardinality/many}
+   :references   {:db/valueType   :db.type/string
+                  :db/cardinality :db.cardinality/many}
    :bug          {:db/valueType :db.type/ref
                   :db/unique    :db.unique/identity}
    :patch        {:db/valueType :db.type/ref
