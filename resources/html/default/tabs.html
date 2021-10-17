@@ -32,11 +32,12 @@
   </ul>
   <div class="level">
     <form action="{{action-path}}" class="level-item">
-      <input class="input" name="s" placeHolder="Leave empty to remove filters" type="text">
+      <input class="input" name="search" value="{{config.search}}"
+	     placeHolder="Plain text search" type="text">
       <button class="button is-success is-light" type="submit">Filter</button>
     </form>
     <form action="{{action-path}}">
-      <input name="s" type="hidden" value="">
+      <input name="search" type="hidden" value="">
       <button class="button is-danger is-light" type="submit">❌</button>
     </form>
   </div>

@@ -9,28 +9,28 @@
 	<div class="container">
 
 	  {% ifequal unhandled-requests|count 0 %}
-	  <h1 class="title is-size-4">No unhandled request</h1>
+	  <h1 id="unhandled-requests" class="title is-size-4">No unhandled request</h1>
 	  {% else %}
-	  <h1 class="title is-size-4">
+	  <h1 id="unhandled-requests" class="title is-size-4">
 	    <span>
 	      {{unhandled-requests|count}} pending request{{unhandled-requests|pluralize}}
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/unhandled-requests.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-info is-light" href="/unhandled-requests.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-info is-light" href="/unhandled-requests.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-info is-light" href="/unhandled-requests.md">MD</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-success is-light" href="/unhandled-requests.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-danger is-light" href="/unhandled-requests.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-warning is-light" href="/unhandled-requests.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
-	    <table class="table is-fullwidth">
+	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
 		  <th>Subject</th>
 		  <th width="15%">User</th>
 		  <th width="15%">
-		    <a href="?sorting-by=date" title="Sort help requests by date">Date</a>
+		    <a href="#unhandled-requests?sorting-by=date" title="Sort help requests by date">Date</a>
 		  </th>
 		  <th width="5%">
-		    <a href="?sorting-by=refs" title="Sort help requests by number of references">Refs</a>
+		    <a href="#unhandled-requests?sorting-by=refs" title="Sort help requests by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>
@@ -55,28 +55,28 @@
 	  {% endifequal %}
 
 	  {% ifequal handled-requests|count 0 %}
-	  <h1 class="title is-size-4">No request currently handled</h1>
+	  <h1 id="handled-requests" class="title is-size-4">No request currently handled</h1>
 	  {% else %}
-	  <h1 class="title is-size-4">
+	  <h1 id="handled-requests" class="title is-size-4">
 	    <span>
 	      {{handled-requests|count}} request{{handled-requests|pluralize}} being handled
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/handled-requests.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-info is-light" href="/handled-requests.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-info is-light" href="/handled-requests.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-info is-light" href="/handled-requests.md">MD</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-success is-light" href="/handled-requests.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-danger is-light" href="/handled-requests.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-warning is-light" href="/handled-requests.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
-	    <table class="table is-fullwidth">
+	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
 		  <th width="15%">User</th>
 		  <th>Subject</th>
 		  <th width="15%">
-		    <a href="?sorting-by=date" title="Sort help requests by date">Date</a>
+		    <a href="#handled-requests?sorting-by=date" title="Sort help requests by date">Date</a>
 		  </th>
 		  <th width="5%">
-		    <a href="?sorting-by=refs" title="Sort help requests by number of references">Refs</a>
+		    <a href="#handled-requests?sorting-by=refs" title="Sort help requests by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>

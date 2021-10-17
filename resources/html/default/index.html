@@ -26,25 +26,25 @@
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  {% ifequal changes|count 0 %}
-	  <h1 class="title is-size-4">No upcoming change</h1>
+	  <h1 id="upcoming-changes" class="title is-size-4">No upcoming change</h1>
 	  {% else %}
-	  <h1 class="title is-size-4">
+	  <h1 id="upcoming-changes" class="title is-size-4">
 	    <span>
 	      {{changes|count}} upcoming change{{changes|pluralize}}
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/changes.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-info is-light" href="/changes.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-info is-light" href="/changes.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-info is-light" href="/changes.md">MD</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-success is-light" href="/changes.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-danger is-light" href="/changes.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-warning is-light" href="/changes.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
-	    <table class="table is-fullwidth">
+	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
 		  <th>Subject</th>
 		  <th width="15%">User</th>
-		  <th width="15%"><a href="?sorting-by=date" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs" title="Sort by refs">Refs</a></th>
+		  <th width="15%"><a href="#upcoming-changes?sorting-by=date" title="Sort by date">Date</a></th>
+		  <th width="5%"><a href="#upcoming-changes?sorting-by=refs" title="Sort by refs">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
@@ -72,25 +72,25 @@
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  {% ifequal released-changes|count 0 %}
-	  <h1 class="title is-size-4">No latest released change</h1>
+	  <h1 id="released-changes" class="title is-size-4">No latest released change</h1>
 	  {% else %}
-	  <h1 class="title is-size-4">
+	  <h1 id="released-changes" class="title is-size-4">
 	    <span>
 	      {{released-changes|count}} released change{{released-changes|pluralize}}
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/released-changes.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-info is-light" href="/released-changes.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-info is-light" href="/released-changes.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-info is-light" href="/released-changes.md">MD</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-success is-light" href="/released-changes.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-danger is-light" href="/released-changes.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-warning is-light" href="/released-changes.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
-	    <table class="table is-fullwidth">
+	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
 		  <th>Subject</th>
 		  <th width="15%">User</th>
-		  <th width="15%"><a href="?sorting-by=date" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs" title="Sort by refs">Refs</a></th>
+		  <th width="15%"><a href="#released-changes?sorting-by=date" title="Sort by date">Date</a></th>
+		  <th width="5%"><a href="#released-changes?sorting-by=refs" title="Sort by refs">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
@@ -120,25 +120,25 @@
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  {% ifequal releases|count 0 %}
-	  <h1 class="title is-size-4">No announced release</h1>
+	  <h1 id="releases" class="title is-size-4">No announced release</h1>
 	  {% else %}
-	  <h1 class="title is-size-4">
+	  <h1 id="releases" class="title is-size-4">
 	    <span>
 	      {{releases|count}} release{{releases|pluralize}}
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/releases.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-info is-light" href="/releases.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-info is-light" href="/releases.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-info is-light" href="/releases.md">MD</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-success is-light" href="/releases.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-danger is-light" href="/releases.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-warning is-light" href="/releases.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
-	    <table class="table is-fullwidth">
+	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
 		  <th>Subject</th>
 		  <th width="15%">User</th>
-		  <th width="15%"><a href="?sorting-by=date" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs" title="Sort by refs">Refs</a></th>
+		  <th width="15%"><a href="#releases?sorting-by=date" title="Sort by date">Date</a></th>
+		  <th width="5%"><a href="#releases?sorting-by=refs" title="Sort by refs">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
@@ -166,29 +166,29 @@
 
       {% if config.features.mail %}
       <section class="section" style="padding: 1.5rem 1.0rem">
-	<div class="container">
+	<div id="mail" class="container">
 
 	  {% ifequal mails|count 0 %}
-	  <h1 class="title is-size-4">No received mail</h1>
+	  <h1 id="mails" class="title is-size-4">No received mail</h1>
 	  {% else %}
-	  <h1 class="title is-size-4">
+	  <h1 id="mails" class="title is-size-4">
 	    <span>
 	      {{mails|count}} mail{{mails|pluralize}} received
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/mails.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-info is-light" href="/mails.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-info is-light" href="/mails.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-info is-light" href="/mails.md">MD</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-success is-light" href="/mails.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-danger is-light" href="/mails.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-warning is-light" href="/mails.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
-	    <table class="table is-fullwidth">
+	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
 		  <th>Subject</th>
 		  <th width="15%">User</th>
-		  <th width="15%"><a href="?sorting-by=date" title="Sort mails by date">Date</a></th>
+		  <th width="15%"><a href="#mail?sorting-by=date" title="Sort mails by date">Date</a></th>
 		  <th width="5%">
-		    <a href="?sorting-by=refs" title="Sort mails by number of references">Refs</a>
+		    <a href="#mail?sorting-by=refs" title="Sort mails by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>

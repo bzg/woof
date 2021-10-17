@@ -9,26 +9,26 @@
 	<div class="container">
 
 	  {% ifequal confirmed-bugs|count 0 %}
-	  <h1 class="title is-size-4">No confirmed bug</h1>
+	  <h1 id="confirmed-bugs" class="title is-size-4">No confirmed bug</h1>
 	  {% else %}
-	  <h1 class="title is-size-4">
+	  <h1 id="confirmed-bugs" class="title is-size-4">
 	    <span>
 	      {{confirmed-bugs|count}} confirmed bug{{confirmed-bugs|pluralize}}
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/confirmed-bugs.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-info is-light" href="/confirmed-bugs.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-info is-light" href="/confirmed-bugs.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-info is-light" href="/confirmed-bugs.md">MD</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-success is-light" href="/confirmed-bugs.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-danger is-light" href="/confirmed-bugs.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-warning is-light" href="/confirmed-bugs.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
-	    <table class="table is-fullwidth">
+	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
 		  <th>Subject</th>
 		  <th width="15%">User</th>
-		  <th width="15%"><a href="?sorting-by=date" title="Sort bugs by date">Date</a></th>
+		  <th width="15%"><a href="#confirmed-bugs?sorting-by=date" title="Sort bugs by date">Date</a></th>
 		  <th width="5%">
-		    <a href="?sorting-by=refs" title="Sort bugs by number of references">Refs</a>
+		    <a href="#confirmed-bugs?sorting-by=refs" title="Sort bugs by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>
@@ -53,26 +53,26 @@
 	  {% endifequal %}
 
 	  {% ifequal unconfirmed-bugs|count 0 %}
-	  <h1 class="title is-size-4">No unconfirmed bug</h1>
+	  <h1 id="unconfirmed-bugs" class="title is-size-4">No unconfirmed bug</h1>
 	  {% else %}
-	  <h1 class="title is-size-4">
+	  <h1 id="unconfirmed-bugs" class="title is-size-4">
 	    <span>
 	      {{unconfirmed-bugs|count}} unconfirmed bug{{unconfirmed-bugs|pluralize}}
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/unconfirmed-bugs.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-info is-light" href="/unconfirmed-bugs.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-info is-light" href="/unconfirmed-bugs.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-info is-light" href="/unconfirmed-bugs.md">MD</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-success is-light" href="/unconfirmed-bugs.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-danger is-light" href="/unconfirmed-bugs.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-warning is-light" href="/unconfirmed-bugs.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
-	    <table class="table is-fullwidth">
+	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
 		  <th>Subject</th>
 		  <th width="15%">User</th>
-		  <th width="15%"><a href="?sorting-by=date" title="Sort bugs by date">Date</a></th>
+		  <th width="15%"><a href="#unconfirmed-bugs?sorting-by=date" title="Sort bugs by date">Date</a></th>
 		  <th width="5%">
-		    <a href="?sorting-by=refs" title="Sort bugs by number of references">Refs</a>
+		    <a href="#unconfirmed-bugs?sorting-by=refs" title="Sort bugs by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>

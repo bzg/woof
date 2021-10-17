@@ -23,7 +23,7 @@
 
 (selmer/add-filter! :e-pluralize #(when (> (count %) 1) "es"))
 
-(defn- entries-format [{:keys [entries s sorting-by]}]
+(defn- entries-format [{:keys [entries search sorting-by]}]
   (let [linkify-maybe
         (if (not-empty (:mail-url-format config/env))
           #(assoc-in % [:link] (format (:mail-url-format config/env)
@@ -36,7 +36,7 @@
                 "user" :username
                 :backrefs))
      reverse
-     (filter #(re-find (re-pattern (str "(?i)" (or (not-empty s) ""))) (:subject %)))
+     (filter #(re-find (re-pattern (str "(?i)" (or (not-empty search) ""))) (:subject %)))
      (map linkify-maybe))))
 
 (def html-defaults
@@ -47,12 +47,10 @@
    :contribute-cta (:contribute-cta config/env)})
 
 (defn- get-page-index [{:keys [query-params]}]
-  (let [format-params   {:s          (get query-params "s")
+  (let [format-params   {:search     (get query-params "search")
                          :sorting-by (get query-params "sorting-by")}
-        defaults        (d/entity core/db [:defaults "init"])
-        news?           (true? (and (-> defaults :features :change)
-                                    (-> defaults :features :release)))
-        config-defaults (merge (into {} defaults) {:news news?})]
+        config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
+                               format-params)]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
@@ -86,9 +84,10 @@
                  (merge {:entries (core/get-mails)} format-params))})))}))
 
 (defn- get-page-bugs [{:keys [query-params]}]
-  (let [format-params   {:s          (get query-params "s")
+  (let [format-params   {:search     (get query-params "search")
                          :sorting-by (get query-params "sorting-by")}
-        config-defaults (d/entity core/db [:defaults "init"])]
+        config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
+                               format-params)]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
@@ -104,9 +103,10 @@
                (merge {:entries (core/get-confirmed-bugs)} format-params))}))}))
 
 (defn- get-page-requests [{:keys [query-params]}]
-  (let [format-params   {:s          (get query-params "s")
+  (let [format-params   {:search     (get query-params "search")
                          :sorting-by (get query-params "sorting-by")}
-        config-defaults (d/entity core/db [:defaults "init"])]
+        config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
+                               format-params)]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
@@ -122,9 +122,10 @@
                                      format-params))}))}))
 
 (defn- get-page-announcements [{:keys [query-params]}]
-  (let [format-params   {:s          (get query-params "s")
+  (let [format-params   {:search     (get query-params "search")
                          :sorting-by (get query-params "sorting-by")}
-        config-defaults (d/entity core/db [:defaults "init"])]
+        config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
+                               format-params)]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
@@ -137,9 +138,10 @@
                                      format-params))}))}))
 
 (defn- get-page-patches [{:keys [query-params]}]
-  (let [format-params   {:s          (get query-params "s")
+  (let [format-params   {:search     (get query-params "search")
                          :sorting-by (get query-params "sorting-by")}
-        config-defaults (d/entity core/db [:defaults "init"])]
+        config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
+                               format-params)]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body

@@ -9,25 +9,25 @@
 	<div class="container">
 
 	  {% ifequal approved-patches|count 0 %}
-	  <h1 class="title is-size-4">No approved patch</h1>
+	  <h1 id="approved-patches" class="title is-size-4">No approved patch</h1>
 	  {% else %}
-	  <h1 class="title is-size-4">
+	  <h1 id="approved-patches" class="title is-size-4">
 	    <span>
 	      {{approved-patches|count}} approved patch{{approved-patches|e-pluralize}}
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/approved-patches.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-info is-light" href="/approved-patches.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-info is-light" href="/approved-patches.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-info is-light" href="/approved-patches.md">MD</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-success is-light" href="/approved-patches.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-danger is-light" href="/approved-patches.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-warning is-light" href="/approved-patches.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
-	    <table class="table is-fullwidth">
+	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
 		  <th>Subject</th>
 		  <th width="15%">User</th>
-		  <th width="15%"><a href="?sorting-by=date" title="Sort patches by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs" title="Sort patches by number of references">Refs</a>
+		  <th width="15%"><a href="#approved-patches?sorting-by=date" title="Sort patches by date">Date</a></th>
+		  <th width="5%"><a href="#approved-patches?sorting-by=refs" title="Sort patches by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>
@@ -52,25 +52,25 @@
 	  {% endifequal %}	  
 
 	  {% ifequal unapproved-patches|count 0 %}
-	  <h1 class="title is-size-4">No patch to review</h1>
+	  <h1 id="unapproved-patches" class="title is-size-4">No patch to review</h1>
 	  {% else %}
-	  <h1 class="title is-size-4">
+	  <h1 id="unapproved-patches" class="title is-size-4">
 	    <span>
 	      {{unapproved-patches|count}} patch{{unapproved-patches|e-pluralize}} to review
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/unapproved-patches.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-info is-light" href="/unapproved-patches.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-info is-light" href="/unapproved-patches.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-info is-light" href="/unapproved-patches.md">MD</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-success is-light" href="/unapproved-patches.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-danger is-light" href="/unapproved-patches.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-warning is-light" href="/unapproved-patches.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
-	    <table class="table is-fullwidth">
+	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
 		  <th>Subject</th>
 		  <th width="15%">User</th>
-		  <th width="15%"><a href="?sorting-by=date" title="Sort patches by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs" title="Sort patches by number of references">Refs</a>
+		  <th width="15%"><a href="#unapproved-patches?sorting-by=date" title="Sort patches by date">Date</a></th>
+		  <th width="5%"><a href="#unapproved-patches?sorting-by=refs" title="Sort patches by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>
