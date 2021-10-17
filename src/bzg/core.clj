@@ -704,20 +704,25 @@
         contributors (get-contributors)
         defaults     (d/entity db [:defaults "init"])]
 
-    ;; Only process emails if they are sent directly from the release
-    ;; manager or from the mailing list.
     (when
         (and
          ;; First check whether this user should be ignored
          (not (:ignored (d/entity db [:email from])))
-         ;; Always process messages from the admin
-         (or (= from (:admin-address config/env))
+         ;; Always process messages from an admin
+         (or (some admins (list from))
              (and
               ;; Don't process anything when under maintenance
               (not (:maintenance defaults))
-              ;; Check relevant "To" headers
-              (some #{to X-Original-To}
-                    (list (:mailing-list-address config/env))))))
+              ;; When not under maintenance, always process direct
+              ;; mails from maintainers
+              (or (some maintainers (list from))
+                  ;; Check relevant "To" headers
+                  (if-let [ml (:mailing-list-address config/env)]
+                    ;; A mailing list, only process mails sent there
+                    (some #{to X-Original-To} (list ml))
+                    ;; No mailing list, process emails sent to the
+                    ;; woof! monitored mailbox
+                    (= to (:inbox-user)))))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
