@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" class="has-navbar-fixed-top">
+  {% include "html/default/head.html" %}
+  <body>
+    {% include "html/default/hero.html"%}
+    <div class="container">
+      {% include "html/default/tabs.html" with active="mails" action-path="/mails" %}
+
+      <section class="section" style="padding: 1.5rem 1.0rem">
+	<div id="mail" class="container">
+
+	  {% ifequal mails|count 0 %}
+	  <h1 id="mails" class="title is-size-4">No received mail</h1>
+	  {% else %}
+	  <h1 id="mails" class="title is-size-4">
+	    <span>
+	      {{mails|count}} mail{{mails|pluralize}} received
+	      {% if config.export.rss %}<a class="tag is-info is-light" href="/mails.rss">RSS</a>{% endif %}
+	      {% if config.export.json %}<a class="tag is-success is-light" href="/mails.json">JSON</a>{% endif %}
+	      {% if config.export.org %}<a class="tag is-danger is-light" href="/mails.org">ORG</a>{% endif %}
+	      {% if config.export.md %}<a class="tag is-warning is-light" href="/mails.md">MD</a>{% endif %}
+	    </span>
+	  </h1>
+	  <div class="table-container">
+	    <table class="table is-hoverable is-bordered is-fullwidth">
+	      <thead>
+		<tr>
+		  <th>Subject</th>
+		  <th width="15%">From</th>
+		  <th width="15%"><a href="#mail?sorting-by=date" title="Sort mails by date">Date</a></th>
+		  <th width="5%">
+		    <a href="#mail?sorting-by=refs" title="Sort mails by number of references">Refs</a>
+		  </th>
+		</tr>
+	      </thead>
+	      <tbody>
+		{% for mail in mails %}
+		<tr>
+		  <td>
+		    {% if mail.link %}
+		    <a href="{{mail.link}}" target="_blank" title="Visit email sent by {{mail.from}} on {{mail.date}}">{{mail.subject}}</a>
+		    {% else %}
+		    {{mail.subject}}
+		    {% endif %}
+		  </td>
+		  <td>{{mail.username}}</td>
+		  <td>{{mail.date|date:shortDate}}</td>
+		  <td>{{mail.backrefs}}</td>
+		</tr>
+		{% endfor %}
+	      </tbody>
+	    </table>
+	  </div>
+	  {% endifequal %}
+
+	</div>
+      </section>
+
+    </div>
+    {% include "html/default/footer.html" %}
+  </body>
+</html>

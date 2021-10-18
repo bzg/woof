@@ -663,7 +663,8 @@
     (add-mail-private! msg)))
 
 (defn- admin-report! [{:keys [commands msg]}]
-  (let [from (:address (first (:from msg)))]
+  (let [from     (:address (first (:from msg)))
+        defaults (d/entity db [:defaults "init"])]
     (doseq [[cmd cmd-val] commands]
       (let [err (format "%s could not run \"%s: %s\""
                         from cmd cmd-val)]
@@ -673,11 +674,17 @@
                   #"(Maintenance|Notifications): (true|false).*"
                   (str cmd ": " cmd-val))
                  (re-matches
-                  #"(Add|Remove) export: (rss|json|org|md).*"
+                  (re-pattern
+                   (format "(Add|Remove) export: (%s).*"
+                           (string/join
+                            "|" (->> defaults :export keys (map name)))))
                   (str cmd ": " cmd-val))
                  (re-matches #"Set theme: .*" (str cmd ": " cmd-val))
                  (re-matches
-                  #"(Add|Remove) feature: (bug|request|patch|announcement|change|release|mail).*"
+                  (re-pattern
+                   (format "(Add|Remove) feature: (%s).*"
+                           (string/join
+                            "|" (->> defaults :features keys (map name)))))
                   (str cmd ": " cmd-val))
                  ;; The command's value is an email address
                  (re-matches email-re cmd-val))

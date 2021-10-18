@@ -22,199 +22,54 @@
 
       {% include "html/default/tabs.html" with active="home" action-path="/" %}
 
-      {% if config.features.change %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
-	  {% ifequal changes|count 0 %}
-	  <h1 id="upcoming-changes" class="title is-size-4">No upcoming change</h1>
-	  {% else %}
-	  <h1 id="upcoming-changes" class="title is-size-4">
-	    <span>
-	      {{changes|count}} upcoming change{{changes|pluralize}}
-	      {% if config.export.rss %}<a class="tag is-info is-light" href="/changes.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-success is-light" href="/changes.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-danger is-light" href="/changes.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-warning is-light" href="/changes.md">MD</a>{% endif %}
-	    </span>
-	  </h1>
-	  <div class="table-container">
-	    <table class="table is-hoverable is-bordered is-fullwidth">
-	      <thead>
-		<tr>
-		  <th>Subject</th>
-		  <th width="15%">User</th>
-		  <th width="15%"><a href="#upcoming-changes?sorting-by=date" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="#upcoming-changes?sorting-by=refs" title="Sort by refs">Refs</a></th>
-		</tr>
-	      </thead>
-	      <tbody>
-		{% for change in changes %}
-		<tr>
-		  <td>
-		    {% if change.link %}
-		    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
-		    {% else %}
-		    {{change.subject}}
-		    {% endif %}
-		  </td>
-		  <td>{{change.username}}</td>
-		  <td>{{change.date|date:shortDate}}</td>
-		  <td>{{change.backrefs}}</td>
-		</tr>
-		{% endfor %}
-	      </tbody>
-	    </table>
-	  </div>
-	  {% endifequal %}
-	</div>
-      </section>
 
-      <section class="section" style="padding: 1.5rem 1.0rem">
-	<div class="container">
-	  {% ifequal released-changes|count 0 %}
-	  <h1 id="released-changes" class="title is-size-4">No latest released change</h1>
-	  {% else %}
-	  <h1 id="released-changes" class="title is-size-4">
-	    <span>
-	      {{released-changes|count}} released change{{released-changes|pluralize}}
-	      {% if config.export.rss %}<a class="tag is-info is-light" href="/released-changes.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-success is-light" href="/released-changes.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-danger is-light" href="/released-changes.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-warning is-light" href="/released-changes.md">MD</a>{% endif %}
-	    </span>
-	  </h1>
-	  <div class="table-container">
-	    <table class="table is-hoverable is-bordered is-fullwidth">
-	      <thead>
-		<tr>
-		  <th>Subject</th>
-		  <th width="15%">User</th>
-		  <th width="15%"><a href="#released-changes?sorting-by=date" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="#released-changes?sorting-by=refs" title="Sort by refs">Refs</a></th>
-		</tr>
-	      </thead>
-	      <tbody>
-		{% for change in released-changes %}
-		<tr>
-		  <td>
-		    {% if change.link %}
-		    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
-		    {% else %}
-		    {{change.subject}}
-		    {% endif %}
-		  </td>
-		  <td>{{change.username}}</td>
-		  <td>{{change.date|date:shortDate}}</td>
-		  <td>{{change.backrefs}}</td>
-		</tr>
-		{% endfor %}
-	      </tbody>
-	    </table>
-	  </div>
-	  {% endifequal %}
-	</div>
-      </section>
-      {% endif %}
-
-      {% if config.features.release %}
-      <section class="section" style="padding: 1.5rem 1.0rem">
-	<div class="container">
-	  {% ifequal releases|count 0 %}
-	  <h1 id="releases" class="title is-size-4">No announced release</h1>
-	  {% else %}
-	  <h1 id="releases" class="title is-size-4">
-	    <span>
-	      {{releases|count}} release{{releases|pluralize}}
-	      {% if config.export.rss %}<a class="tag is-info is-light" href="/releases.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-success is-light" href="/releases.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-danger is-light" href="/releases.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-warning is-light" href="/releases.md">MD</a>{% endif %}
-	    </span>
-	  </h1>
-	  <div class="table-container">
-	    <table class="table is-hoverable is-bordered is-fullwidth">
-	      <thead>
-		<tr>
-		  <th>Subject</th>
-		  <th width="15%">User</th>
-		  <th width="15%"><a href="#releases?sorting-by=date" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="#releases?sorting-by=refs" title="Sort by refs">Refs</a></th>
-		</tr>
-	      </thead>
-	      <tbody>
-		{% for release in releases %}
-		<tr>
-		  <td>
-		    {% if release.link %}
-		    <a href="{{release.link}}" target="_blank" title="Visit email sent by {{release.from}} on {{release.date}}">{{release.subject}}</a>
-		    {% else %}
-		    {{release.subject}}
-		    {% endif %}
-		  </td>
-		  <td>{{release.username}}</td>
-		  <td>{{release.date|date:shortDate}}</td>
-		  <td>{{release.backrefs}}</td>
-		</tr>
-		{% endfor %}
-	      </tbody>
-	    </table>
-	  </div>
-	  {% endifequal %}
-	</div>
-      </section>
-      {% endif %}
-
-      {% if config.features.mail %}
-      <section class="section" style="padding: 1.5rem 1.0rem">
-	<div id="mail" class="container">
-
-	  {% ifequal mails|count 0 %}
-	  <h1 id="mails" class="title is-size-4">No received mail</h1>
-	  {% else %}
-	  <h1 id="mails" class="title is-size-4">
-	    <span>
-	      {{mails|count}} mail{{mails|pluralize}} received
-	      {% if config.export.rss %}<a class="tag is-info is-light" href="/mails.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-success is-light" href="/mails.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-danger is-light" href="/mails.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-warning is-light" href="/mails.md">MD</a>{% endif %}
-	    </span>
-	  </h1>
-	  <div class="table-container">
-	    <table class="table is-hoverable is-bordered is-fullwidth">
-	      <thead>
-		<tr>
-		  <th>Subject</th>
-		  <th width="15%">User</th>
-		  <th width="15%"><a href="#mail?sorting-by=date" title="Sort mails by date">Date</a></th>
-		  <th width="5%">
-		    <a href="#mail?sorting-by=refs" title="Sort mails by number of references">Refs</a>
-		  </th>
-		</tr>
-	      </thead>
-	      <tbody>
-		{% for mail in mails %}
-		<tr>
-		  <td>
-		    {% if mail.link %}
-		    <a href="{{mail.link}}" target="_blank" title="Visit email sent by {{mail.from}} on {{mail.date}}">{{mail.subject}}</a>
-		    {% else %}
-		    {{mail.subject}}
-		    {% endif %}
-		  </td>
-		  <td>{{mail.username}}</td>
-		  <td>{{mail.date|date:shortDate}}</td>
-		  <td>{{mail.backrefs}}</td>
-		</tr>
-		{% endfor %}
-	      </tbody>
-	    </table>
-	  </div>
-	  {% endifequal %}
+      {% ifequal announcements|count 0 %}
+      <h1 id="announcements" class="title is-size-4">No community announcement</h1>
+      {% else %}
+      <h1 id="announcements" class="title is-size-4">
+	<span>
+	  {{announcements|count}} community announcement{{announcements|pluralize}}
+	  {% if config.export.rss %}<a class="tag is-info is-light" href="/announcements.rss">RSS</a>{% endif %}
+	  {% if config.export.json %}<a class="tag is-success is-light" href="/announcements.json">JSON</a>{% endif %}
+	  {% if config.export.org %}<a class="tag is-danger is-light" href="/announcements.org">ORG</a>{% endif %}
+	  {% if config.export.md %}<a class="tag is-warning is-light" href="/announcements.md">MD</a>{% endif %}
+	</span>
+      </h1>
+      <div class="table-container">
+	<table class="table is-hoverable is-bordered is-fullwidth">
+	  <thead>
+	    <tr>
+	      <th>Subject</th>
+	      <th width="15%">From</th>
+	      <th width="15%"><a href="#announcements?sorting-by=date" title="Sort announcements by date">Date</a></th>
+	      <th width="5%"><a href="#announcements?sorting-by=refs" title="Sort announcements by number of references">Refs</a>
+	      </th>
+	    </tr>
+	  </thead>
+	  <tbody>
+	    {% for announcement in announcements %}
+	    <tr>
+	      <td>
+		{% if announcement.link %}
+		<a href="{{announcement.link}}" target="_blank" title="Visit email sent by {{announcement.from}} on {{announcement.date}}">{{announcement.subject}}</a>
+		{% else %}
+		{{announcement.subject}}
+		{% endif %}
+	      </td>
+	      <td>{{announcement.username}}</td>
+	      <td>{{announcement.date|date:shortDate}}</td>
+	      <td>{{announcement.backrefs}}</td>
+	    </tr>
+	    {% endfor %}
+	  </tbody>
+	</table>
+      </div>
+      {% endifequal %}
 
 	</div>
       </section>
-      {% endif %}
 
       {% endif %}
       {% endif %}

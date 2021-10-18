@@ -54,15 +54,14 @@
    :maintenance   false
    :notifications true
    :features      {;; Each feature with a dedicated tab
+                   ;; FIXME: prevent from removing announcements?
                    :announcement true
                    :bug          true
                    :patch        true
-                   ;; Features on the homepage
                    :change       true
                    :release      true
                    :request      true
                    :top          false
-                   ;; Also on the homepage, mostly for testing puropse
                    :mail         false
                    }
    ;; Show only x latest releases/mails/announcements

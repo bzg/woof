@@ -60,6 +60,23 @@
       (io/resource (str "html/" (:theme config-defaults) "/index.html"))
       (merge html-defaults
              {:config config-defaults}
+             {:announcements
+              (entries-format
+               (merge {:entries (core/get-announcements)}
+                      format-params))}))}))
+
+(defn- get-page-changes [{:keys [query-params]}]
+  (let [format-params   {:search     (get query-params "search")
+                         :sorting-by (get query-params "sorting-by")}
+        config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
+                               format-params)]
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body
+     (html/render-file
+      (io/resource (str "html/" (:theme config-defaults) "/changes.html"))
+      (merge html-defaults
+             {:config config-defaults}
              (when (-> config-defaults :features :bug)
                {:releases
                 (entries-format
@@ -70,20 +87,27 @@
                {:changes
                 (entries-format (merge {:entries (core/get-upcoming-changes)}
                                        format-params))})
-             (when (-> config-defaults :features :change)
+             (when (-> config-defaults :features :release)
                {:released-changes
                 (entries-format
                  (merge {:entries (core/get-latest-released-changes)}
-                        format-params))})
-             (when (-> config-defaults :features :announcement)
-               {:announcements
-                (entries-format
-                 (merge {:entries (core/get-announcements)}
-                        format-params))})
-             (when (-> config-defaults :features :mail)
-               {:mails
-                (entries-format
-                 (merge {:entries (core/get-mails)} format-params))})))}))
+                        format-params))})))}))
+
+(defn- get-page-mails [{:keys [query-params]}]
+  (let [format-params   {:search     (get query-params "search")
+                         :sorting-by (get query-params "sorting-by")}
+        config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
+                               format-params)]
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body
+     (html/render-file
+      (io/resource (str "html/" (:theme config-defaults) "/mails.html"))
+      (merge html-defaults
+             {:config config-defaults}
+             {:mails
+              (entries-format
+               (merge {:entries (core/get-mails)} format-params))}))}))
 
 (defn- get-page-bugs [{:keys [query-params]}]
   (let [format-params   {:search     (get query-params "search")
@@ -121,22 +145,6 @@
                                      format-params))
               :handled-requests
               (entries-format (merge {:entries (core/get-handled-requests)}
-                                     format-params))}))}))
-
-(defn- get-page-announcements [{:keys [query-params]}]
-  (let [format-params   {:search     (get query-params "search")
-                         :sorting-by (get query-params "sorting-by")}
-        config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
-                               format-params)]
-    {:status  200
-     :headers {"Content-Type" "text/html"}
-     :body
-     (html/render-file
-      (io/resource (str "html/" (:theme config-defaults) "/announcements.html"))
-      (merge html-defaults
-             {:config config-defaults
-              :announcements
-              (entries-format (merge {:entries (core/get-announcements)}
                                      format-params))}))}))
 
 (defn- get-page-patches [{:keys [query-params]}]
@@ -179,11 +187,12 @@
   (ring/ring-handler
    (ring/router
     [["/" {:get (fn [params] (get-page-index params))}]
-     ["/bugs" {:get (fn [params] (get-page-bugs params))}]
-     ["/top" {:get (fn [params] (get-page-top params))}]
-     ["/patches" {:get (fn [params] (get-page-patches params))}]
+     ["/changes" {:get (fn [params] (get-page-changes params))}]
      ["/requests" {:get (fn [params] (get-page-requests params))}]
-     ["/announcements" {:get (fn [params] (get-page-announcements params))}]
+     ["/bugs" {:get (fn [params] (get-page-bugs params))}]
+     ["/patches" {:get (fn [params] (get-page-patches params))}]
+     ["/mails" {:get (fn [params] (get-page-mails params))}]
+     ["/top" {:get (fn [params] (get-page-top params))}]
      ["/howto"
       {:get (fn [_]
               {:status  200
