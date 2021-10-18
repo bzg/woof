@@ -61,7 +61,7 @@
                    :change       true
                    :release      true
                    :request      true
-                   :top          true
+                   :top          false
                    ;; Also on the homepage, mostly for testing puropse
                    :mail         false
                    }
@@ -95,6 +95,8 @@
 (def admin-report-strings
   {;; Contributors actions
    :notifications     "Notifications"
+   :home              "Home"
+   :support           "Support"
    ;; Maintainers actions
    :add-maintainer    "Add maintainer"
    :maintenance       "Maintenance"
@@ -120,7 +122,7 @@
                   :remove-maintainer :undelete :unignore
                   :add-export :remove-export :set-theme}
    :maintainer  #{:maintenance :add-maintainer :delete :ignore}
-   :contributor #{:notifications}})
+   :contributor #{:notifications :home :support}})
 
 (defn format-email-notification
   [{:keys [notification-type from id

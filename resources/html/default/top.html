@@ -7,22 +7,69 @@
       {% include "html/default/tabs.html" with active="top" action-path="/top" %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
+	  <div class="content">
 
-	  {% ifequal top-bug-contributors|count 0 %}
-	  <h1 id="top-bug-contributors|count" class="title is-size-4">No bug contributor</h1>
-	  {% else %}
-	  <h1 id="top-bug-contributors" class="title is-size-4">
-	    <span>
-	      Top bug contributor{{top-bug-contributors|pluralize}}
-	    </span>
-	  </h1>
-	  <ul>
-	    {% for top-bug-contributor in top-bug-contributors %}
-	    <li>{{top-bug-contributor.email}}</li>
-	    {% endfor %}
-	  </ul>
-	  {% endifequal %}
+	    {% if config.features.bug %}
+	    {% ifequal top-bug-contributors|count 0 %}
+	    <h1 id="top-bug-contributors|count" class="title is-size-4">No bug contribution</h1>
+	    {% else %}
+	    <h1 id="top-bug-contributors" class="title is-size-4" 
+		title="Reporting good bugs, confirming or fixing them.">Helping with bugs
+	    </h1>
 
+	    <ul>
+	      {% for top-bug-contributor in top-bug-contributors %}
+	      <li>{{top-bug-contributor.cnt}} {{top-bug-contributor.email}}
+		{% if top-bug-contributor.home %}<a href="{{top-bug-contributor.home}}">🏠</a>{% endif %}
+		{% if top-bug-contributor.support %}<a href="{{top-bug-contributor.support}}">🙏</a>{% endif %}
+	      </li>
+	      {% endfor %}
+	    </ul>
+	    {% endifequal %}
+	    {% endif %}
+
+	    {% if config.features.patch %}
+	    {% ifequal top-patch-contributors|count 0 %}
+	    <h1 id="top-patch-contributors|count" class="title is-size-4">No patch contribution</h1>
+	    {% else %}
+	    <h1 id="top-patch-contributors" class="title is-size-4" 
+		title="Sending good patches, approving or applying them.">Helping with patch
+	    </h1>
+	    <ul>
+	      {% for top-patch-contributor in top-patch-contributors %}
+	      <li>{{top-patch-contributor.email}}</li>
+	      {% endfor %}
+	    </ul>
+	    {% endifequal %}
+	    {% endif %}
+
+	    {% if config.features.request %}
+	    {% ifequal top-request-contributors|count 0 %}
+	    <h1 id="top-request-contributors|count" class="title is-size-4">No help request handled</h1>
+	    {% else %}
+	    <h1 id="top-request-contributors" class="title is-size-4">Handling help requests</h1>
+	    <ul>
+	      {% for top-request-contributor in top-request-contributors %}
+	      <li>{{top-request-contributor.email}}</li>
+	      {% endfor %}
+	    </ul>
+	    {% endifequal %}
+	    {% endif %}
+
+	    {% if config.features.announcement %}
+	    {% ifequal top-announcement-contributors|count 0 %}
+	    <h1 id="top-announcement-contributors|count" class="title is-size-4">No announcement yet</h1>
+	    {% else %}
+	    <h1 id="top-announcement-contributors" class="title is-size-4">Sharing announcements</h1>
+	    <ul>
+	      {% for top-announcement-contributor in top-announcement-contributors %}
+	      <li>{{top-announcement-contributor.email}}</li>
+	      {% endfor %}
+	    </ul>
+	    {% endifequal %}
+	    {% endif %}
+
+	  </div>
 	</div>
       </section>
     </div>

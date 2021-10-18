@@ -169,8 +169,11 @@
      (html/render-file
       (io/resource (str "html/" (:theme config-defaults) "/top.html"))
       (merge html-defaults
-             {:config               config-defaults
-              :top-bug-contributors (core/get-top-bug-contributors)}))}))
+             {:config                        config-defaults
+              :top-bug-contributors          (core/get-top-bug-contributors)
+              :top-patch-contributors        (core/get-top-patch-contributors)
+              :top-request-contributors      (core/get-top-request-contributors)
+              :top-announcement-contributors (core/get-top-announcement-contributors)}))}))
 
 (def handler
   (ring/ring-handler
