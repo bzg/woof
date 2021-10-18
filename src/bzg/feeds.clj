@@ -11,14 +11,16 @@
         msgid (:message-id msg)]
     (format
      "<![CDATA[ %s ]]>"
-     (if-let [mail-url-format (not-empty (:mail-url-format config/env))]
+     (if-let [fmt (:mail-url-format config/env)]
        (html/render-file
         (io/resource (str "html/" (:theme config/env) "/link.html"))
-        (assoc msg :link (format mail-url-format msgid) :what what))
+        (assoc msg :link (format fmt msgid) :what what))
        (str msgid (format " (%s)" what))))))
 
 (defn feed-item [{:keys [message-id subject date from] :as msg} what]
-  (let [link (format (:mail-url-format config/env) message-id)]
+  (let [link (if-let [fmt (:mail-url-format config/env)]
+                      (format fmt message-id)
+                      message-id)]
     {:title       subject
      :link        link
      :description (feed-description msg what)
@@ -34,7 +36,7 @@
     {:title       (str (:feed-title config/env) " - " path)
      :link        (string/replace
                    (:base-url config/env)
-                   #"([^/])/*$" (str "$1" path))
+                   #"([^/])/*$" (str "$1/" path))
      :description (str (:feed-description config/env) " - " path)}
     items)})
 
@@ -82,20 +84,20 @@
                  :updates            (core/get-updates)
                  ))))))
 
-(defn feed-confirmed-bugs [_] (make-feed {:path "/bugs.rss" :what :confirmed-bugs}))
-(defn feed-unconfirmed-bugs [_] (make-feed {:path "/bugs.rss" :what :unconfirmed-bugs}))
-(defn feed-bugs [_] (make-feed {:path "/bugs.rss" :what :bugs}))
+(defn feed-confirmed-bugs [_] (make-feed {:path "bugs.rss" :what :confirmed-bugs}))
+(defn feed-unconfirmed-bugs [_] (make-feed {:path "bugs.rss" :what :unconfirmed-bugs}))
+(defn feed-bugs [_] (make-feed {:path "bugs.rss" :what :bugs}))
 
-(defn feed-unapproved-patches [_] (make-feed {:path "/unapproved-patches.rss" :what :unapproved-patches}))
-(defn feed-approved-patches [_] (make-feed {:path "/approved-patches.rss" :what :approved-patches}))
-(defn feed-patches [_] (make-feed {:path "/patches.rss" :what :patches}))
+(defn feed-unapproved-patches [_] (make-feed {:path "unapproved-patches.rss" :what :unapproved-patches}))
+(defn feed-approved-patches [_] (make-feed {:path "approved-patches.rss" :what :approved-patches}))
+(defn feed-patches [_] (make-feed {:path "patches.rss" :what :patches}))
 
-(defn feed-unhandled-requests [_] (make-feed {:path "/unhandled-requests.rss" :what :unhandled-requests}))
-(defn feed-handled-requests [_] (make-feed {:path "/handled-requests.rss" :what :handled-requests}))
-(defn feed-requests [_] (make-feed {:path "/requests.rss" :what :requests}))
+(defn feed-unhandled-requests [_] (make-feed {:path "unhandled-requests.rss" :what :unhandled-requests}))
+(defn feed-handled-requests [_] (make-feed {:path "handled-requests.rss" :what :handled-requests}))
+(defn feed-requests [_] (make-feed {:path "requests.rss" :what :requests}))
 
-(defn feed-mails [_] (make-feed {:path "/mails.rss" :what :mails}))
-(defn feed-changes [_] (make-feed {:path "/changes.rss" :what :changes}))
-(defn feed-released-changes [_] (make-feed {:path "/released-changes.rss" :what :changes}))
-(defn feed-announcements [_] (make-feed {:path "/announcements.rss" :what :announcements}))
-(defn feed-releases [_] (make-feed {:path "/releases.rss" :what :releases}))
+(defn feed-mails [_] (make-feed {:path "mails.rss" :what :mails}))
+(defn feed-changes [_] (make-feed {:path "changes.rss" :what :changes}))
+(defn feed-released-changes [_] (make-feed {:path "released-changes.rss" :what :changes}))
+(defn feed-announcements [_] (make-feed {:path "announcements.rss" :what :announcements}))
+(defn feed-releases [_] (make-feed {:path "releases.rss" :what :releases}))
