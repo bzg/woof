@@ -90,16 +90,21 @@ mailbox with this command at the beginning of a line:
 - =Notifications: false= : To turn notifications off
 - =Notifications: true= : To turn notifications on
 
+Admins can turn notifications globally on and off with
+
+- =Global notifications: [true|false]=
+
 * Admins and maintainers
 
 Each Woof! instance comes with a default admin.
 
 *Admins* can update the main configuration:
 
+- =Global notifications: [true|false]= : Enable/disable mail notifications globally
 - =Maintenance: [true|false]= : Put the website in maintenance mode
-- =Notifications: [true|false]= : Enable/disable mail notifications globally
 - =Set theme: my_theme= : Use =my_theme= for the interface
 - =[Add|Remove] admin: woof@woof.io= : Add or remove an admin
+- =[Add|Remove] maintainer: woof@woof.io= : Add or remove a maintainer
 - =[Add|Remove] feature: feature= : Add or remove a feature
 - =[Add|Remove] export: format= : Add or remove an export format
 

@@ -93,24 +93,26 @@
 
 (def admin-report-strings
   {;; Contributors actions
-   :notifications     "Notifications"
-   :home              "Home"
-   :support           "Support"
+   :notifications        "Notifications"
+   :home                 "Home"
+   :support              "Support"
    ;; Maintainers actions
-   :add-maintainer    "Add maintainer"
-   :maintenance       "Maintenance"
+   :add-maintainer       "Add maintainer"
+   :delete               "Delete"
+   :ignore               "Ignore"
    ;; Admin actions
-   :add-admin         "Add admin"
-   :add-export        "Add export"
-   :delete            "Delete"
-   :remove-feature    "Remove feature"
-   :add-feature       "Add feature"
-   :ignore            "Ignore"
-   :remove-admin      "Remove admin"
-   :remove-export     "Remove export"
-   :remove-maintainer "Remove maintainer"
-   :set-theme         "Set theme"
-   :undelete          "Undelete"
+   :add-admin            "Add admin"
+   :add-export           "Add export"
+   :add-feature          "Add feature"
+   :remove-admin         "Remove admin"
+   :remove-export        "Remove export"
+   :remove-feature       "Remove feature"
+   :remove-maintainer    "Remove maintainer"
+   :maintenance          "Maintenance"
+   :set-theme            "Set theme"
+   :undelete             "Undelete"
+   :unignore             "Unignore"
+   :global-notifications "Global notifications"
    })
 
 ;; Admin permissions include maintainer permissions which include
@@ -119,7 +121,8 @@
   {:admin       #{:add-admin :remove-admin
                   :add-feature :remove-feature
                   :remove-maintainer :undelete :unignore
-                  :add-export :remove-export :set-theme}
+                  :add-export :remove-export :set-theme
+                  :global-notifications}
    :maintainer  #{:maintenance :add-maintainer :delete :ignore}
    :contributor #{:notifications :home :support}})
 

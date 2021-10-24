@@ -338,7 +338,7 @@
 
 ;; Check whether a report is an action against a known entity
 
-(def admin-strings-re
+(def config-strings-re
   (let [{:keys [admin maintainer contributor]} config/permissions]
     (->> (concat admin maintainer contributor)
          (map #(% config/admin-report-strings))
@@ -632,91 +632,49 @@
       (timbre/info
        (format "Now using theme \"%s\"" theme)))))
 
-(defn- update-maintenance! [status]
+(defn- config-maintenance! [status]
   (d/transact! conn [{:defaults "init" :maintenance status}])
   (timbre/info (format "Maintenance is now: %s" status)))
 
-(defn- update-notifications! [status]
+(defn- config-notifications! [status]
   (d/transact! conn [{:defaults "init" :notifications status}])
   (timbre/info (format "Notifications are now: %s" status)))
 
-(defn- contributor-report! [{:keys [commands msg]}]
-  (let [from (:address (first (:from msg)))]
+(defn- config! [{:keys [commands msg]}]
+  (let [from (:address (first (:from msg)))
+        role (condp some (list from)
+               (get-admins)       :admin
+               (get-maintainers)  :maintainer
+               (get-contributors) :contributor
+               (timbre/error
+                (format "%s not allowed to send config updates" from)))]
     (doseq [[cmd cmd-val] commands]
-      (let [err (format "%s could not run \"%s: %s\""
-                        from cmd cmd-val)]
-        (if-not (or (re-matches #"Notifications: (true|false).*"
-                                (str cmd ": " cmd-val))
-                    (re-matches #"(Home|Support): https?://.*"
-                                (str cmd ": " cmd-val)))
-          (timbre/error
-           (format "%s sent an ill-formatted command: %s: %s"
-                   from cmd cmd-val))
-          (condp = cmd
-            "Home"
-            (update-person! {:email from} [:home cmd-val])
-            "Support"
-            (update-person! {:email from} [:support cmd-val])
-            "Notifications"
-            (update-person! {:email from} [:notifications cmd-val])
-            (timbre/error err)))))
+      (when (= role :contributor)
+        (condp = cmd
+          "Home"          (update-person! {:email from} [:home cmd-val])
+          "Notifications" (update-person! {:email from} [:notifications cmd-val])
+          "Support"       (update-person! {:email from} [:support cmd-val])))
+      (when (= role :maintainer)
+        (condp = cmd
+          ;; Only for maintainers
+          "Add maintainer" (add-maintainer! cmd-val from)
+          "Delete"         (delete! cmd-val)
+          "Ignore"         (ignore! cmd-val)))
+      (when (= role :admin)
+        (condp = cmd
+          "Add admin"            (add-admin! cmd-val from)
+          "Add export"           (add-export-format! cmd-val)
+          "Add feature"          (add-feature! cmd-val)
+          "Global notifications" (config-notifications! (edn/read-string cmd-val))
+          "Maintenance"          (config-maintenance! (edn/read-string cmd-val))
+          "Remove admin"         (remove-admin! cmd-val)
+          "Remove export"        (remove-export-format! cmd-val)
+          "Remove feature"       (remove-feature! cmd-val)
+          "Remove maintainer"    (remove-maintainer! cmd-val)
+          "Set theme"            (set-theme! cmd-val)
+          "Undelete"             (undelete! cmd-val)
+          "Unignore"             (unignore! cmd-val))))
     (add-mail-private! msg)))
-
-(defn- admin-report! [{:keys [commands msg]}]
-  (let [from     (:address (first (:from msg)))
-        defaults (d/entity db [:defaults "init"])]
-    (doseq [[cmd cmd-val] commands]
-      (let [err (format "%s could not run \"%s: %s\""
-                        from cmd cmd-val)]
-        (if-not (or
-                 ;; This is an admin toggle command
-                 (re-matches
-                  #"(Maintenance|Notifications): (true|false).*"
-                  (str cmd ": " cmd-val))
-                 (re-matches
-                  (re-pattern
-                   (format "(Add|Remove) export: (%s).*"
-                           (string/join
-                            "|" (->> defaults :export keys (map name)))))
-                  (str cmd ": " cmd-val))
-                 (re-matches #"Set theme: .*" (str cmd ": " cmd-val))
-                 (re-matches
-                  (re-pattern
-                   (format "(Add|Remove) feature: (%s).*"
-                           (string/join
-                            "|" (->> defaults :features keys (map name)))))
-                  (str cmd ": " cmd-val))
-                 ;; The command's value is an email address
-                 (re-matches email-re cmd-val))
-          (timbre/error
-           (format "%s sent an ill-formatted command: %s: %s"
-                   from cmd cmd-val))
-          (when (condp some (list from)
-                  (get-admins)
-                  (condp = cmd
-                    "Add admin"         (add-admin! cmd-val from)
-                    "Add export"        (add-export-format! cmd-val)
-                    "Add maintainer"    (add-maintainer! cmd-val from)
-                    "Delete"            (delete! cmd-val)
-                    "Remove feature"    (remove-feature! cmd-val)
-                    "Add feature"       (add-feature! cmd-val)
-                    "Ignore"            (ignore! cmd-val)
-                    "Maintenance"       (update-maintenance! (edn/read-string cmd-val))
-                    "Notifications"     (update-notifications! (edn/read-string cmd-val))
-                    "Remove admin"      (remove-admin! cmd-val)
-                    "Remove export"     (remove-export-format! cmd-val)
-                    "Remove maintainer" (remove-maintainer! cmd-val)
-                    "Set theme"         (set-theme! cmd-val)
-                    "Undelete"          (undelete! cmd-val)
-                    "Unignore"          (unignore! cmd-val)
-                    (timbre/error err))
-                  (get-maintainers)
-                  (condp = cmd
-                    "Add maintainer" (add-maintainer! cmd-val from)
-                    "Delete"         (delete! cmd-val)
-                    "Ignore"         (ignore! cmd-val)
-                    (timbre/error err)))
-            (add-mail-private! msg)))))))
 
 (defn- report! [action]
   (let [action-type   (condp #(%1 %2) action
@@ -823,16 +781,15 @@
 (defn- process-incoming-message [{:keys [from] :as msg}]
   (let [{:keys [To X-Original-To References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
-        references   (when (not-empty References)
-                       (->> (string/split References #"\s")
-                            (keep not-empty)
-                            (map get-id)))
-        to           (when (string? To) (re-matches email-re To))
-        from         (:address (first from))
-        admins       (get-admins)
-        maintainers  (get-maintainers)
-        contributors (get-contributors)
-        defaults     (d/entity db [:defaults "init"])]
+        references  (when (not-empty References)
+                      (->> (string/split References #"\s")
+                           (keep not-empty)
+                           (map get-id)))
+        to          (when (string? To) (re-matches email-re To))
+        from        (:address (first from))
+        admins      (get-admins)
+        maintainers (get-maintainers)
+        defaults    (d/entity db [:defaults "init"])]
 
     (when
         (and
@@ -902,23 +859,15 @@
                     (map string/trim)
                     (filter not-empty))]
 
-           (if (empty? references) ;; FIXME: Needed?
-             ;; Check whether this is a maintainer report sent to the admin
+           (if (empty? references) ;; FIXME: required?
+
+             ;; Check whether this is a configuration command
              (when-let [cmds
                         (->> body-seq
-                             (map #(when-let [m (re-matches admin-strings-re %)]
+                             (map #(when-let [m (re-matches config-strings-re %)]
                                      (rest m)))
                              (remove nil?))]
-               (when (some (into #{} (concat admins maintainers)) (list from))
-                 (admin-report! {:commands cmds :msg msg}))
-
-               ;; FIXME: always done even if the report has been
-               ;; processed before as admin report.  Conditional?
-               (if (some contributors (list from))
-                 (contributor-report! {:commands cmds :msg msg})
-                 (timbre/error
-                  (format "%s (unknown) tried this command: %s"
-                          from (second (first cmds))))))
+               (config! {:commands cmds :msg msg}))
 
              ;; Or a report against a known patch, bug, etc
              (when-let
