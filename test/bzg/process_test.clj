@@ -25,6 +25,7 @@
 ;; Define test emails
 (defn- read-mail-resource [f] (mail/file->message (str "test-mails/" f)))
 (def mail-bug1 (read-mail-resource "mail-bug1"))
+(def mail-patch1 (read-mail-resource "mail-patch1"))
 
 ;; Run tests
 (deftest processes
@@ -32,7 +33,10 @@
     (is (not-empty (core/get-admins))))
   (testing "Adding a bug"
     (do (core/read-and-process-mail (list mail-bug1))
-        (is (not-empty (core/get-unconfirmed-bugs))))))
+        (is (not-empty (core/get-unconfirmed-bugs)))))
+  (testing "Adding a patch"
+    (do (core/read-and-process-mail (list mail-patch1))
+        (is (= 1 (count (core/get-unapproved-patches)))))))
 
 ;; Clean up behind tests
 (sh/sh "rm" "-fr" "db-test")
