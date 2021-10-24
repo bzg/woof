@@ -346,7 +346,7 @@
     (->> (concat admin maintainer contributor)
          (map #(% config/admin-report-strings))
          (string/join "|")
-         (format "(%s): ([^\\s]+).*")
+         (format "(%s): (.+)\\s*$")
          re-pattern)))
 
 (defn- report-strings-all [report-type]
@@ -503,130 +503,150 @@
   (when-let [m (re-matches #"^\[RELEASE\s*([^]]+)].*$" (:subject msg))]
     (peek m)))
 
-(defn- add-admin! [email from]
-  (let [person (into {} (d/entity db [:email email]))]
-    (when-let [output (d/transact! conn [(conj person [:role :admin])])]
-      (mail nil (format "Hi %s,\n\n%s added you as an admin.
+(defn- add-admin! [cmd-val from]
+  (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
+    (doseq [email emails]
+      (when-let [person (into {} (d/entity db [:email email]))]
+        (let [output (d/transact! conn [(conj person [:role :admin])])]
+          (mail nil (format "Hi %s,\n\n%s added you as an admin.
 \nSee this page on how to use Woof! as an admin:\n%s/howto\n\nThanks!"
-                        (:username person)
-                        from
-                        (:base-url config/env))
-            :add-admin
-            (format "[%s] You are now a Woof! admin"
-                    (:project-name config/env))
-            from)
-      (timbre/info (format "%s has been granted admin permissions" email))
-      output)))
+                            (:username person)
+                            from
+                            (:base-url config/env))
+                :add-admin
+                (format "[%s] You are now a Woof! admin"
+                        (:project-name config/env))
+                from)
+          (timbre/info (format "%s has been granted admin permissions" email))
+          output)))))
 
-(defn- remove-admin! [email]
-  (let [admin-entity (d/entity db [:email email])]
-    (if (true? (:root admin-entity))
-      (timbre/error "Trying to remove the root admin: ignore")
+(defn- remove-admin! [cmd-val]
+  (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
+    (doseq [email emails]
+      (let [admin-entity (d/entity db [:email email])]
+        (if (true? (:root admin-entity))
+          (timbre/error "Trying to remove the root admin: ignore")
+          (when-let [output
+                     (d/transact!
+                      conn [(d/retract (d/entity db [:email email]) :admin)])]
+            (timbre/info (format "%s has been denied admin permissions" email))
+            output))))))
+
+(defn- add-maintainer! [cmd-val from]
+  (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
+    (doseq [email emails]
+      (let [person (into {} (d/entity db [:email email]))]
+        (when-let [output (d/transact! conn [(conj person [:role :maintainer])])]
+          (mail nil (format "Hi %s,\n\n%s added you as an maintainer.
+\nSee this page on how to use Woof! as an maintainer:\n%s/howto\n\nThanks!"
+                            (:username person)
+                            from
+                            (:base-url config/env))
+                :add-maintainer
+                (format "[%s] You are now a Woof! maintainer"
+                        (:project-name config/env))
+                from)
+          (timbre/info (format "%s has been granted maintainer permissions" email))
+          output)))))
+
+(defn- remove-maintainer! [cmd-val]
+  (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
+    (doseq [email emails]
       (when-let [output
                  (d/transact!
-                  conn [(d/retract (d/entity db [:email email]) :admin)])]
-        (timbre/info (format "%s has been denied admin permissions" email))
+                  conn [(d/retract (d/entity db [:email email]) :maintainer)])]
+        (timbre/info (format "%s has been removed maintainer permissions" email))
         output))))
 
-(defn- add-maintainer! [email from]
-  (let [person (into {} (d/entity db [:email email]))]
-    (when-let [output (d/transact! conn [(conj person [:role :maintainer])])]
-      (mail nil (format "Hi %s,\n\n%s added you as an maintainer.
-\nSee this page on how to use Woof! as an maintainer:\n%s/howto\n\nThanks!"
-                        (:username person)
-                        from
-                        (:base-url config/env))
-            :add-maintainer
-            (format "[%s] You are now a Woof! maintainer"
-                    (:project-name config/env))
-            from)
-      (timbre/info (format "%s has been granted maintainer permissions" email))
-      output)))
+(defn- delete! [cmd-val]
+  (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
+    (doseq [email emails]
+      (let [reports
+            (->> (map
+                  #(d/q `[:find ?mail-id :where
+                          [?report-id ~% ?mail-id]
+                          [?mail-id :from ~email]]
+                        db)
+                  ;; Delete all but changes and releases, even if the
+                  ;; email being deleted is from a maintainer
+                  [:bug :patch :request :announcement])
+                 (map concat) flatten)]
+        (when (seq reports)
+          (doseq [r reports]
+            (d/transact! conn [{:db/id r :deleted (java.util.Date.)}]))
+          (timbre/info (format "Past mails from %s are now deleted" email))
+          true)))))
 
-(defn- remove-maintainer! [email]
-  (when-let [output
-             (d/transact!
-              conn [(d/retract (d/entity db [:email email]) :maintainer)])]
-    (timbre/info (format "%s has been removed maintainer permissions" email))
-    output))
+(defn- undelete! [cmd-val]
+  (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
+    (doseq [email emails]
+      (let [reports
+            (->> (map
+                  #(d/q `[:find ?mail-id
+                          :where
+                          [?report-id ~% ?mail-id]
+                          [?mail-id :deleted _]
+                          [?mail-id :from ~email]]
+                        db)
+                  [:bug :patch :request :announcement])
+                 (map concat) flatten)]
+        (when (seq reports)
+          (doseq [r reports]
+            (d/transact! conn [[:db/retract r :deleted]]))
+          (timbre/info (format "Past mails from %s are not deleted anymore" email))
+          true)))))
 
-(defn- delete! [email]
-  (let [reports
-        (->> (map
-              #(d/q `[:find ?mail-id :where
-                      [?report-id ~% ?mail-id]
-                      [?mail-id :from ~email]]
-                    db)
-              ;; Delete all but changes and releases, even if the
-              ;; email being deleted is from a maintainer
-              [:bug :patch :request :announcement])
-             (map concat) flatten)]
-    (when (seq reports)
-      (doseq [r reports]
-        (d/transact! conn [{:db/id r :deleted (java.util.Date.)}]))
-      (timbre/info (format "Past mails from %s are now deleted" email))
-      true)))
-
-(defn- undelete! [email]
-  (let [reports
-        (->> (map
-              #(d/q `[:find ?mail-id
-                      :where
-                      [?report-id ~% ?mail-id]
-                      [?mail-id :deleted _]
-                      [?mail-id :from ~email]]
-                    db)
-              [:bug :patch :request :announcement])
-             (map concat) flatten)]
-    (when (seq reports)
-      (doseq [r reports]
-        (d/transact! conn [[:db/retract r :deleted]]))
-      (timbre/info (format "Past mails from %s are not deleted anymore" email))
-      true)))
-
-(defn- unignore! [email]
-  (when-let [output
-             (d/transact!
-              conn [(d/retract (d/entity db [:email email]) :ignored)])]
-    (timbre/info (format "Mails from %s won't be ignored anymore" email))
-    output))
-
-(defn- ignore! [email]
-  (let [person     (into {} (d/entity db [:email email]))
-        as-ignored (conj person [:ignored (java.util.Date.)])]
-    ;; Never ignore the root admin
-    (when-not (true? (:root person))
-      (when-let [output (d/transact! conn [as-ignored])]
-        (timbre/info (format "Mails from %s will now be ignored" email))
+(defn- unignore! [cmd-val]
+  (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
+    (doseq [email emails]
+      (when-let [output
+                 (d/transact!
+                  conn [(d/retract (d/entity db [:email email]) :ignored)])]
+        (timbre/info (format "Mails from %s won't be ignored anymore" email))
         output))))
 
-(defn- add-feature! [feature & disable?]
-  (let [defaults     (d/entity db [:defaults "init"])
-        new-defaults (update-in
-                      defaults
-                      [:features (keyword feature)] (fn [_] (empty? disable?)))]
-    (when (d/transact! conn [new-defaults])
-      (timbre/info
-       (format "Feature \"%s\" is %s"
-               feature
-               (if disable? "disabled" "enabled"))))))
+(defn- ignore! [cmd-val]
+  (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
+    (doseq [email emails]
+      (let [person     (into {} (d/entity db [:email email]))
+            as-ignored (conj person [:ignored (java.util.Date.)])]
+        ;; Never ignore the root admin
+        (when-not (true? (:root person))
+          (when-let [output (d/transact! conn [as-ignored])]
+            (timbre/info (format "Mails from %s will now be ignored" email))
+            output))))))
 
-(defn- remove-feature! [feature]
-  (add-feature! feature :disable))
+(defn- add-feature! [cmd-val & disable?]
+  (let [features (->> (string/split cmd-val #"\s") (remove empty?))]
+    (doseq [feature features]
+      (let [defaults     (d/entity db [:defaults "init"])
+            new-defaults (update-in
+                          defaults
+                          [:features (keyword feature)] (fn [_] (empty? disable?)))]
+        (when (d/transact! conn [new-defaults])
+          (timbre/info
+           (format "Feature \"%s\" is %s"
+                   feature
+                   (if disable? "disabled" "enabled"))))))))
 
-(defn- add-export-format! [export-format & remove?]
-  (let [defaults     (d/entity db [:defaults "init"])
-        new-defaults (update-in
-                      defaults
-                      [:export (keyword export-format)] (fn [_] (empty? remove?)))]
-    (when (d/transact! conn [new-defaults])
-      (timbre/info
-       (format "Export format \"%s\" is %s"
-               export-format
-               (if remove? "removed" "added"))))))
+(defn- remove-feature! [cmd-val]
+  (add-feature! cmd-val :disable))
 
-(defn- remove-export-format! [export-format]
-  (add-export-format! export-format :remove))
+(defn- add-export-format! [cmd-val & remove?]
+  (let  [formats (->> (string/split cmd-val #"\s") (remove empty?))]
+    (doseq [export-format formats]
+      (let [defaults     (d/entity db [:defaults "init"])
+            new-defaults (update-in
+                          defaults
+                          [:export (keyword export-format)] (fn [_] (empty? remove?)))]
+        (when (d/transact! conn [new-defaults])
+          (timbre/info
+           (format "Export format \"%s\" is %s"
+                   export-format
+                   (if remove? "removed" "added"))))))))
+
+(defn- remove-export-format! [cmd-val]
+  (add-export-format! cmd-val :remove))
 
 (defn- set-theme! [theme]
   (let [defaults     (d/entity db [:defaults "init"])
