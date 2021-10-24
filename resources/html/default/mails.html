@@ -26,11 +26,9 @@
 	      <thead>
 		<tr>
 		  <th>Subject</th>
-		  <th width="15%">From</th>
-		  <th width="15%"><a href="#mail?sorting-by=date" title="Sort mails by date">Date</a></th>
-		  <th width="5%">
-		    <a href="#mail?sorting-by=refs" title="Sort mails by number of references">Refs</a>
-		  </th>
+		  <th width="15%"><a href="?sorting-by=user#mail" title="Sort mails by author">From<a></th>
+		  <th width="15%"><a href="?sorting-by=date#mail" title="Sort mails by date">Date</a></th>
+		  <th width="5%"><a href="?sorting-by=refs#mail" title="Sort mails by number of references">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
@@ -44,15 +42,15 @@
 		    {% endif %}
 		  </td>
 		  <td>
-		    {% if mail.admin %}
+		    {% ifequal mail.role 2 %}
 		    <strong>{{mail.username}}</strong>
 		    {% else %}
-		    {% if mail.maintainer %}
+		    {% ifequal mail.role 1 %}
 		    <em>{{mail.username}}</em>
 		    {% else %}
 		    {{mail.username}}
-		    {% endif %}
-		    {% endif %}
+		    {% endifequal %}
+		    {% endifequal %}
 		  </td>
 		  <td>{{mail.date|date:shortDate}}</td>
 		  <td>{{mail.backrefs}}</td>

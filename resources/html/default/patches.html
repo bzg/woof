@@ -25,9 +25,9 @@
 	      <thead>
 		<tr>
 		  <th>Subject</th>
-		  <th width="15%">From</th>
-		  <th width="15%"><a href="#approved-patches?sorting-by=date" title="Sort patches by date">Date</a></th>
-		  <th width="5%"><a href="#approved-patches?sorting-by=refs" title="Sort patches by number of references">Refs</a>
+		  <th width="15%"><a href="?sorting-by=user#approved-patches" title="Sort patches by author">From<a></th>
+		  <th width="15%"><a href="?sorting-by=date#approved-patches" title="Sort patches by date">Date</a></th>
+		  <th width="5%"><a href="?sorting-by=refs#approved-patches" title="Sort patches by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>
@@ -42,15 +42,15 @@
 		    {% endif %}
 		  </td>
 		  <td>
-		    {% if patch.admin %}
+		    {% ifequal patch.role 2 %}
 		    <strong>{{patch.username}}</strong>
 		    {% else %}
-		    {% if patch.maintainer %}
+		    {% ifequal patch.role 1 %}
 		    <em>{{patch.username}}</em>
 		    {% else %}
 		    {{patch.username}}
-		    {% endif %}
-		    {% endif %}
+		    {% endifequal %}
+		    {% endifequal %}
 		  </td>
 		  <td>{{patch.date|date:shortDate}}</td>
 		  <td>{{patch.backrefs}}</td>
@@ -78,9 +78,9 @@
 	      <thead>
 		<tr>
 		  <th>Subject</th>
-		  <th width="15%">From</th>
-		  <th width="15%"><a href="#unapproved-patches?sorting-by=date" title="Sort patches by date">Date</a></th>
-		  <th width="5%"><a href="#unapproved-patches?sorting-by=refs" title="Sort patches by number of references">Refs</a>
+		  <th width="15%"><a href="?sorting-by=user#unapproved-patches" title="Sort patches by author">From<a></th>
+		  <th width="15%"><a href="?sorting-by=date#unapproved-patches" title="Sort patches by date">Date</a></th>
+		  <th width="5%"><a href="?sorting-by=refs#unapproved-patches" title="Sort patches by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>
@@ -95,15 +95,15 @@
 		    {% endif %}
 		  </td>
 		  <td>
-		    {% if patch.admin %}
+		    {% ifequal patch.role 2 %}
 		    <strong>{{patch.username}}</strong>
 		    {% else %}
-		    {% if patch.maintainer %}
+		    {% ifequal patch.role 1 %}
 		    <em>{{patch.username}}</em>
 		    {% else %}
 		    {{patch.username}}
-		    {% endif %}
-		    {% endif %}
+		    {% endifequal %}
+		    {% endifequal %}
 		  </td>
 		  <td>{{patch.date|date:shortDate}}</td>
 		  <td>{{patch.backrefs}}</td>

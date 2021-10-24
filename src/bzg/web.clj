@@ -31,12 +31,14 @@
           identity)]
     (->>
      entries
-     (sort-by (condp = sorting-by
-                "date" :date
-                "user" :username
-                :backrefs))
+     (sort-by (condp = sorting-by "date" :date "user" :role :backrefs))
      reverse
-     (filter #(re-find (re-pattern (str "(?i)" (or (not-empty search) ""))) (:subject %)))
+     (map (fn [e]
+            (if-let [s (not-empty search)]
+              (when (re-find (re-pattern (str "(?i)" s))
+                             (:subject e)) e)
+              e)))
+     (remove nil?)
      (map linkify-maybe))))
 
 (def html-defaults
@@ -110,7 +112,7 @@
      (entries-format (merge {:entries (core/get-unapplied-patches)}
                             format-params))}))
 
-(defn- page-top [_ config-defaults]
+(defn- page-tops [_ config-defaults]
   (with-html-defaults config-defaults
     {:top-bug-contributors          (core/get-top-bug-contributors)
      :top-patch-contributors        (core/get-top-patch-contributors)
@@ -124,7 +126,7 @@
    :bugs     {:html "/bugs.html" :fn page-bugs}
    :requests {:html "/requests.html" :fn page-requests}
    :mails    {:html "/mails.html" :fn page-mails}
-   :top      {:html "/top.html" :fn page-top}})
+   :tops     {:html "/tops.html" :fn page-tops}})
 
 (defn- get-page [query-params page]
   (let [format-params   {:search     (get query-params "search")
@@ -157,8 +159,8 @@
 (defn- get-page-patches [{:keys [query-params]}]
   (get-page query-params :patches))
 
-(defn- get-page-top [{:keys [query-params]}]
-  (get-page query-params :top))
+(defn- get-page-tops [{:keys [query-params]}]
+  (get-page query-params :tops))
 
 (def handler
   (ring/ring-handler
@@ -169,7 +171,7 @@
      ["/bugs" {:get (fn [params] (get-page-bugs params))}]
      ["/patches" {:get (fn [params] (get-page-patches params))}]
      ["/mails" {:get (fn [params] (get-page-mails params))}]
-     ["/top" {:get (fn [params] (get-page-top params))}]
+     ["/tops" {:get (fn [params] (get-page-tops params))}]
      ["/howto"
       {:get (fn [_]
               {:status  200

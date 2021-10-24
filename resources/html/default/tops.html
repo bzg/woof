@@ -18,7 +18,16 @@
 
 	    <ul>
 	      {% for top-bug-contributor in top-bug-contributors %}
-	      <li>{{top-bug-contributor.cnt}} {{top-bug-contributor.email}}
+	      <li title="{{top-bug-contributor.cnt}} contributions">
+		{% ifequal top-bug-contributor.role 2 %}
+		<strong>{{top-bug-contributor.email}}</strong>
+		{% else %}
+		{% ifequal top-bug-contributor.role 1 %}
+		<em>{{top-bug-contributor.email}}</em>
+		{% else %}
+		{{top-bug-contributor.email}}
+		{% endifequal %}
+		{% endifequal %}
 		{% if top-bug-contributor.home %}<a href="{{top-bug-contributor.home}}">🏠</a>{% endif %}
 		{% if top-bug-contributor.support %}<a href="{{top-bug-contributor.support}}">🙏</a>{% endif %}
 	      </li>
@@ -35,7 +44,17 @@
 		title="Sending good patches, approving or applying them.">Helping with patches</h1>
 	    <ul>
 	      {% for top-patch-contributor in top-patch-contributors %}
-	      <li>{{top-patch-contributor.email}}</li>
+	      <li title="{{top-patch-contributor.cnt}} contributions">
+		{% ifequal top-patch-contributor.role 2 %}
+		<strong>{{top-patch-contributor.email}}</strong>
+		{% else %}
+		{% ifequal top-patch-contributor.role 1 %}
+		<em>{{top-patch-contributor.email}}</em>
+		{% else %}
+		{{top-patch-contributor.email}}
+		{% endifequal %}
+		{% endifequal %}
+	      </li>
 	      {% endfor %}
 	    </ul>
 	    {% endifequal %}
@@ -48,7 +67,17 @@
 	    <h1 id="top-request-contributors" class="title is-size-4">Handling help requests</h1>
 	    <ul>
 	      {% for top-request-contributor in top-request-contributors %}
-	      <li>{{top-request-contributor.email}}</li>
+	      <li title="{{top-request-contributor.cnt}} contributions">
+		{% ifequal top-request-contributor.role 2 %}
+		<strong>{{top-request-contributor.email}}</strong>
+		{% else %}
+		{% ifequal top-request-contributor.role 1 %}
+		<em>{{top-request-contributor.email}}</em>
+		{% else %}
+		{{top-request-contributor.email}}
+		{% endifequal %}
+		{% endifequal %}
+	      </li>
 	      {% endfor %}
 	    </ul>
 	    {% endifequal %}
@@ -61,7 +90,17 @@
 	    <h1 id="top-announcement-contributors" class="title is-size-4">Sharing announcements</h1>
 	    <ul>
 	      {% for top-announcement-contributor in top-announcement-contributors %}
-	      <li>{{top-announcement-contributor.email}}</li>
+	      <li>
+		{% ifequal top-announcement-contributor.role 2 %}
+		<strong>{{top-announcement-contributor.email}}</strong>
+		{% else %}
+		{% ifequal top-announcement-contributor.role 1 %}
+		<em>{{top-announcement-contributor.email}}</em>
+		{% else %}
+		{{top-announcement-contributor.email}}
+		{% endifequal %}
+		{% endifequal %}
+	      </li>
 	      {% endfor %}
 	    </ul>
 	    {% endifequal %}

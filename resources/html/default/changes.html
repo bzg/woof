@@ -27,9 +27,9 @@
 	      <thead>
 		<tr>
 		  <th>Subject</th>
-		  <th width="15%">From</th>
-		  <th width="15%"><a href="#upcoming-changes?sorting-by=date" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="#upcoming-changes?sorting-by=refs" title="Sort by refs">Refs</a></th>
+		  <th width="15%"><a href="?sorting-by=user#uncomping-changes" title="Sort by author">From<a></th>
+		  <th width="15%"><a href="?sorting-by=date#upcoming-changes" title="Sort by date">Date</a></th>
+		  <th width="5%"><a href="?sorting-by=refs#upcoming-changes" title="Sort by refs">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
@@ -43,15 +43,15 @@
 		    {% endif %}
 		  </td>
 		  <td>
-		    {% if change.admin %}
+		    {% ifequal change.role 2 %}
 		    <strong>{{change.username}}</strong>
 		    {% else %}
-		    {% if change.maintainer %}
+		    {% ifequal change.role 1 %}
 		    <em>{{change.username}}</em>
 		    {% else %}
 		    {{change.username}}
-		    {% endif %}
-		    {% endif %}
+		    {% endifequal %}
+		    {% endifequal %}
 		  </td>
 		  <td>{{change.date|date:shortDate}}</td>
 		  <td>{{change.backrefs}}</td>
@@ -83,9 +83,9 @@
 	      <thead>
 		<tr>
 		  <th>Subject</th>
-		  <th width="15%">From</th>
-		  <th width="15%"><a href="#released-changes?sorting-by=date" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="#released-changes?sorting-by=refs" title="Sort by refs">Refs</a></th>
+		  <th width="15%"><a href="?sorting-by=user#released-changes" title="Sort by author">From<a></th>
+		  <th width="15%"><a href="?sorting-by=date#released-changes" title="Sort by date">Date</a></th>
+		  <th width="5%"><a href="?sorting-by=refs#released-changes" title="Sort by refs">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
@@ -99,15 +99,15 @@
 		    {% endif %}
 		  </td>
 		  <td>
-		    {% if change.admin %}
+		    {% ifequal change.role 2 %}
 		    <strong>{{change.username}}</strong>
 		    {% else %}
-		    {% if change.maintainer %}
+		    {% ifequal change.role 1 %}
 		    <em>{{change.username}}</em>
 		    {% else %}
 		    {{change.username}}
-		    {% endif %}
-		    {% endif %}
+		    {% endifequal %}
+		    {% endifequal %}
 		  </td>
 		  <td>{{change.date|date:shortDate}}</td>
 		  <td>{{change.backrefs}}</td>
@@ -141,9 +141,9 @@
 	      <thead>
 		<tr>
 		  <th>Subject</th>
-		  <th width="15%">From</th>
-		  <th width="15%"><a href="#releases?sorting-by=date" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="#releases?sorting-by=refs" title="Sort by refs">Refs</a></th>
+		  <th width="15%"><a href="?sorting-by=user#releases" title="Sort by author">From<a></th>
+		  <th width="15%"><a href="?sorting-by=date#releases" title="Sort by date">Date</a></th>
+		  <th width="5%"><a href="?sorting-by=refs#releases" title="Sort by refs">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
@@ -157,15 +157,15 @@
 		    {% endif %}
 		  </td>
 		  <td>
-		    {% if release.admin %}
+		    {% ifequal release.role 2 %}
 		    <strong>{{release.username}}</strong>
 		    {% else %}
-		    {% if release.maintainer %}
+		    {% ifequal release.maintainer 1 %}
 		    <em>{{release.username}}</em>
 		    {% else %}
 		    {{release.username}}
-		    {% endif %}
-		    {% endif %}
+		    {% endifequal %}
+		    {% endifequal %}
 		  </td>
 		  <td>{{release.date|date:shortDate}}</td>
 		  <td>{{release.backrefs}}</td>

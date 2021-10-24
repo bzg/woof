@@ -87,14 +87,17 @@
        (remove :deleted)
        (remove :canceled)))
 
+(defn- add-role [e]
+  (let [roles (count (select-keys
+                      (d/entity db [:email (:from e)])
+                      [:admin :maintainer]))]
+    (merge e {:role roles})))
+
 (defn- get-reports-msgs [report-type reports]
   (->> (map #(d/entity db (:db/id (report-type %))) reports)
        (map #(dissoc (into {} %) :db/id))
        (remove :deleted)
-       (map (fn [e] (let [roles (select-keys
-                                 (d/entity db [:email (:from e)])
-                                 [:admin :maintainer])]
-                      (merge e roles))))))
+       (map add-role)))
 
 (defn get-mails []
   (->> (d/q '[:find ?e :where [?e :message-id _]] db)
@@ -103,6 +106,7 @@
        (remove :private)
        (remove :deleted)
        (sort-by :date)
+       (map add-role)
        (take (-> (d/entity db [:defaults "init"]) :max :mails))))
 
 (defn get-bugs [] (get-reports-msgs :bug (get-reports :bug)))
@@ -226,11 +230,6 @@
        (map first)
        (map #(d/pull db '[*] %))))
 
-(defn- get-contributors []
-  (->> (filter :contributor (get-persons))
-       (map :email)
-       (into #{})))
-
 (defn get-admins []
   (->> (filter :admin (get-persons))
        (map :email)
@@ -253,6 +252,7 @@
               (let [e (d/entity db [:email key])]
                 {:email    key
                  :username (:username e)
+                 :role     (count (select-keys e [:admin :maintainer]))
                  :home     (:home e)
                  :support  (:support e)
                  :cnt      (count val)})))
@@ -367,7 +367,11 @@
          re-pattern)))
 
 (defn- report-strings-all [report-type]
-  (let [report-do   (map #(% config/report-strings)
+  (let [report-type
+        (condp = report-type
+          :bug    :bugs    :patch        :patches       :request :requests
+          :change :changes :announcement :announcements :release :releases)
+        report-do   (map #(% config/report-strings)
                          (report-type config/reports))
         report-undo (map #(string/capitalize (str "Un" %)) report-do)]
     (into #{} (concat report-do report-undo))))
@@ -479,8 +483,10 @@
 (def mail-chan (async/chan))
 
 (defn- mail [msg body purpose & new-msg]
-  (if (:notifications (d/entity db [:defaults "init"]))
-    (async/put! mail-chan {:msg         msg :body body :purpose purpose
+  (if (:global-notifications (d/entity db [:defaults "init"]))
+    (async/put! mail-chan {:msg         msg
+                           :body        body
+                           :purpose     purpose
                            :new-subject (first new-msg)
                            :reply-to    (second new-msg)})
     (timbre/info "Notifications are disabled, do not send email")))
@@ -523,8 +529,8 @@
 (defn- add-admin! [cmd-val from]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
     (doseq [email emails]
-      (when-let [person (into {} (d/entity db [:email email]))]
-        (let [output (d/transact! conn [(conj person [:role :admin])])]
+      (when-let [person (not-empty (into {} (d/entity db [:email email])))]
+        (let [output (d/transact! conn [(conj person [:admin (java.util.Date.)])])]
           (mail nil (format "Hi %s,\n\n%s added you as an admin.
 \nSee this page on how to use Woof! as an admin:\n%s/howto\n\nThanks!"
                             (:username person)
@@ -552,8 +558,8 @@
 (defn- add-maintainer! [cmd-val from]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
     (doseq [email emails]
-      (let [person (into {} (d/entity db [:email email]))]
-        (when-let [output (d/transact! conn [(conj person [:role :maintainer])])]
+      (when-let [person (not-empty (into {} (d/entity db [:email email])))]
+        (let [output (d/transact! conn [(conj person [:maintainer (java.util.Date.)])])]
           (mail nil (format "Hi %s,\n\n%s added you as an maintainer.
 \nSee this page on how to use Woof! as an maintainer:\n%s/howto\n\nThanks!"
                             (:username person)
@@ -681,39 +687,48 @@
   (timbre/info (format "Notifications are now: %s" status)))
 
 (defn- config! [{:keys [commands msg]}]
-  (let [from (:address (first (:from msg)))
-        role (condp some (list from)
-               (get-admins)       :admin
-               (get-maintainers)  :maintainer
-               (get-contributors) :contributor
-               (timbre/error
-                (format "%s not allowed to send config updates" from)))]
+  (let [from  (:address (first (:from msg)))
+        roles (select-keys (d/entity db [:email from])
+                           [:admin :contributor :maintainer])
+        role  (cond (:admin roles)      :admin
+                    (:maintainer roles) :maintainer
+                    :else               :contributor)]
     (doseq [[cmd cmd-val] commands]
-      (when (= role :contributor)
+      ;; FIXME: avoid redundancy?
+      (condp = role
+        :contributor
         (condp = cmd
           "Home"          (update-person! {:email from} [:home cmd-val])
           "Notifications" (update-person! {:email from} [:notifications cmd-val])
-          "Support"       (update-person! {:email from} [:support cmd-val])))
-      (when (= role :maintainer)
+          "Support"       (update-person! {:email from} [:support cmd-val])
+          nil)
+        :maintainer
         (condp = cmd
-          ;; Only for maintainers
           "Add maintainer" (add-maintainer! cmd-val from)
           "Delete"         (delete! cmd-val)
-          "Ignore"         (ignore! cmd-val)))
-      (when (= role :admin)
+          "Ignore"         (ignore! cmd-val)
+          nil)
+        :admin
         (condp = cmd
           "Add admin"            (add-admin! cmd-val from)
           "Add export"           (add-export-format! cmd-val)
           "Add feature"          (add-feature! cmd-val)
+          "Add maintainer"       (add-maintainer! cmd-val from)
+          "Delete"               (delete! cmd-val)
           "Global notifications" (config-notifications! (edn/read-string cmd-val))
+          "Home"                 (update-person! {:email from} [:home cmd-val])
+          "Ignore"               (ignore! cmd-val)
           "Maintenance"          (config-maintenance! (edn/read-string cmd-val))
+          "Notifications"        (update-person! {:email from} [:notifications cmd-val])
           "Remove admin"         (remove-admin! cmd-val)
           "Remove export"        (remove-export-format! cmd-val)
           "Remove feature"       (remove-feature! cmd-val)
           "Remove maintainer"    (remove-maintainer! cmd-val)
           "Set theme"            (set-theme! cmd-val)
+          "Support"              (update-person! {:email from} [:support cmd-val])
           "Undelete"             (undelete! cmd-val)
-          "Unignore"             (unignore! cmd-val))))
+          "Unignore"             (unignore! cmd-val)
+          nil)))
     (add-mail-private! msg)))
 
 (defn- report! [action]
@@ -861,8 +876,7 @@
         (and (-> defaults :features :requests) (new-request? msg))
         (report! {:request (add-mail! msg)})
 
-        (and (-> defaults :features :announcements)
-             (new-announcement? msg))
+        (and (-> defaults :features :announcements) (new-announcement? msg))
         (report! {:announcement (add-mail! msg)})
 
         :else
