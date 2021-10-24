@@ -123,7 +123,8 @@ moderating users instead of ignoring them.
 - =Delete: woof@woof.io=
 - =Ignore: woof@woof.io=
 
-New maintainers receive a mail notification.
+When contributors are promoted as maintainers, they receive a mail
+notification.
 
 Note that maintainers cannot remove admins or other maintainers and
 they cannot undelete mails or unignore contributors.
