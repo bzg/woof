@@ -781,7 +781,7 @@
     (doseq [r changes-to-unrelease]
       (d/transact! conn [[:db/retract r :released]]))))
 
-(defn- process-incoming-message [{:keys [from] :as msg}]
+(defn- process-mail [{:keys [from] :as msg}]
   (let [{:keys [To X-Original-To References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         references  (when (not-empty References)
@@ -930,6 +930,12 @@
 
 (def woof-inbox-monitor (atom nil))
 
+(defn- read-and-process-mail [mail]
+  (->> mail
+       (map message/read-message)
+       (map process-mail)
+       doall))
+
 (defn- start-inbox-monitor! []
   (reset!
    woof-inbox-monitor
@@ -943,12 +949,7 @@
          idle-manager (events/new-idle-manager session)]
      (events/add-message-count-listener
       ;; Process incoming mails
-      (fn [e]
-        (doall
-         (remove nil?
-                 (->> e :messages
-                      (map message/read-message)
-                      (map process-incoming-message)))))
+      (fn [e] (->> e :messages read-and-process-mail))
       ;; Don't process deleted mails
       nil
       folder
