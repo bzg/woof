@@ -912,107 +912,109 @@
                (when (some (into #{} (concat admins maintainers)) (list from))
                  (admin-report! {:commands cmds :msg msg}))
 
+               ;; FIXME: always done even if the report has been
+               ;; processed before as admin report.  Conditional?
                (if (some contributors (list from))
                  (contributor-report! {:commands cmds :msg msg})
                  (timbre/error
                   (format "%s (unknown) tried this command: %s"
                           from (second (first cmds))))))
 
-               ;; Or a report against a known patch, bug, etc
-               (when-let
-                   [body-report
-                    (->> body-seq
-                         (map #(when-let [m (re-matches report-strings-re %)]
-                                 (peek m)))
-                         (remove nil?))]
+             ;; Or a report against a known patch, bug, etc
+             (when-let
+                 [body-report
+                  (->> body-seq
+                       (map #(when-let [m (re-matches report-strings-re %)]
+                               (peek m)))
+                       (remove nil?))]
 
-                 (or
-                  ;; New action against a known patch
-                  (when (-> defaults :features :patch)
-                    (when-let [{:keys [report-eid status]}
-                               (is-report-update? :patch body-report references)]
-                      (report! {:patch report-eid status (add-mail! msg)})))
+               (or
+                ;; New action against a known patch
+                (when (-> defaults :features :patch)
+                  (when-let [{:keys [report-eid status]}
+                             (is-report-update? :patch body-report references)]
+                    (report! {:patch report-eid status (add-mail! msg)})))
 
-                  ;; New action against a known bug
-                  (when (-> defaults :features :bug)
-                    (when-let [{:keys [report-eid status]}
-                               (is-report-update? :bug body-report references)]
-                      (report! {:bug report-eid status (add-mail! msg)})))
+                ;; New action against a known bug
+                (when (-> defaults :features :bug)
+                  (when-let [{:keys [report-eid status]}
+                             (is-report-update? :bug body-report references)]
+                    (report! {:bug report-eid status (add-mail! msg)})))
 
-                  ;; New action against a known help request
-                  (when  (-> defaults :features :request)
-                    (when-let [{:keys [report-eid status]}
-                               (is-report-update? :request body-report references)]
-                      (report! {:request report-eid status (add-mail! msg)})))
+                ;; New action against a known help request
+                (when  (-> defaults :features :request)
+                  (when-let [{:keys [report-eid status]}
+                             (is-report-update? :request body-report references)]
+                    (report! {:request report-eid status (add-mail! msg)})))
 
-                  ;; New action against a known announcement
-                  (when  (-> defaults :features :announcement)
-                    (when-let [{:keys [report-eid status]}
-                               (is-report-update? :announcement body-report references)]
-                      (report! {:announcement report-eid status (add-mail! msg)})))
+                ;; New action against a known announcement
+                (when  (-> defaults :features :announcement)
+                  (when-let [{:keys [report-eid status]}
+                             (is-report-update? :announcement body-report references)]
+                    (report! {:announcement report-eid status (add-mail! msg)})))
 
-                  ;; Finally, maintainers can perform actions against
-                  ;; existing changes/releases
-                  (if-not (some maintainers (list from))
-                    (timbre/warn
-                     (format
-                      "%s tried to update a change/release while not a maintainer"
-                      from))
-                    (do
-                      ;; New action against a known change announcement?
-                      (when (-> defaults :features :change)
-                        (when-let [{:keys [report-eid status]}
-                                   (is-report-update? :change body-report references)]
-                          (report! {:change report-eid status (add-mail! msg)})))
+                ;; Finally, maintainers can perform actions against
+                ;; existing changes/releases
+                (if-not (some maintainers (list from))
+                  (timbre/warn
+                   (format
+                    "%s tried to update a change/release while not a maintainer"
+                    from))
+                  (do
+                    ;; New action against a known change announcement?
+                    (when (-> defaults :features :change)
+                      (when-let [{:keys [report-eid status]}
+                                 (is-report-update? :change body-report references)]
+                        (report! {:change report-eid status (add-mail! msg)})))
 
-                      ;; New action against a known release announcement?
-                      (when (-> defaults :features :release)
-                        (when-let [{:keys [report-eid status]}
-                                   (is-report-update? :release body-report references)]
-                          (report! {:release report-eid status (add-mail! msg)})
-                          (unrelease-changes! report-eid))))))))))))))
+                    ;; New action against a known release announcement?
+                    (when (-> defaults :features :release)
+                      (when-let [{:keys [report-eid status]}
+                                 (is-report-update? :release body-report references)]
+                        (report! {:release report-eid status (add-mail! msg)})
+                        (unrelease-changes! report-eid))))))))))))))
 
 ;;; Inbox monitoring
 
-  (def woof-inbox-monitor (atom nil))
+(def woof-inbox-monitor (atom nil))
 
-  (defn- start-inbox-monitor! []
-    (reset!
-     woof-inbox-monitor
-     (let [session      (mail/get-session "imaps")
-           mystore      (mail/store "imaps" session
-                                    (:inbox-server config/env)
-                                    (:inbox-user config/env)
-                                    (:inbox-password config/env))
-           folder       (mail/open-folder mystore (:inbox-folder config/env)
-                                          :readonly)
-           idle-manager (events/new-idle-manager session)]
-       (events/add-message-count-listener
-        ;; Process incoming mails
-        (fn [e]
-          (doall
-           (remove nil?
-                   (->> e :messages
-                        (map message/read-message)
-                        (map process-incoming-message)))))
-        ;; Don't process deleted mails
-        nil
-        folder
-        idle-manager)
-       idle-manager)))
+(defn- start-inbox-monitor! []
+  (reset!
+   woof-inbox-monitor
+   (let [session      (mail/get-session "imaps")
+         mystore      (mail/store "imaps" session
+                                  (:inbox-server config/env)
+                                  (:inbox-user config/env)
+                                  (:inbox-password config/env))
+         folder       (mail/open-folder mystore (:inbox-folder config/env)
+                                        :readonly)
+         idle-manager (events/new-idle-manager session)]
+     (events/add-message-count-listener
+      ;; Process incoming mails
+      (fn [e]
+        (doall
+         (remove nil?
+                 (->> e :messages
+                      (map message/read-message)
+                      (map process-incoming-message)))))
+      ;; Don't process deleted mails
+      nil
+      folder
+      idle-manager)
+     idle-manager)))
 
-  (defn- start-tasks! []
-    (tt/every! 1200 ;; 20 minutes
-               (fn []
-                 (try
-                   (events/stop @woof-inbox-monitor)
-                   (catch Exception _ nil))
-                 (start-inbox-monitor!))))
+(defn- start-tasks! []
+  (tt/every! 1200 ;; 20 minutes
+             (fn []
+               (try
+                 (events/stop @woof-inbox-monitor)
+                 (catch Exception _ nil))
+               (start-inbox-monitor!))))
 
-  (def woof-manager) ;; FIXME: Needed?
-  (mount/defstate woof-manager
-    :start (do (start-tasks!)
-               (timbre/info "Woof started"))
-    :stop (when woof-manager
-            (events/stop woof-inbox-monitor)
-            (timbre/info "Woof stopped")))
+(def woof-manager) ;; FIXME: Needed?
+(mount/defstate woof-manager
+  :start (do (start-tasks!)
+             (timbre/info "Woof started"))
+  :stop (when woof-manager
+          (events/stop woof-inbox-monitor)
+          (timbre/info "Woof stopped")))
