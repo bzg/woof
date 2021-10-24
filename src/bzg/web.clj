@@ -103,11 +103,11 @@
 
 (defn- page-patches [format-params config-defaults]
   (with-html-defaults config-defaults
-    {:unhandled-requests
-     (entries-format (merge {:entries (core/get-unhandled-requests)}
+    {:unapproved-patches
+     (entries-format (merge {:entries (core/get-unapproved-patches)}
                             format-params))
-     :handled-requests
-     (entries-format (merge {:entries (core/get-handled-requests)}
+     :unapplied-patches
+     (entries-format (merge {:entries (core/get-unapplied-patches)}
                             format-params))}))
 
 (defn- page-top [_ config-defaults]
