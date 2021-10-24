@@ -310,31 +310,34 @@
 
 (defn update-person! [{:keys [email username role]} & [action]]
   ;; An email is enough to update a person
-  (let [existing-person (d/entity db [:email email])
-        timestamp       (java.util.Date.)
-        username        (or username email)
-        new-role        (condp = role
-                          :maintainer {:contributor timestamp
-                                       :maintainer  timestamp}
-                          :admin      {:contributor timestamp
-                                       :maintainer  timestamp
-                                       :admin       timestamp}
-                          {:contributor
-                           (or (:contributor existing-person) timestamp)})
-        person          (merge {:email email :username username}
-                               new-role action)]
+  (let [existing-person    (d/entity db [:email email])
+        ts                 (java.util.Date.)
+        contributor-since? (or (:contributor existing-person) ts)
+        maintainer-since?  (or (:maintainer existing-person) ts)
+        admin-since?       (or (:admin existing-person) ts)
+        username           (or username email)
+        new-role           (condp = role
+                             :maintainer {:contributor contributor-since?
+                                          :maintainer  maintainer-since?}
+                             :admin      {:contributor contributor-since?
+                                          :maintainer  maintainer-since?
+                                          :admin       admin-since?}
+                             {:contributor contributor-since?})
+        new-role-str       (string/join ", " (map name (keys new-role)))
+        person             (merge {:email email :username username}
+                                  new-role action)]
     ;; FIXME: Clumsy
     (when (d/transact! conn [person])
-      (when-not existing-person
-        (timbre/info
-         (format "Added %s (%s): %s" username email new-role)))
-      (when role
-        (timbre/info
-         (format "Updated %s (%s): %s" username email new-role)))
-      (when action
-        (timbre/info
-         (format "Updated %s (%s): %s and %s"
-                 username email new-role action))))))
+      (let [msg (cond
+                  (and existing-person action)
+                  (format "Updated %s (%s): %s and %s"
+                          username email new-role-str action)
+                  action
+                  (format "Added %s (%s): %s and %s"
+                          username email new-role-str action)
+                  :else
+                  (format "Added %s (%s): %s" username email new-role-str))]
+        (timbre/info msg)))))
 
 ;; Check whether a report is an action against a known entity
 
