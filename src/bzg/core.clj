@@ -227,7 +227,7 @@
        (map :email)
        (into #{})))
 
-(defn- get-admins []
+(defn get-admins []
   (->> (filter :admin (get-persons))
        (map :email)
        (into #{})))
@@ -930,8 +930,8 @@
 
 (def woof-inbox-monitor (atom nil))
 
-(defn- read-and-process-mail [mail]
-  (->> mail
+(defn read-and-process-mail [mails]
+  (->> mails
        (map message/read-message)
        (map process-mail)
        doall))

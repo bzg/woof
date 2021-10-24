@@ -1,9 +1,7 @@
 (ns bzg.config-test
-  (:require [bzg.core :as core]
-            [bzg.config :as config]
+  (:require [bzg.config :as config]
             [clojure.spec.alpha :as spec]
-            [clojure.test :refer :all]
-            [clojure.java.shell :as sh]))
+            [clojure.test :refer [deftest is testing]]))
 
 (spec/def ::port string?)
 (spec/def ::db-dir string?)
@@ -15,23 +13,25 @@
 (spec/def ::inbox-server string?)
 (spec/def ::inbox-password string?)
 (spec/def ::inbox-folder string?)
-(spec/def ::mailing-list-address string?)
-(spec/def ::mail-url-format string?)
-(spec/def ::smtp-host string?)
-(spec/def ::smtp-login string?)
-(spec/def ::smtp-password string?)
-(spec/def ::title string?)
+
 (spec/def ::theme string?)
-(spec/def ::project-name string?)
-(spec/def ::project-url string?)
-(spec/def ::contribute-url string?)
-(spec/def ::contribute-cta string?)
-(spec/def ::contribute-cta-email string?)
-(spec/def ::support-url string?)
-(spec/def ::support-cta string?)
-(spec/def ::support-cta-email string?)
-(spec/def ::feed-title string?)
-(spec/def ::feed-description string?)
+
+(spec/def ::mailing-list-address (spec/nilable string?))
+(spec/def ::mail-url-format (spec/nilable string?))
+(spec/def ::smtp-host (spec/nilable string?))
+(spec/def ::smtp-login (spec/nilable string?))
+(spec/def ::smtp-password (spec/nilable string?))
+(spec/def ::title (spec/nilable string?))
+(spec/def ::project-name (spec/nilable string?))
+(spec/def ::project-url (spec/nilable string?))
+(spec/def ::contribute-url (spec/nilable string?))
+(spec/def ::contribute-cta (spec/nilable string?))
+(spec/def ::contribute-cta-email (spec/nilable string?))
+(spec/def ::support-url (spec/nilable string?))
+(spec/def ::support-cta (spec/nilable string?))
+(spec/def ::support-cta-email (spec/nilable string?))
+(spec/def ::feed-title (spec/nilable string?))
+(spec/def ::feed-description (spec/nilable string?))
 
 (spec/def ::config
   (spec/keys
@@ -45,21 +45,21 @@
             ::title
             ::project-name
             ::project-url]
-   :req-opt [::port
-             ::db-dir
-             ::log-file
-             ::base-url
-             ::admin-username
-             ::inbox-folder
-             ::mailing-list-address
-             ::mail-url-format
-             ::theme
-             ::contribute-url
-             ::contribute-cta
-             ::contribute-cta-email
-             ::support-url
-             ::support-cta
-             ::support-cta-email]))
+   :opt-un [::port
+            ::db-dir
+            ::log-file
+            ::base-url
+            ::admin-username
+            ::inbox-folder
+            ::mailing-list-address
+            ::mail-url-format
+            ::theme
+            ::contribute-url
+            ::contribute-cta
+            ::contribute-cta-email
+            ::support-url
+            ::support-cta
+            ::support-cta-email]))
 
 (deftest configuration
   (testing "Testing configuration"
