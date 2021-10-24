@@ -42,7 +42,17 @@
 		    {{change.subject}}
 		    {% endif %}
 		  </td>
-		  <td>{{change.username}}</td>
+		  <td>
+		    {% if change.admin %}
+		    <strong>{{change.username}}</strong>
+		    {% else %}
+		    {% if change.maintainer %}
+		    <em>{{change.username}}</em>
+		    {% else %}
+		    {{change.username}}
+		    {% endif %}
+		    {% endif %}
+		  </td>
 		  <td>{{change.date|date:shortDate}}</td>
 		  <td>{{change.backrefs}}</td>
 		</tr>
@@ -88,7 +98,17 @@
 		    {{change.subject}}
 		    {% endif %}
 		  </td>
-		  <td>{{change.username}}</td>
+		  <td>
+		    {% if change.admin %}
+		    <strong>{{change.username}}</strong>
+		    {% else %}
+		    {% if change.maintainer %}
+		    <em>{{change.username}}</em>
+		    {% else %}
+		    {{change.username}}
+		    {% endif %}
+		    {% endif %}
+		  </td>
 		  <td>{{change.date|date:shortDate}}</td>
 		  <td>{{change.backrefs}}</td>
 		</tr>
@@ -136,7 +156,17 @@
 		    {{release.subject}}
 		    {% endif %}
 		  </td>
-		  <td>{{release.username}}</td>
+		  <td>
+		    {% if release.admin %}
+		    <strong>{{release.username}}</strong>
+		    {% else %}
+		    {% if release.maintainer %}
+		    <em>{{release.username}}</em>
+		    {% else %}
+		    {{release.username}}
+		    {% endif %}
+		    {% endif %}
+		  </td>
 		  <td>{{release.date|date:shortDate}}</td>
 		  <td>{{release.backrefs}}</td>
 		</tr>

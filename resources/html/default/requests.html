@@ -44,7 +44,17 @@
 		    {{request.subject}}
 		    {% endif %}
 		  </td>
-		  <td>{{request.username}}</td>
+		  <td>
+		    {% if request.admin %}
+		    <strong>{{request.username}}</strong>
+		    {% else %}
+		    {% if request.maintainer %}
+		    <em>{{request.username}}</em>
+		    {% else %}
+		    {{request.username}}
+		    {% endif %}
+		    {% endif %}
+		  </td>
 		  <td>{{request.date|date:shortDate}}</td>
 		  <td>{{request.backrefs}}</td>
 		</tr>
@@ -83,7 +93,17 @@
 	      <tbody>
 		{% for request in handled-requests %}
 		<tr>
-		  <td>{{request.username}}</td>
+		  <td>
+		    {% if request.admin %}
+		    <strong>{{request.username}}</strong>
+		    {% else %}
+		    {% if request.maintainer %}
+		    <em>{{request.username}}</em>
+		    {% else %}
+		    {{request.username}}
+		    {% endif %}
+		    {% endif %}
+		  </td>
 		  <td>
 		    {% if request.link %}
 		    <a href="{{request.link}}" target="_blank" title="Visit email sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>

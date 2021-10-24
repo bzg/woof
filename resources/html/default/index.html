@@ -58,7 +58,17 @@
 		{{announcement.subject}}
 		{% endif %}
 	      </td>
-	      <td>{{announcement.username}}</td>
+	      <td>
+		{% if announcement.admin %}
+		<strong>{{announcement.username}}</strong>
+		{% else %}
+		{% if announcement.maintainer %}
+		<em>{{announcement.username}}</em>
+		{% else %}
+		{{announcement.username}}
+		{% endif %}
+		{% endif %}
+	      </td>
 	      <td>{{announcement.date|date:shortDate}}</td>
 	      <td>{{announcement.backrefs}}</td>
 	    </tr>

@@ -90,7 +90,11 @@
 (defn- get-reports-msgs [report-type reports]
   (->> (map #(d/entity db (:db/id (report-type %))) reports)
        (map #(dissoc (into {} %) :db/id))
-       (remove :deleted)))
+       (remove :deleted)
+       (map (fn [e] (let [roles (select-keys
+                                 (d/entity db [:email (:from e)])
+                                 [:admin :maintainer])]
+                      (merge e roles))))))
 
 (defn get-mails []
   (->> (d/q '[:find ?e :where [?e :message-id _]] db)

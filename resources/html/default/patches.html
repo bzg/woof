@@ -41,7 +41,17 @@
 		    {{patch.subject}}
 		    {% endif %}
 		  </td>
-		  <td>{{patch.username}}</td>
+		  <td>
+		    {% if patch.admin %}
+		    <strong>{{patch.username}}</strong>
+		    {% else %}
+		    {% if patch.maintainer %}
+		    <em>{{patch.username}}</em>
+		    {% else %}
+		    {{patch.username}}
+		    {% endif %}
+		    {% endif %}
+		  </td>
 		  <td>{{patch.date|date:shortDate}}</td>
 		  <td>{{patch.backrefs}}</td>
 		</tr>
@@ -84,7 +94,17 @@
 		    {{patch.subject}}
 		    {% endif %}
 		  </td>
-		  <td>{{patch.username}}</td>
+		  <td>
+		    {% if patch.admin %}
+		    <strong>{{patch.username}}</strong>
+		    {% else %}
+		    {% if patch.maintainer %}
+		    <em>{{patch.username}}</em>
+		    {% else %}
+		    {{patch.username}}
+		    {% endif %}
+		    {% endif %}
+		  </td>
 		  <td>{{patch.date|date:shortDate}}</td>
 		  <td>{{patch.backrefs}}</td>
 		</tr>

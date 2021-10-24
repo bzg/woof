@@ -43,7 +43,17 @@
 		    {{mail.subject}}
 		    {% endif %}
 		  </td>
-		  <td>{{mail.username}}</td>
+		  <td>
+		    {% if mail.admin %}
+		    <strong>{{mail.username}}</strong>
+		    {% else %}
+		    {% if mail.maintainer %}
+		    <em>{{mail.username}}</em>
+		    {% else %}
+		    {{mail.username}}
+		    {% endif %}
+		    {% endif %}
+		  </td>
 		  <td>{{mail.date|date:shortDate}}</td>
 		  <td>{{mail.backrefs}}</td>
 		</tr>
