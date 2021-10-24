@@ -15,7 +15,7 @@
 	  {% else %}
 	  <h1 id="upcoming-changes" class="title is-size-4">
 	    <span>
-	      {{changes|count}} upcoming change{{changes|pluralize}}
+	      {{changes|count}} upcoming change{{changes|pluralize}} to anticipate
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/changes.rss">RSS</a>{% endif %}
 	      {% if config.export.json %}<a class="tag is-success is-light" href="/changes.json">JSON</a>{% endif %}
 	      {% if config.export.org %}<a class="tag is-danger is-light" href="/changes.org">ORG</a>{% endif %}
@@ -57,11 +57,11 @@
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  {% ifequal released-changes|count 0 %}
-	  <h1 id="released-changes" class="title is-size-4">No latest released change</h1>
+	  <h1 id="released-changes" class="title is-size-4">No released change</h1>
 	  {% else %}
 	  <h1 id="released-changes" class="title is-size-4">
 	    <span>
-	      {{released-changes|count}} released change{{released-changes|pluralize}}
+	      {{released-changes|count}} released change{{released-changes|pluralize}} to be aware of
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/released-changes.rss">RSS</a>{% endif %}
 	      {% if config.export.json %}<a class="tag is-success is-light" href="/released-changes.json">JSON</a>{% endif %}
 	      {% if config.export.org %}<a class="tag is-danger is-light" href="/released-changes.org">ORG</a>{% endif %}

@@ -9,11 +9,11 @@
 	<div class="container">
 
 	  {% ifequal confirmed-bugs|count 0 %}
-	  <h1 id="confirmed-bugs" class="title is-size-4">No confirmed bug</h1>
+	  <h1 id="confirmed-bugs" class="title is-size-4">No bug to fix</h1>
 	  {% else %}
 	  <h1 id="confirmed-bugs" class="title is-size-4">
 	    <span>
-	      {{confirmed-bugs|count}} confirmed bug{{confirmed-bugs|pluralize}}
+	      {{confirmed-bugs|count}} bug{{confirmed-bugs|pluralize}} to fix
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/confirmed-bugs.rss">RSS</a>{% endif %}
 	      {% if config.export.json %}<a class="tag is-success is-light" href="/confirmed-bugs.json">JSON</a>{% endif %}
 	      {% if config.export.org %}<a class="tag is-danger is-light" href="/confirmed-bugs.org">ORG</a>{% endif %}
@@ -53,11 +53,11 @@
 	  {% endifequal %}
 
 	  {% ifequal unconfirmed-bugs|count 0 %}
-	  <h1 id="unconfirmed-bugs" class="title is-size-4">No unconfirmed bug</h1>
+	  <h1 id="unconfirmed-bugs" class="title is-size-4">No bug to confirm</h1>
 	  {% else %}
 	  <h1 id="unconfirmed-bugs" class="title is-size-4">
 	    <span>
-	      {{unconfirmed-bugs|count}} unconfirmed bug{{unconfirmed-bugs|pluralize}}
+	      {{unconfirmed-bugs|count}} bug{{unconfirmed-bugs|pluralize}} to confirm
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/unconfirmed-bugs.rss">RSS</a>{% endif %}
 	      {% if config.export.json %}<a class="tag is-success is-light" href="/unconfirmed-bugs.json">JSON</a>{% endif %}
 	      {% if config.export.org %}<a class="tag is-danger is-light" href="/unconfirmed-bugs.org">ORG</a>{% endif %}

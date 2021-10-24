@@ -9,11 +9,11 @@
 	<div class="container">
 
 	  {% ifequal unhandled-requests|count 0 %}
-	  <h1 id="unhandled-requests" class="title is-size-4">No unhandled request</h1>
+	  <h1 id="unhandled-requests" class="title is-size-4">No request to handle</h1>
 	  {% else %}
 	  <h1 id="unhandled-requests" class="title is-size-4">
 	    <span>
-	      {{unhandled-requests|count}} pending request{{unhandled-requests|pluralize}}
+	      {{unhandled-requests|count}} request{{unhandled-requests|pluralize}} to handle
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/unhandled-requests.rss">RSS</a>{% endif %}
 	      {% if config.export.json %}<a class="tag is-success is-light" href="/unhandled-requests.json">JSON</a>{% endif %}
 	      {% if config.export.org %}<a class="tag is-danger is-light" href="/unhandled-requests.org">ORG</a>{% endif %}
@@ -59,7 +59,7 @@
 	  {% else %}
 	  <h1 id="handled-requests" class="title is-size-4">
 	    <span>
-	      {{handled-requests|count}} request{{handled-requests|pluralize}} being handled
+	      {{handled-requests|count}} request{{handled-requests|pluralize}} currently handled
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/handled-requests.rss">RSS</a>{% endif %}
 	      {% if config.export.json %}<a class="tag is-success is-light" href="/handled-requests.json">JSON</a>{% endif %}
 	      {% if config.export.org %}<a class="tag is-danger is-light" href="/handled-requests.org">ORG</a>{% endif %}

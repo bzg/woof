@@ -10,11 +10,11 @@
 	<div id="mail" class="container">
 
 	  {% ifequal mails|count 0 %}
-	  <h1 id="mails" class="title is-size-4">No received mail</h1>
+	  <h1 id="mails" class="title is-size-4">No mail</h1>
 	  {% else %}
 	  <h1 id="mails" class="title is-size-4">
 	    <span>
-	      {{mails|count}} mail{{mails|pluralize}} received
+	      {{mails|count}} mail{{mails|pluralize}}
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/mails.rss">RSS</a>{% endif %}
 	      {% if config.export.json %}<a class="tag is-success is-light" href="/mails.json">JSON</a>{% endif %}
 	      {% if config.export.org %}<a class="tag is-danger is-light" href="/mails.org">ORG</a>{% endif %}

@@ -9,11 +9,11 @@
 	<div class="container">
 
 	  {% ifequal approved-patches|count 0 %}
-	  <h1 id="approved-patches" class="title is-size-4">No approved patch</h1>
+	  <h1 id="approved-patches" class="title is-size-4">No patch to apply</h1>
 	  {% else %}
 	  <h1 id="approved-patches" class="title is-size-4">
 	    <span>
-	      {{approved-patches|count}} approved patch{{approved-patches|e-pluralize}}
+	      {{approved-patches|count}} patch{{approved-patches|e-pluralize}} to apply
 	      {% if config.export.rss %}<a class="tag is-info is-light" href="/approved-patches.rss">RSS</a>{% endif %}
 	      {% if config.export.json %}<a class="tag is-success is-light" href="/approved-patches.json">JSON</a>{% endif %}
 	      {% if config.export.org %}<a class="tag is-danger is-light" href="/approved-patches.org">ORG</a>{% endif %}
