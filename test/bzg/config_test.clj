@@ -9,23 +9,17 @@
 (spec/def ::db-dir string?)
 (spec/def ::log-file string?)
 (spec/def ::base-url string?)
-
 (spec/def ::admin-address string?)
 (spec/def ::admin-username string?)
-
 (spec/def ::inbox-user string?)
 (spec/def ::inbox-server string?)
 (spec/def ::inbox-password string?)
 (spec/def ::inbox-folder string?)
-
 (spec/def ::mailing-list-address string?)
-
 (spec/def ::mail-url-format string?)
-
 (spec/def ::smtp-host string?)
 (spec/def ::smtp-login string?)
 (spec/def ::smtp-password string?)
-
 (spec/def ::title string?)
 (spec/def ::theme string?)
 (spec/def ::project-name string?)
@@ -38,7 +32,6 @@
 (spec/def ::support-cta-email string?)
 (spec/def ::feed-title string?)
 (spec/def ::feed-description string?)
-
 
 (spec/def ::config
   (spec/keys
@@ -70,4 +63,16 @@
 
 (deftest configuration
   (testing "Testing configuration"
+    (is (spec/valid? ::admin-address (:admin-address config/env)))
+    (is (spec/valid? ::inbox-user (:inbox-user config/env)))
+    (is (spec/valid? ::inbox-server (:inbox-server config/env)))
+    (is (spec/valid? ::inbox-user (:inbox-user config/env)))
+    (is (spec/valid? ::inbox-password (:inbox-password config/env)))
+    (is (spec/valid? ::inbox-folder (:inbox-folder config/env)))
+    (is (spec/valid? ::smtp-host (:smtp-host config/env)))
+    (is (spec/valid? ::smtp-login (:smtp-login config/env)))
+    (is (spec/valid? ::smtp-password (:smtp-password config/env)))
+    (is (spec/valid? ::title (:title config/env)))
+    (is (spec/valid? ::project-name (:project-name config/env)))
+    (is (spec/valid? ::project-url (:project-url config/env)))
     (is (spec/valid? ::config config/env))))
