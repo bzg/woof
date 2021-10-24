@@ -5,37 +5,37 @@
       <a title="Where contributors ask for help" href="/">Announcements</a>
     </li>
 
-    {% if config.features.change %}
+    {% if config.features.changes %}
     <li {% ifequal active "changes" %}class="is-active"{% endifequal %}>
       <a title="Important changes to be aware of" href="/changes">Changes</a>
     </li>
     {% endif %}
 
-    {% if config.features.request %}
+    {% if config.features.requests %}
     <li {% ifequal active "requests" %}class="is-active"{% endifequal %}>
       <a title="Where contributors ask for help" href="/requests">Requests</a>
     </li>
     {% endif %}
 
-    {% if config.features.bug %}
+    {% if config.features.bugs %}
     <li {% ifequal active "bugs" %}class="is-active"{% endifequal %}>
       <a title="All about bugs" href="/bugs">Bugs</a>
     </li>
     {% endif %}
 
-    {% if config.features.patch %}
+    {% if config.features.patches %}
     <li {% ifequal active "patches" %}class="is-active"{% endifequal %}>
       <a title="Patches" href="/patches">Patches</a>
     </li>
     {% endif %}
 
-    {% if config.features.mail %}
+    {% if config.features.mails %}
     <li {% ifequal active "mails" %}class="is-active"{% endifequal %}>
       <a title="Mail activity" href="/mails">Mails</a>
     </li>
     {% endif %}
 
-    {% if config.features.top %}
+    {% if config.features.tops %}
     <li {% ifequal active "top" %}class="is-active"{% endifequal %}>
       <a title="Top contributors" href="/top">Top</a>
     </li>

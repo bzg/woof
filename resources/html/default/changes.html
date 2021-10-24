@@ -7,7 +7,7 @@
 
       {% include "html/default/tabs.html" with active="changes" action-path="/changes" %}
 
-      {% if config.features.change %}
+      {% if config.features.changes %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  {% ifequal changes|count 0 %}
@@ -101,7 +101,7 @@
       </section>
       {% endif %}
 
-      {% if config.features.release %}
+      {% if config.features.releases %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  {% ifequal releases|count 0 %}

@@ -9,7 +9,7 @@
 	<div class="container">
 	  <div class="content">
 
-	    {% if config.features.bug %}
+	    {% if config.features.bugs %}
 	    {% ifequal top-bug-contributors|count 0 %}
 	    <h1 id="top-bug-contributors|count" class="title is-size-4">No bug contribution</h1>
 	    {% else %}
@@ -27,7 +27,7 @@
 	    {% endifequal %}
 	    {% endif %}
 
-	    {% if config.features.patch %}
+	    {% if config.features.patches %}
 	    {% ifequal top-patch-contributors|count 0 %}
 	    <h1 id="top-patch-contributors|count" class="title is-size-4">No patch contribution</h1>
 	    {% else %}
@@ -41,7 +41,7 @@
 	    {% endifequal %}
 	    {% endif %}
 
-	    {% if config.features.request %}
+	    {% if config.features.requests %}
 	    {% ifequal top-request-contributors|count 0 %}
 	    <h1 id="top-request-contributors|count" class="title is-size-4">No help request handled</h1>
 	    {% else %}
@@ -54,7 +54,7 @@
 	    {% endifequal %}
 	    {% endif %}
 
-	    {% if config.features.announcement %}
+	    {% if config.features.announcements %}
 	    {% ifequal top-announcement-contributors|count 0 %}
 	    <h1 id="top-announcement-contributors|count" class="title is-size-4">No announcement yet</h1>
 	    {% else %}

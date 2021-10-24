@@ -329,14 +329,27 @@
     ;; FIXME: Clumsy
     (when (d/transact! conn [person])
       (let [msg (cond
+                  (and existing-person role action)
+                  (format "Updated %s (%s) as %s: %s"
+                          username email new-role-str action)
                   (and existing-person action)
-                  (format "Updated %s (%s): %s and %s"
+                  (format "Updated %s (%s): %s"
+                          username email action)
+                  (and existing-person role)
+                  (format "Updated %s (%s): %s"
+                          username email new-role-str)
+                  (and role action)
+                  (format "Added %s (%s) as %s: %s"
                           username email new-role-str action)
                   action
-                  (format "Added %s (%s): %s and %s"
-                          username email new-role-str action)
+                  (format "Added %s (%s): %s"
+                          username email action)
+                  role
+                  (format "Added %s (%s) as %s"
+                          username email new-role-str)
                   :else
-                  (format "Added %s (%s): %s" username email new-role-str))]
+                  (format "%s (%s) already known as %s"
+                          username email new-role-str))]
         (timbre/info msg)))))
 
 ;; Check whether a report is an action against a known entity
@@ -835,16 +848,16 @@
 
       (cond
         ;; Detect a new bug/patch/request/announcement
-        (and (-> defaults :features :patch) (new-patch? msg))
+        (and (-> defaults :features :patches) (new-patch? msg))
         (report! {:patch (add-mail! msg)})
 
-        (and (-> defaults :features :bug) (new-bug? msg))
+        (and (-> defaults :features :bugs) (new-bug? msg))
         (report! {:bug (add-mail! msg)})
 
-        (and (-> defaults :features :request) (new-request? msg))
+        (and (-> defaults :features :requests) (new-request? msg))
         (report! {:request (add-mail! msg)})
 
-        (and (-> defaults :features :announcement)
+        (and (-> defaults :features :announcements)
              (new-announcement? msg))
         (report! {:announcement (add-mail! msg)})
 
@@ -853,14 +866,14 @@
         (or
          ;; Only maintainers can push changes and releases
          (when (some maintainers (list from))
-           (when (-> defaults :features :change)
+           (when (-> defaults :features :changes)
              (when-let [version (new-change? msg)]
                (if (some (get-all-releases) (list version))
                  (timbre/error
                   (format "%s tried to announce a change against released version %s"
                           from version))
                  (report! {:change (add-mail! msg) :version version}))))
-           (when (-> defaults :features :release)
+           (when (-> defaults :features :releases)
              (when-let [version (new-release? msg)]
                (let [release-id (add-mail! msg)]
                  (report! {:release release-id :version version})
@@ -902,25 +915,25 @@
 
                (or
                 ;; New action against a known patch
-                (when (-> defaults :features :patch)
+                (when (-> defaults :features :patches)
                   (when-let [{:keys [report-eid status]}
                              (is-report-update? :patch body-report references)]
                     (report! {:patch report-eid status (add-mail! msg)})))
 
                 ;; New action against a known bug
-                (when (-> defaults :features :bug)
+                (when (-> defaults :features :bugs)
                   (when-let [{:keys [report-eid status]}
                              (is-report-update? :bug body-report references)]
                     (report! {:bug report-eid status (add-mail! msg)})))
 
                 ;; New action against a known help request
-                (when  (-> defaults :features :request)
+                (when  (-> defaults :features :requests)
                   (when-let [{:keys [report-eid status]}
                              (is-report-update? :request body-report references)]
                     (report! {:request report-eid status (add-mail! msg)})))
 
                 ;; New action against a known announcement
-                (when  (-> defaults :features :announcement)
+                (when  (-> defaults :features :announcements)
                   (when-let [{:keys [report-eid status]}
                              (is-report-update? :announcement body-report references)]
                     (report! {:announcement report-eid status (add-mail! msg)})))
@@ -934,13 +947,13 @@
                     from))
                   (do
                     ;; New action against a known change announcement?
-                    (when (-> defaults :features :change)
+                    (when (-> defaults :features :changes)
                       (when-let [{:keys [report-eid status]}
                                  (is-report-update? :change body-report references)]
                         (report! {:change report-eid status (add-mail! msg)})))
 
                     ;; New action against a known release announcement?
-                    (when (-> defaults :features :release)
+                    (when (-> defaults :features :releases)
                       (when-let [{:keys [report-eid status]}
                                  (is-report-update? :release body-report references)]
                         (report! {:release report-eid status (add-mail! msg)})

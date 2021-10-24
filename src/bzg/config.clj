@@ -53,14 +53,14 @@
    :notifications true
    :features      {;; Each feature with a dedicated tab
                    ;; FIXME: prevent from removing announcements?
-                   :announcement true
-                   :bug          true
-                   :patch        true
-                   :change       true
-                   :release      true
-                   :request      true
-                   :top          false
-                   :mail         false
+                   :announcements true
+                   :bugs          true
+                   :patches       true
+                   :changes       true
+                   :releases      true
+                   :requests      true
+                   :tops          false
+                   :mails         false
                    }
    ;; Show only x latest releases/mails/announcements
    :max           {:releases      4
@@ -82,12 +82,12 @@
    :handled   "Handled"})
 
 (def reports
-  {:bug          #{:confirmed :canceled :fixed}
-   :patch        #{:approved :canceled :applied}
-   :request      #{:handled :canceled :done}
-   :change       #{:canceled}
-   :announcement #{:canceled}
-   :release      #{:canceled}})
+  {:bugs          #{:confirmed :canceled :fixed}
+   :patches       #{:approved :canceled :applied}
+   :requests      #{:handled :canceled :done}
+   :changes       #{:canceled}
+   :announcements #{:canceled}
+   :releases      #{:canceled}})
 
 (def admin-report-strings
   {;; Contributors actions
