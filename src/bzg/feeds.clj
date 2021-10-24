@@ -33,11 +33,11 @@
    :headers {"Content-Type" "application/xml"}
    :body
    (rss/channel-xml
-    {:title       (str (:feed-title config/env) " - " path)
+    {:title       (str (:project-name config/env) " - " path)
      :link        (string/replace
                    (:base-url config/env)
                    #"([^/])/*$" (str "$1/" path))
-     :description (str (:feed-description config/env) " - " path)}
+     :description (str (:title config/env) " - " path)}
     items)})
 
 (defn feed-updates [_]

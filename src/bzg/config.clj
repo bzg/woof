@@ -16,7 +16,7 @@
    :inbox-user     (System/getenv "WOOF_INBOX_USER")
    :inbox-server   (System/getenv "WOOF_INBOX_SERVER")
    :inbox-password (System/getenv "WOOF_INBOX_PASSWORD")
-   :inbox-folder   (System/getenv "WOOF_INBOX_FOLDER")
+   :inbox-folder   (or (System/getenv "WOOF_INBOX_FOLDER") "inbox")
 
    ;; The mailing list address that Woof! to which the monitored
    ;; mailbox is subscribed.
@@ -44,8 +44,6 @@
    :support-url          (System/getenv "WOOF_SUPPORT_URL")
    :support-cta          (System/getenv "WOOF_SUPPORT_CTA")
    :support-cta-email    (System/getenv "WOOF_SUPPORT_CTA_EMAIL")
-   :feed-title           (System/getenv "WOOF_FEED_TITLE")
-   :feed-description     (System/getenv "WOOF_FEED_DESCRIPTION")
    })
 
 (def defaults
