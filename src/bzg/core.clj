@@ -93,7 +93,7 @@
        (remove :deleted)))
 
 (defn get-mails []
-  (->> (d/q `[:find ?e :where [?e :message-id _]] db)
+  (->> (d/q '[:find ?e :where [?e :message-id _]] db)
        (map first)
        (map #(d/pull db '[*] %))
        (remove :private)
