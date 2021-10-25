@@ -1,23 +1,27 @@
 <footer class="footer">
   <div class="columns">
     <div class="column is-offset-3 is-6 has-text-centered">
-      <p>Feeds:	<a href="/bugs.rss">bugs</a>,
-	<a href="/patches.rss">patches</a>,
-	<a href="/requests.rss">requests</a>,
-	<a href="/announcements.rss">announcements</a>,
-	<a href="/changes.rss">changes</a>,
-	<a href="/releases.rss">releases</a> or
-	<a href="/updates.rss">important updates</a>
-      </p>
-      <p>Data: <a href="/bugs.json">bugs</a>,
-	<a href="/patches.json">patches</a>,
-	<a href="/requests.json">requests</a>,
-	<a href="/announcements.json">announcements</a>,
-	<a href="/changes.json">changes</a>,
-	<a href="/releases.json">releases</a> or
-	<a href="/updates.json">important updates</a>
-      </p>
-      <br>
+
+      <div class="content">
+
+	{% if config.export.rss %}
+	<a title="Subscribe to important updates via RSS" class="tag is-info is-light" href="/updates.rss">RSS</a>
+	{% endif %}
+
+	{% if config.export.json %}
+	<a title="Get important updates as a json file" class="tag is-success is-light" href="/updates.json">JSON</a>
+	{% endif %}
+
+	{% if config.export.org %}
+	<a title="Get important updates as an org file" class="tag is-danger is-light" href="/updates.org">ORG</a>
+	{% endif %}
+
+	{% if config.export.md %}
+	<a title="Get important updates as a markdown file" class="tag is-warning is-light" href="/updates.md">MD</a>
+	{% endif %}
+
+      </div>
+
       <p>Made with <a href="https://github.com/bzg/woof">🐕 Woof!</a></p>
     </div>
   </div>
