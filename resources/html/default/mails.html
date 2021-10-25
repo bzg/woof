@@ -5,10 +5,10 @@
     {% include "html/default/hero.html"%}
     <div class="container">
       {% include "html/default/tabs.html" with active="mails" action-path="/mails" %}
-
+      {% if config.features.mails %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div id="mail" class="container">
-
+	  
 	  {% ifequal mails|count 0 %}
 	  <h1 id="mails" class="title is-size-4">No mail</h1>
 	  {% else %}
@@ -60,10 +60,11 @@
 	    </table>
 	  </div>
 	  {% endifequal %}
-
 	</div>
       </section>
-
+      {% else %}
+      {% include "html/default/feature-not-enabled.html" %}
+      {% endif %}
     </div>
     {% include "html/default/footer.html" %}
   </body>

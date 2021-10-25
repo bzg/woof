@@ -4,9 +4,7 @@
   <body>
     {% include "html/default/hero.html"%}
     <div class="container">
-
       {% include "html/default/tabs.html" with active="changes" action-path="/changes" %}
-
       {% if config.features.changes %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
@@ -177,8 +175,9 @@
 	  {% endifequal %}
 	</div>
       </section>
+      {% else %}
+      {% include "html/default/feature-not-enabled.html" %}
       {% endif %}
-
     </div>
     {% include "html/default/footer.html" %}
   </body>
