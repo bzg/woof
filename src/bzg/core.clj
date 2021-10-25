@@ -214,14 +214,16 @@
          (get-reports-msgs :change))))
 
 (defn get-updates []
-  (flatten
-   (list
-    (get-confirmed-bugs)
-    (get-approved-patches)
-    (get-unhandled-requests)
-    (get-upcoming-changes)
-    (get-announcements)
-    (get-releases))))
+  (let [features (:features (d/entity db [:defaults "init"]))]
+    (->> (list
+          (when (:bugs features) (get-confirmed-bugs))
+          (when (:patches features) (get-approved-patches))
+          (when (:requests features) (get-unhandled-requests))
+          (when (:changes features) (get-upcoming-changes))
+          (when (:releases features) (get-releases))
+          (get-announcements))
+         (remove nil?)
+         flatten)))
 
 ;; Main admin functions
 
