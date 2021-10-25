@@ -48,7 +48,6 @@
 
 (def defaults
   {:theme         (:theme env)
-   :admin         (:admin-address env)
    :maintenance   false
    :notifications true
    :features      {;; Each feature with a dedicated tab
@@ -71,6 +70,23 @@
                    :org  true
                    :md   true
                    }})
+
+(def action-words
+  {:patches       "PATCH"
+   :bugs          "BUG"
+   :requests      "HELP"
+   :announcements "ANN"
+   :changes       "CHANGE"
+   :releases      "RELEASE"})
+
+(def action-re
+  {:patches       (re-pattern
+                   (format "^\\[%s(?: [0-9]+/[0-9]+)?\\].*$" (:patches action-words)))
+   :bugs          (re-pattern (format "^\\[%s\\].*$" (:bugs action-words)))
+   :requests      (re-pattern (format "^\\[%s\\].*$" (:requests action-words)))
+   :announcements (re-pattern (format "^\\[%s\\].*$" (:announcements action-words)))
+   :changes       (re-pattern (format "^\\[%s\\s*([^]]+)\\].*$" (:changes action-words)))
+   :releases      (re-pattern (format "^\\[%s\\s*([^]]+)\\].*$" (:releases action-words)))})
 
 (def report-strings
   {:applied   "Applied"

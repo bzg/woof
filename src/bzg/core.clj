@@ -504,7 +504,7 @@
 (defn- new-patch? [msg]
   (or
    ;; New patches with a subject starting with "[PATCH"
-   (re-matches #"^\[PATCH(?: [0-9]+/[0-9]+)?].*$" (:subject msg))
+   (re-matches (:patches config/action-re) (:subject msg))
    ;; New patches with a text/x-diff or text/x-patch MIME part
    (and (:multipart? msg)
         (not-empty
@@ -512,20 +512,20 @@
                  (map :content-type (:body msg)))))))
 
 (defn- new-bug? [msg]
-  (re-matches #"^\[BUG].*$" (:subject msg)))
+  (re-matches (:bugs config/action-re) (:subject msg)))
 
 (defn- new-request? [msg]
-  (re-matches #"^\[HELP].*$" (:subject msg)))
+  (re-matches (:requests config/action-re) (:subject msg)))
 
 (defn- new-announcement? [msg]
-  (re-matches #"^\[ANN].*$" (:subject msg)))
+  (re-matches (:announcements config/action-re) (:subject msg)))
 
 (defn- new-change? [msg]
-  (when-let [m (re-matches #"^\[CHANGE\s*([^]]+)].*$" (:subject msg))]
+  (when-let [m (re-matches (:changes config/action-re) (:subject msg))]
     (peek m)))
 
 (defn- new-release? [msg]
-  (when-let [m (re-matches #"^\[RELEASE\s*([^]]+)].*$" (:subject msg))]
+  (when-let [m (re-matches (:releases config/action-re) (:subject msg))]
     (peek m)))
 
 (defn- add-admin! [cmd-val from]
