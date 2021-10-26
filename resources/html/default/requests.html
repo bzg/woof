@@ -25,15 +25,27 @@
 	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
+		  <th class="has-text-centered" width="3%">iI!</th>
 		  <th>Subject</th>
 		  <th width="15%"><a href="?sorting-by=user#unhandled-requests" title="Sort help requests by author">From<a></th>
 		  <th width="15%"><a href="?sorting-by=date#unhandled-requests" title="Sort help requests by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs#unhandled-requests" title="Sort help requests by number of references">Refs</a></th>
+		  <th class="has-text-centered" width="5%"><a href="?sorting-by=refs#unhandled-requests" title="Sort help requests by number of references">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
 		{% for request in unhandled-requests %}
 		<tr>
+		  <td class="has-text-centered">
+		    {% ifequal request.priority 2 %}
+		    🟥
+		    {% else %}
+		    {% ifequal request.priority 1 %}
+		    🟧
+		    {% else %}
+		    🟨
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
 		  <td>
 		    {% if request.link %}
 		    <a href="{{request.link}}" target="_blank" title="Visit email sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>
@@ -77,15 +89,27 @@
 	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
+		  <th class="has-text-centered" width="3%">iI!</th>
 		  <th>Subject</th>
 		  <th width="15%"><a href="?sorting-by=user#handled-requests" title="Sort help requests by author">From<a></th>
 		  <th width="15%"><a href="?sorting-by=date#handled-requests" title="Sort help requests by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs#handled-requests" title="Sort help requests by number of references">Refs</a></th>
+		  <th class="has-text-centered" width="5%"><a href="?sorting-by=refs#handled-requests" title="Sort help requests by number of references">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
 		{% for request in handled-requests %}
 		<tr>
+		  <td class="has-text-centered">
+		    {% ifequal request.priority 2 %}
+		    🟥
+		    {% else %}
+		    {% ifequal request.priority 1 %}
+		    🟧
+		    {% else %}
+		    🟨
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
 		  <td>
 		    {% if request.link %}
 		    <a href="{{request.link}}" target="_blank" title="Visit email sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>

@@ -97,13 +97,21 @@
    :fixed     "Fixed"
    :handled   "Handled"})
 
+(def report-keywords-all
+  (let [ks (keys report-strings)]
+    (concat ks (map #(keyword (str "un" (name %))) ks))))
+
 (def reports
   {:bugs          #{:confirmed :canceled :fixed}
    :patches       #{:approved :canceled :applied}
+   ;; FIXME: Allow to approve requests and announcements
    :requests      #{:handled :canceled :done}
-   :changes       #{:canceled}
    :announcements #{:canceled}
+   :changes       #{:canceled}
    :releases      #{:canceled}})
+
+(def report-types
+  [:bug :patch :request :change :announcement :release])
 
 (def admin-report-strings
   {;; Contributors actions
@@ -139,6 +147,9 @@
                   :global-notifications}
    :maintainer  #{:maintenance :add-maintainer :delete :ignore}
    :contributor #{:notifications :home :support}})
+
+;; Set default priority for all reports
+(def priority 0)
 
 (defn format-email-notification
   [{:keys [notification-type from id

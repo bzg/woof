@@ -24,15 +24,27 @@
 	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
+		  <th class="has-text-centered" width="3%">iI!</th>
 		  <th>Subject</th>
 		  <th width="15%"><a href="?sorting-by=user#uncomping-changes" title="Sort by author">From<a></th>
 		  <th width="15%"><a href="?sorting-by=date#upcoming-changes" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs#upcoming-changes" title="Sort by refs">Refs</a></th>
+		  <th class="has-text-centered" width="5%"><a href="?sorting-by=refs#upcoming-changes" title="Sort by refs">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
 		{% for change in changes %}
 		<tr>
+		  <td class="has-text-centered">
+		    {% ifequal change.priority 2 %}
+		    🟥
+		    {% else %}
+		    {% ifequal change.priority 1 %}
+		    🟧
+		    {% else %}
+		    🟨
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
 		  <td>
 		    {% if change.link %}
 		    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
@@ -80,15 +92,27 @@
 	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
+		  <th class="has-text-centered" width="3%">iI!</th>
 		  <th>Subject</th>
 		  <th width="15%"><a href="?sorting-by=user#released-changes" title="Sort by author">From<a></th>
 		  <th width="15%"><a href="?sorting-by=date#released-changes" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs#released-changes" title="Sort by refs">Refs</a></th>
+		  <th class="has-text-centered" width="5%"><a href="?sorting-by=refs#released-changes" title="Sort by refs">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
 		{% for change in released-changes %}
 		<tr>
+		  <td class="has-text-centered">
+		    {% ifequal change.priority 2 %}
+		    🟥
+		    {% else %}
+		    {% ifequal change.priority 1 %}
+		    🟧
+		    {% else %}
+		    🟨
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
 		  <td>
 		    {% if change.link %}
 		    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
@@ -138,15 +162,27 @@
 	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
+		  <th class="has-text-centered" width="3%">iI!</th>
 		  <th>Subject</th>
 		  <th width="15%"><a href="?sorting-by=user#releases" title="Sort by author">From<a></th>
 		  <th width="15%"><a href="?sorting-by=date#releases" title="Sort by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs#releases" title="Sort by refs">Refs</a></th>
+		  <th class="has-text-centered" width="5%"><a href="?sorting-by=refs#releases" title="Sort by refs">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
 		{% for release in releases %}
 		<tr>
+		  <td class="has-text-centered">
+		    {% ifequal release.priority 2 %}
+		    🟥
+		    {% else %}
+		    {% ifequal release.priority 1 %}
+		    🟧
+		    {% else %}
+		    🟨
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
 		  <td>
 		    {% if release.link %}
 		    <a href="{{release.link}}" target="_blank" title="Visit email sent by {{release.from}} on {{release.date}}">{{release.subject}}</a>

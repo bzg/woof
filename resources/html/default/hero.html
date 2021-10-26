@@ -1,5 +1,5 @@
 <section class="hero">
-  <div class="hero-body" style="padding: 0.4rem 1.2rem">
+  <div class="hero-body" style="padding: 2rem 1.2rem">
     <h1 class="title has-text-centered" style="margin-bottom: 1em;">{{title}}</h1>
     <h2 class="subtitle column is-8 is-offset-2 has-text-centered" style="margin-bottom:0;">
       <a title="Go the the main page" href="/">Home</a> — <a title="Go the project's homepage" href="{{project-url}}">{{project-name}}</a>
@@ -7,5 +7,21 @@
       {% if support-cta %}— <a title="Support this project" href="{{support-url}}">{{support-cta}}</a>{% endif %}
       — <a href="/howto" title="How to use Woof! to update this page?">Howto</a>
     </h2>
+
+    <div class="columns">
+      <div class="column is-offset-4 is-4">
+	<div class="level">
+	  <form action="{{action-path}}" class="level-item">
+	    <input class="input" name="search" value="{{config.search}}"
+		   placeHolder="Plain text search" type="text">
+	    <button class="button is-success is-light" type="submit">Filter</button>
+	  </form>
+	  <form action="{{action-path}}">
+	    <input name="search" type="hidden" value="">
+	    <button class="button is-danger is-light" type="submit">❌</button>
+	  </form>
+	</div>
+      </div>
+    </div>
   </div>
 </section>

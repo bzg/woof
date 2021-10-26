@@ -25,15 +25,27 @@
 	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
+		  <th class="has-text-centered" width="3%">iI!</th>
 		  <th>Subject</th>
 		  <th width="15%"><a href="?sorting-by=user#mail" title="Sort mails by author">From<a></th>
 		  <th width="15%"><a href="?sorting-by=date#mail" title="Sort mails by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs#mail" title="Sort mails by number of references">Refs</a></th>
+		  <th class="has-text-centered" width="5%"><a href="?sorting-by=refs#mail" title="Sort mails by number of references">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
 		{% for mail in mails %}
 		<tr>
+		  <td class="has-text-centered">
+		    {% ifequal mail.priority 2 %}
+		    🟥
+		    {% else %}
+		    {% ifequal mail.priority 1 %}
+		    🟧
+		    {% else %}
+		    🟨
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
 		  <td>
 		    {% if mail.link %}
 		    <a href="{{mail.link}}" target="_blank" title="Visit email sent by {{mail.from}} on {{mail.date}}">{{mail.subject}}</a>

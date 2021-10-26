@@ -94,8 +94,8 @@
     (merge e {:role roles})))
 
 (defn- get-reports-msgs [report-type reports]
-  (->> (map #(d/entity db (:db/id (report-type %))) reports)
-       (map #(dissoc (into {} %) :db/id))
+  (->> (map #(assoc (into {} (d/entity db (:db/id (report-type %))))
+                    :priority (:priority %)) reports)
        (remove :deleted)
        (map add-role)))
 
@@ -130,6 +130,8 @@
        (get-reports-msgs :announcement)
        (take (-> (d/entity db [:defaults "init"]) :max :announcements))))
 
+;; FIXME: Handle priority:
+;; (remove #(if-let [p (:priority %)] (< p 2) true))
 (defn get-confirmed-bugs []
   (->> (get-reports :bug)
        (filter :confirmed)
@@ -371,8 +373,11 @@
 (defn- report-strings-all [report-type]
   (let [report-type
         (condp = report-type
-          :bug    :bugs    :patch        :patches       :request :requests
-          :change :changes :announcement :announcements :release :releases)
+          :bug           :bugs    :patch
+          :patches       :request :requests
+          :change        :changes :announcement
+          :announcements :release :releases
+          nil)
         report-do   (map #(% config/report-strings)
                          (report-type config/reports))
         report-undo (map #(string/capitalize (str "Un" %)) report-do)]
@@ -388,7 +393,7 @@
         all      (into #{} (concat all-do all-undo))]
     (->> all
          (string/join "|")
-         (format "(%s)[;,:.].*")
+         (format "(%s)(?: \\(([^)\\s]+)\\))?[;,:.].*")
          re-pattern)))
 
 (defn- is-in-a-known-thread? [references]
@@ -400,7 +405,8 @@
 (defn- is-report-update? [report-type body-report references]
   ;; Is there a known action (e.g. "Canceled") for this report type
   ;; in the body of the email?
-  (when-let [action (some (report-strings-all report-type) body-report)]
+  (when-let [action (some (report-strings-all report-type)
+                          (list (first body-report)))]
     ;; Is this action against a known report, and if so, which one?
     (when-let [e (-> #(ffirst (d/q `[:find ?e
                                      :where
@@ -411,6 +417,8 @@
                      (as-> refs (remove nil? refs))
                      first)]
       {:status     (keyword (string/lower-case action))
+       :priority   (if-let [p (last body-report)]
+                     (condp = p "high" 2 "medium" 1 0) 0)
        :report-eid (report-type (d/entity db e))})))
 
 ;; Setup logging
@@ -553,7 +561,7 @@
           (timbre/error "Trying to remove the root admin: ignore")
           (when-let [output
                      (d/transact!
-                      conn [(d/retract (d/entity db [:email email]) :admin)])]
+                      conn [[:db/retract (d/entity db [:email email]) :admin]])]
             (timbre/info (format "%s has been denied admin permissions" email))
             output))))))
 
@@ -579,7 +587,7 @@
     (doseq [email emails]
       (when-let [output
                  (d/transact!
-                  conn [(d/retract (d/entity db [:email email]) :maintainer)])]
+                  conn [[:db/retract (d/entity db [:email email]) :maintainer]])]
         (timbre/info (format "%s has been removed maintainer permissions" email))
         output))))
 
@@ -626,7 +634,7 @@
     (doseq [email emails]
       (when-let [output
                  (d/transact!
-                  conn [(d/retract (d/entity db [:email email]) :ignored)])]
+                  conn [[:db/retract (d/entity db [:email email]) :ignored]])]
         (timbre/info (format "Mails from %s won't be ignored anymore" email))
         output))))
 
@@ -733,24 +741,15 @@
           nil)))
     (add-mail-private! msg)))
 
+(defn- contained 
+  "Return the first element from l that m contains."
+  [m l]
+  (->> (map #(when (contains? m %) %) l) (remove nil?) first))
+
+;; FIXME: Factor out report-update! from report! ?
 (defn- report! [action]
-  (let [action-type   (condp #(%1 %2) action
-                        :bug          :bug
-                        :patch        :patch
-                        :request      :request
-                        :change       :change
-                        :announcement :announcement
-                        :release      :release
-                        (timbre/error "Cannot get report type"))
-        action-status (condp #(%1 %2) action
-                        :confirmed :confirmed
-                        :canceled  :canceled
-                        :applied   :applied
-                        :approved  :approved
-                        :done      :done
-                        :fixed     :fixed
-                        :handled   :handled
-                        nil)
+  (let [action-type   (contained action config/report-types)
+        action-status (contained action config/report-keywords-all)
         action-string (name action-type)
         status-string (when action-status (name action-status))
 
@@ -758,20 +757,28 @@
         op-report-msg (d/entity db (:db/id (action-type action)))
         op-from       (:from op-report-msg)
         op-msgid      (:message-id op-report-msg)
-        op-msg        {:id   op-msgid :subject    (:subject op-report-msg)
-                       :from op-from  :references (:references op-report-msg)}
+        op-msg        {:id         op-msgid
+                       :subject    (:subject op-report-msg)
+                       :from       op-from
+                       :references (:references op-report-msg)}
         ;; Get the report against an existing one
         report-msg    (when action-status
                         (d/entity db (:db/id (action-status action))))
         from          (or (:from report-msg) op-from)
         msgid         (or (:message-id report-msg) op-msgid)
-        msg           {:id   msgid :subject    (:subject report-msg)
-                       :from from  :references (:references report-msg)}
+        msg           {:id         msgid
+                       :subject    (:subject report-msg)
+                       :from       from
+                       :references (:references report-msg)}
         ;; Get other info
         username      (or (:username report-msg)
                           (:username op-report-msg) from)
         action-status {:action-string action-string
                        :status-string status-string}
+        ;; Maybe add default priority
+        action        (if-let [p (:priority action)]
+                        action
+                        (assoc action :priority config/priority))
         admin-or-maintainer?
         (or (:admin (d/entity db [:email from]))
             (:maintainer (d/entity db [:email from])))]
@@ -781,9 +788,11 @@
 
     ;; Add or retract status
     (if-let [m (when (not-empty status-string)
-                 (re-matches #"un(.+)" status-string))]
-      (d/transact! conn [[:db/retract (:db/id report-msg) (keyword (peek m))]])
-      (d/transact! conn [(into {} (map (fn [[k v]] [k (:db/id v)]) action))]))
+                 (re-matches #"^un(.+)" status-string))]
+      (d/transact! conn [[:db/retract [action-type (:db/id op-report-msg)] (keyword (peek m))]])
+      (d/transact! conn [(->> action
+                              (map (fn [[k v]] [k (if (integer? v) v (:db/id v))]))
+                              (into {}))]))
 
     (if status-string
       ;; Report against a known entry
@@ -930,33 +939,38 @@
                  [body-report
                   (->> body-seq
                        (map #(when-let [m (re-matches report-strings-re %)]
-                               (peek m)))
-                       (remove nil?))]
+                               (take-last 2 m)))
+                       (remove nil?)
+                       first)]
 
                (or
                 ;; New action against a known patch
                 (when (-> defaults :features :patches)
-                  (when-let [{:keys [report-eid status]}
+                  (when-let [{:keys [report-eid status priority]}
                              (is-report-update? :patch body-report references)]
-                    (report! {:patch report-eid status (add-mail! msg)})))
+                    (report! {:patch    report-eid status (add-mail! msg)
+                              :priority priority})))
 
                 ;; New action against a known bug
                 (when (-> defaults :features :bugs)
-                  (when-let [{:keys [report-eid status]}
+                  (when-let [{:keys [report-eid status priority]}
                              (is-report-update? :bug body-report references)]
-                    (report! {:bug report-eid status (add-mail! msg)})))
+                    (report! {:bug      report-eid status (add-mail! msg)
+                              :priority priority})))
 
                 ;; New action against a known help request
                 (when  (-> defaults :features :requests)
-                  (when-let [{:keys [report-eid status]}
+                  (when-let [{:keys [report-eid status priority]}
                              (is-report-update? :request body-report references)]
-                    (report! {:request report-eid status (add-mail! msg)})))
+                    (report! {:request  report-eid status (add-mail! msg)
+                              :priority priority})))
 
                 ;; New action against a known announcement
                 (when  (-> defaults :features :announcements)
-                  (when-let [{:keys [report-eid status]}
+                  (when-let [{:keys [report-eid status priority]}
                              (is-report-update? :announcement body-report references)]
-                    (report! {:announcement report-eid status (add-mail! msg)})))
+                    (report! {:announcement report-eid status (add-mail! msg)
+                              :priority     priority})))
 
                 ;; Finally, maintainers can perform actions against
                 ;; existing changes/releases
@@ -968,15 +982,17 @@
                   (do
                     ;; New action against a known change announcement?
                     (when (-> defaults :features :changes)
-                      (when-let [{:keys [report-eid status]}
+                      (when-let [{:keys [report-eid status priority]}
                                  (is-report-update? :change body-report references)]
-                        (report! {:change report-eid status (add-mail! msg)})))
+                        (report! {:change   report-eid status (add-mail! msg)
+                                  :priority priority})))
 
                     ;; New action against a known release announcement?
                     (when (-> defaults :features :releases)
-                      (when-let [{:keys [report-eid status]}
+                      (when-let [{:keys [report-eid status priority]}
                                  (is-report-update? :release body-report references)]
-                        (report! {:release report-eid status (add-mail! msg)})
+                        (report! {:release  report-eid status (add-mail! msg)
+                                  :priority priority})
                         (unrelease-changes! report-eid))))))))))))))
 
 ;;; Inbox monitoring

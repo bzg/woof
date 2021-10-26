@@ -25,15 +25,27 @@
 	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
+		  <th class="has-text-centered" width="3%">iI!</th>
 		  <th>Subject</th>
 		  <th width="15%"><a href="?sorting-by=user#confirmed-bugs" title="Sort bugs by author">From<a></th>
 		    <th width="15%"><a href="?sorting-by=date#confirmed-bugs" title="Sort bugs by date">Date</a></th>
-		    <th width="5%"><a href="?sorting-by=refs#confirmed-bugs" title="Sort bugs by number of references">Refs</a></th>
+		    <th class="has-text-centered" width="5%"><a href="?sorting-by=refs#confirmed-bugs" title="Sort bugs by number of references">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
 		{% for bug in confirmed-bugs %}
 		<tr>
+		  <td class="has-text-centered">
+		    {% ifequal bug.priority 2 %}
+		    🟥
+		    {% else %}
+		    {% ifequal bug.priority 1 %}
+		    🟧
+		    {% else %}
+		    🟨
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
 		  <td>
 		    {% if bug.link %}
 		    <a href="{{bug.link}}" target="_blank" title="Visit email sent by {{bug.from}} on {{bug.date}}">{{bug.subject}}</a>
@@ -43,7 +55,7 @@
 		  </td>
 		  <td>{{bug.username}}</td>
 		  <td>{{bug.date|date:shortDate}}</td>
-		  <td>{{bug.backrefs}}</td>
+		  <td class="has-text-centered">{{bug.backrefs}}</td>
 		</tr>
 		{% endfor %}
 	      </tbody>
@@ -67,15 +79,27 @@
 	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
+		  <th class="has-text-centered" width="3%">iI!</th>
 		  <th>Subject</th>
 		  <th width="15%"><a href="?sorting-by=user#unconfirmed-bugs" title="Sort bugs by author">From<a></th>
 		    <th width="15%"><a href="?sorting-by=date#unconfirmed-bugs" title="Sort bugs by date">Date</a></th>
-		    <th width="5%"><a href="#unconfirmed-bugs?sorting-by=refs" title="Sort bugs by number of references">Refs</a></th>
+		    <th class="has-text-centered" width="5%"><a href="#unconfirmed-bugs?sorting-by=refs" title="Sort bugs by number of references">Refs</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
 		{% for bug in unconfirmed-bugs %}
 		<tr>
+		  <td class="has-text-centered">
+		    {% ifequal bug.priority 2 %}
+		    🟥
+		    {% else %}
+		    {% ifequal bug.priority 1 %}
+		    🟧
+		    {% else %}
+		    🟨
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
 		  <td>
 		    {% if bug.link %}
 		    <a href="{{bug.link}}" target="_blank" title="Visit email sent by {{bug.from}} on {{bug.date}}">{{bug.subject}}</a>

@@ -67,6 +67,7 @@
          (concat
           (map #(feed-item % what)
                (condp = what
+                 ;; FIXME: Check config.features
                  :confirmed-bugs     (core/get-confirmed-bugs)
                  :unconfirmed-bugs   (core/get-unconfirmed-bugs)
                  :bugs               (core/get-unfixed-bugs)

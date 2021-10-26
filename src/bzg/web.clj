@@ -6,7 +6,7 @@
             [bzg.config :as config]
             [bzg.feeds :as feeds]
             [reitit.ring.middleware.muuntaja :as muuntaja]
-            ;; [ring.middleware.reload :as reload]
+            [ring.middleware.reload :as reload]
             [ring.middleware.params :as params]
             [muuntaja.core :as m]
             [reitit.ring.middleware.parameters :as parameters]
@@ -275,11 +275,11 @@
 
 (def woof-server)
 (mount/defstate ^{:on-reload :noop} woof-server
-  ;; :start (server/run-server
-  ;;         (reload/wrap-reload handler {:dirs ["src" "resources"]})
-  ;;         {:port (edn/read-string (:port config/env))})
   :start (server/run-server
-          handler {:port (edn/read-string (:port config/env))})
+          (reload/wrap-reload handler {:dirs ["src" "resources"]})
+          {:port (edn/read-string (:port config/env))})
+  ;; :start (server/run-server
+  ;;         handler {:port (edn/read-string (:port config/env))})
   :stop (when woof-server (woof-server :timeout 100)))
 
 (defn -main []

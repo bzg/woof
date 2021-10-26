@@ -41,16 +41,28 @@
 	<table class="table is-hoverable is-bordered is-fullwidth">
 	  <thead>
 	    <tr>
+	      <th class="has-text-centered" width="3%">iI!</th>
 	      <th>Subject</th>
 	      <th width="15%"><a href="?sorting-by=user#announcements" title="Sort announcements by author">From<a></th>
 	      <th width="15%"><a href="?sorting-by=date#announcements" title="Sort announcements by date">Date</a></th>
-	      <th width="5%"><a href="?sorting-by=refs#announcements" title="Sort announcements by number of references">Refs</a>
+	      <th class="has-text-centered" width="5%"><a href="?sorting-by=refs#announcements" title="Sort announcements by number of references">Refs</a>
 	      </th>
 	    </tr>
 	  </thead>
 	  <tbody>
 	    {% for announcement in announcements %}
 	    <tr>
+	      <td class="has-text-centered">
+		{% ifequal announcement.priority 2 %}
+		🟥
+		{% else %}
+		{% ifequal announcement.priority 1 %}
+		🟧
+		{% else %}
+		🟨
+		{% endifequal %}
+		{% endifequal %}
+	      </td>
 	      <td>
 		{% if announcement.link %}
 		<a href="{{announcement.link}}" target="_blank" title="Visit email sent by {{announcement.from}} on {{announcement.date}}">{{announcement.subject}}</a>

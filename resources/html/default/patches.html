@@ -25,16 +25,28 @@
 	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
+		  <th class="has-text-centered" width="3%">iI!</th>
 		  <th>Subject</th>
 		  <th width="15%"><a href="?sorting-by=user#approved-patches" title="Sort patches by author">From<a></th>
 		  <th width="15%"><a href="?sorting-by=date#approved-patches" title="Sort patches by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs#approved-patches" title="Sort patches by number of references">Refs</a>
+		  <th class="has-text-centered" width="5%"><a href="?sorting-by=refs#approved-patches" title="Sort patches by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>
 	      <tbody>
 		{% for patch in approved-patches %}
 		<tr>
+		  <td class="has-text-centered">
+		    {% ifequal patch.priority 2 %}
+		    🟥
+		    {% else %}
+		    {% ifequal patch.priority 1 %}
+		    🟧
+		    {% else %}
+		    🟨
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
 		  <td>
 		    {% if patch.link %}
 		    <a href="{{patch.link}}" target="_blank" title="Visit email sent by {{patch.from}} on {{patch.date}}">{{patch.subject}}</a>
@@ -78,16 +90,28 @@
 	    <table class="table is-hoverable is-bordered is-fullwidth">
 	      <thead>
 		<tr>
+		  <th class="has-text-centered" width="3%">iI!</th>
 		  <th>Subject</th>
 		  <th width="15%"><a href="?sorting-by=user#unapproved-patches" title="Sort patches by author">From<a></th>
 		  <th width="15%"><a href="?sorting-by=date#unapproved-patches" title="Sort patches by date">Date</a></th>
-		  <th width="5%"><a href="?sorting-by=refs#unapproved-patches" title="Sort patches by number of references">Refs</a>
+		  <th class="has-text-centered" width="5%"><a href="?sorting-by=refs#unapproved-patches" title="Sort patches by number of references">Refs</a>
 		  </th>
 		</tr>
 	      </thead>
 	      <tbody>
 		{% for patch in unapproved-patches %}
 		<tr>
+		  <td class="has-text-centered">
+		    {% ifequal patch.priority 2 %}
+		    🟥
+		    {% else %}
+		    {% ifequal patch.priority 1 %}
+		    🟧
+		    {% else %}
+		    🟨
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
 		  <td>
 		    {% if patch.link %}
 		    <a href="{{patch.link}}" target="_blank" title="Visit email sent by {{patch.from}} on {{patch.date}}">{{patch.subject}}</a>
