@@ -10,17 +10,32 @@
     <dependency>
       <groupId>metosin</groupId>
       <artifactId>reitit-middleware</artifactId>
-      <version>0.5.5</version>
+      <version>0.5.15</version>
+    </dependency>
+    <dependency>
+      <groupId>selmer</groupId>
+      <artifactId>selmer</artifactId>
+      <version>1.12.44</version>
     </dependency>
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.10.1</version>
+      <version>1.10.3</version>
+    </dependency>
+    <dependency>
+      <groupId>ring</groupId>
+      <artifactId>ring-devel</artifactId>
+      <version>1.9.4</version>
+    </dependency>
+    <dependency>
+      <groupId>com.draines</groupId>
+      <artifactId>postal</artifactId>
+      <version>2.0.4</version>
     </dependency>
     <dependency>
       <groupId>metosin</groupId>
       <artifactId>muuntaja</artifactId>
-      <version>0.6.7</version>
+      <version>0.6.8</version>
     </dependency>
     <dependency>
       <groupId>ring-cors</groupId>
@@ -28,9 +43,14 @@
       <version>0.1.13</version>
     </dependency>
     <dependency>
+      <groupId>markdown-clj</groupId>
+      <artifactId>markdown-clj</artifactId>
+      <version>1.10.6</version>
+    </dependency>
+    <dependency>
       <groupId>metosin</groupId>
       <artifactId>reitit-ring</artifactId>
-      <version>0.5.5</version>
+      <version>0.5.15</version>
     </dependency>
     <dependency>
       <groupId>tea-time</groupId>
@@ -38,19 +58,14 @@
       <version>1.0.1</version>
     </dependency>
     <dependency>
-      <groupId>com.sun.mail</groupId>
-      <artifactId>javax.mail</artifactId>
-      <version>1.6.2</version>
+      <groupId>datalevin</groupId>
+      <artifactId>datalevin</artifactId>
+      <version>0.5.26</version>
     </dependency>
     <dependency>
-      <groupId>hiccup</groupId>
-      <artifactId>hiccup</artifactId>
-      <version>1.0.5</version>
-    </dependency>
-    <dependency>
-      <groupId>clojure.java-time</groupId>
-      <artifactId>clojure.java-time</artifactId>
-      <version>0.3.2</version>
+      <groupId>com.taoensso</groupId>
+      <artifactId>timbre</artifactId>
+      <version>5.1.2</version>
     </dependency>
     <dependency>
       <groupId>io.forward</groupId>
@@ -60,7 +75,7 @@
     <dependency>
       <groupId>clj-rss</groupId>
       <artifactId>clj-rss</artifactId>
-      <version>0.2.5</version>
+      <version>0.2.7</version>
     </dependency>
     <dependency>
       <groupId>mount</groupId>
@@ -70,17 +85,22 @@
     <dependency>
       <groupId>metosin</groupId>
       <artifactId>jsonista</artifactId>
-      <version>0.2.7</version>
+      <version>0.3.4</version>
     </dependency>
     <dependency>
       <groupId>metosin</groupId>
       <artifactId>reitit</artifactId>
-      <version>0.5.5</version>
+      <version>0.5.15</version>
+    </dependency>
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>core.async</artifactId>
+      <version>1.3.622</version>
     </dependency>
     <dependency>
       <groupId>http-kit</groupId>
       <artifactId>http-kit</artifactId>
-      <version>2.4.0</version>
+      <version>2.5.3</version>
     </dependency>
   </dependencies>
   <build>
