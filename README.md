@@ -63,14 +63,17 @@ Depuis with:
 
 # Contribute
 
-Feedback and contributions are welcome, you can e.g.:
+Contributions are welcome.  You can send feedback and patches to
+[~bzg/dev@lists.sr.ht](mailto:~bzg/dev@lists.sr.ht).  For patches, please configure your local copy
+of the repository to add a prefix to the subject line of your emails:
+
+    ~$ git config format.subjectPrefix 'PATCH woof'
+
+You can for example:
 
 -   Write a HTML theme
 -   Add more tests
 -   Report bugs
-
-Woof! is alpha software.  One instance is used by the [Org-mode](https://updates.orgmode.org)
-community.
 
 
 # Support the Clojure(script) ecosystem
