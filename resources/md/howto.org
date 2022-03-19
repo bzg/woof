@@ -72,7 +72,7 @@ For *help requests*:
 For bugs, patches, requests, announcements, changes and releases, you
 can also cancel them:
 
-- =Canceled=. : Mark the bug, patch, request, announcement, change or
+- =Canceled.= : Mark the bug, patch, request, announcement, change or
   release as canceled.
 
 *Note*: A punctuation mark among =;:,.= is /mandatory/ for these reports and
