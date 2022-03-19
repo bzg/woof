@@ -22,7 +22,7 @@
                org.clojure/core.async    {:mvn/version "1.5.648"}
                com.taoensso/timbre       {:mvn/version "5.1.2"}
                selmer/selmer             {:mvn/version "1.12.50"}
-               datalevin/datalevin       {:mvn/version "0.6.0"}
+               datalevin/datalevin       {:mvn/version "0.6.1"}
                com.cognitect/transit-clj {:mvn/version "1.0.324"}}
  :aliases
  {:run {:main-opts ["-m" "bzg.web"]
