@@ -16,3 +16,4 @@ logs.txt
 .lsp
 .clj-kondo/
 .db/
+.dir-locals.el
