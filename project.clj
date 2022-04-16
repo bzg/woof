@@ -22,7 +22,11 @@
                  [org.clojure/core.async    "1.3.622"]
                  [com.taoensso/timbre       "5.1.2"]
                  [selmer/selmer             "1.12.44"]
-                 [datalevin/datalevin       "0.5.25"]]
+                 [datalevin/datalevin       "0.5.25"]
+                 [com.cognitect/transit-clj "1.0.329"]]
+
+  :jvm-opts  ["--add-opens=java.base/java.nio=ALL-UNNAMED"
+              "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]
 
   :source-paths ["src"]
   :resource-paths ["resources"]
