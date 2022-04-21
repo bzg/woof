@@ -69,7 +69,10 @@ of the repository to add a prefix to the subject line of your emails:
 
     ~$ git config format.subjectPrefix 'PATCH woof'
 
-You can for example:
+To subscribe to this list, see <https://lists.sr.ht/~bzg/dev/> or just
+send an email to `~bzg/dev+subscribe@lists.sr.ht`.
+
+Some suggested contributions:
 
 -   Write a HTML theme
 -   Add more tests
@@ -84,7 +87,7 @@ donating to [clojuriststogether.org](https://www.clojuriststogether.org).
 
 # License
 
-© Bastien Guerry 2020-2021
+© Bastien Guerry 2020-2022
 
 Woof is released under [the EPL 2.0 license](LICENSE).
 
