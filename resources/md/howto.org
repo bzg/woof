@@ -57,7 +57,7 @@ Actions are declared at the beginning of a line in the reply.
 For *bugs*:
 
 - =Confirmed.= : Confirm a bug.
-- =Fix.= : Mark a bug as fixed.
+- =Fixed.= : Mark a bug as fixed.
 
 For *patches*:
 
