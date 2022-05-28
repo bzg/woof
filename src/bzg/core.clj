@@ -71,7 +71,7 @@
 (defn- get-id [^String id]
   (peek (re-matches #"^<?(.+[^>])>?$" id)))
 
-(defn- get-subject [^String s]
+(defn- trim-subject [^String s]
   (-> s
       (string/replace #"^(R[Ee] ?: ?)+" "")
       (string/replace #" *\([^)]+\)" "")
@@ -471,7 +471,7 @@
                   :reply-to   (or reply-to (make-to (:admin-username config/env)
                                                     (:admin-address config/env)))
                   :to         to
-                  :subject    (or new-subject (str "Re: " (get-subject subject)))
+                  :subject    (or new-subject (str "Re: " (trim-subject subject)))
                   :body       body}
                  (when references
                    {:references (string/join " " (remove nil? (list references id)))})
