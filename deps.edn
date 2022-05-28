@@ -7,8 +7,8 @@
  :deps        {org.clojure/clojure       {:mvn/version "1.11.1"}
                io.forward/clojure-mail   {:mvn/version "1.0.8"}
                http-kit/http-kit         {:mvn/version "2.5.3"}
-               clj-rss/clj-rss           {:mvn/version "0.3.0"}
-               markdown-clj/markdown-clj {:mvn/version "1.11.0"}
+               clj-rss/clj-rss           {:mvn/version "0.4.0"}
+               markdown-clj/markdown-clj {:mvn/version "1.11.1"}
                metosin/reitit            {:mvn/version "0.5.18"}
                metosin/reitit-ring       {:mvn/version "0.5.18"}
                metosin/reitit-middleware {:mvn/version "0.5.18"}
@@ -22,7 +22,7 @@
                org.clojure/core.async    {:mvn/version "1.5.648"}
                com.taoensso/timbre       {:mvn/version "5.2.1"}
                selmer/selmer             {:mvn/version "1.12.50"}
-               datalevin/datalevin       {:mvn/version "0.6.7"}
+               datalevin/datalevin       {:mvn/version "0.6.13"}
                com.cognitect/transit-clj {:mvn/version "1.0.329"}}
  :aliases
  {:run {:main-opts ["-m" "bzg.web"]
