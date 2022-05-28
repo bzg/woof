@@ -1036,10 +1036,7 @@
 (def woof-manager) ;; FIXME: Needed?
 (mount/defstate woof-manager
   :start (do (start-tasks!)
-             (timbre/info
-              (format "Woof started on %s (port %s)"
-                      (:base-url config/env)
-                      (:port config/env))))
+             (timbre/info "Woof email monitoring started"))
   :stop (when woof-manager
           (events/stop woof-inbox-monitor)
-          (timbre/info "Woof stopped")))
+          (timbre/info "Woof email monitoring stopped")))

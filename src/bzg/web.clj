@@ -19,7 +19,8 @@
             [selmer.filters :as selmer]
             [markdown.core :as md]
             [clojure.java.io :as io]
-            [datalevin.core :as d])
+            [datalevin.core :as d]
+            [taoensso.timbre :as timbre])
   (:gen-class))
 
 (selmer/add-filter! :e-pluralize #(when (> (count %) 1) "es"))
@@ -276,13 +277,18 @@
 
 (def woof-server)
 (mount/defstate ^{:on-reload :noop} woof-server
-  :start (server/run-server
-          (reload/wrap-reload handler {:dirs ["src" "resources"]})
-          {:port (edn/read-string (:port config/env))})
+  :start (do (server/run-server
+              (reload/wrap-reload handler {:dirs ["src" "resources"]})
+              {:port (edn/read-string (:port config/env))})
+             (timbre/info (format "Woof web server started on %s (port %s)"
+                                  (:base-url config/env)
+                                  (:port config/env))))
   ;; FIXME: Use in production
   ;; :start (server/run-server
   ;;         handler {:port (edn/read-string (:port config/env))})
-  :stop (when woof-server (woof-server :timeout 100)))
+  :stop (when woof-server
+          (woof-server :timeout 100)
+          (timbre/info "Woof web server stopped")))
 
 (defn -main []
   (let [admin-address (:admin-address config/env)]
