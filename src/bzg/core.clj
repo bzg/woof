@@ -775,10 +775,10 @@
                           (:username op-report-msg) from)
         action-status {:action-string action-string
                        :status-string status-string}
-        ;; Maybe add default priority
-        action        (if-let [p (:priority action)]
-                        action
-                        (assoc action :priority config/priority))
+        ;; ;; Maybe add default priority
+        ;; action        (if-let [p (:priority action)]
+        ;;                 action
+        ;;                 (assoc action :priority config/priority))
         admin-or-maintainer?
         (or (:admin (d/entity db [:email from]))
             (:maintainer (d/entity db [:email from])))]
