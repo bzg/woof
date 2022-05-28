@@ -5,8 +5,8 @@
    ;; General application settings
    :port     (or (System/getenv "WOOF_PORT") "3000")
    :db-dir   (or (System/getenv "WOOF_DB_DIR") ".db")
-   :log-file (or (System/getenv "WOOF_LOG_FILE") "logs.txt")
-   :base-url (or (System/getenv "WOOF_BASE_URL") "https://localhost:3000")
+   :log-file (or (System/getenv "WOOF_LOG_FILE") "log.txt")
+   :base-url (or (System/getenv "WOOF_BASE_URL") "http://localhost:3000")
 
    ;; Set the application admin
    :admin-address  (System/getenv "WOOF_ADMIN_ADDRESS")
