@@ -81,7 +81,7 @@
 
 (def action-re
   {:patches       (re-pattern
-                   (format "^\\[%s(?: [0-9]+/[0-9]+)?\\].*$" (:patches action-words)))
+                   (format "^\\[%s(?: [^\\s]+)?(?: [0-9]+/[0-9]+)?\\].*$" (:patches action-words)))
    :bugs          (re-pattern (format "^\\[%s\\].*$" (:bugs action-words)))
    :requests      (re-pattern (format "^\\[%s\\].*$" (:requests action-words)))
    :announcements (re-pattern (format "^\\[%s\\].*$" (:announcements action-words)))
