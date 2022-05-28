@@ -19,14 +19,14 @@
 
 (defn feed-item [{:keys [message-id subject date from] :as msg} what]
   (let [link (if-let [fmt (:mail-url-format config/env)]
-                      (format fmt message-id)
-                      message-id)]
+               (format fmt message-id)
+               message-id)]
     {:title       subject
      :link        link
      :description (feed-description msg what)
      :author      from
      :guid        link
-     :pubDate     date}))
+     :pubDate     (.toInstant date)}))
 
 (defn feed [path items]
   {:status  200
