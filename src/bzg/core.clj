@@ -442,13 +442,13 @@
    :postal             (merge (postal-appender/postal-appender ;; :min-level :warn
                                ^{:host (:smtp-host config/env)
                                  :user (:smtp-login config/env)
+                                 :port 587
                                  :pass (:smtp-password config/env)
                                  :tls  true}
                                {:from (:smtp-login config/env)
                                 :to   (make-to
                                        (:admin-username config/env)
-                                       (:admin-address config/env))})
-                              {:min-level :warn})}})
+                                       (:admin-address config/env))}))}})
 
 ;; Email notifications
 
