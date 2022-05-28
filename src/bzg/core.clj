@@ -77,6 +77,15 @@
       (string/replace #" *\([^)]+\)" "")
       (string/trim)))
 
+;; Trim subject prefixes in mailing list
+(defn- trim-subject-prefix [^String s]
+  (let [p (re-pattern
+           (format "^\\[(?:%s)\\] .*$"
+                   (string/join "|" (vals config/action-words))))]
+    (if-let [s (re-matches p s)]
+      s
+      (string/replace s #"^\[[^]]+\] " ""))))
+
 ;; Main reports functions
 
 (defn- get-reports [report-type]
@@ -304,7 +313,7 @@
         refs        (if refs-string
                       (into #{} (string/split refs-string #"\s")) #{})]
     (d/transact! conn [{:message-id id
-                        :subject    subject
+                        :subject    (trim-subject-prefix subject)
                         :references refs
                         :private    (not (nil? private))
                         :from       (:address (first from))
