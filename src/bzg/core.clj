@@ -451,9 +451,9 @@
    :postal             (merge (postal-appender/postal-appender ;; :min-level :warn
                                ^{:host (:smtp-host config/env)
                                  :user (:smtp-login config/env)
-                                 :port 587
+                                 :port (:smtp-port config/env)
                                  :pass (:smtp-password config/env)
-                                 :tls  true}
+                                 :tls  (:smtp-use-tls config/env)}
                                {:from (:smtp-login config/env)
                                 :to   (make-to
                                        (:admin-username config/env)
@@ -469,9 +469,8 @@
       (when-let
           [res (postal/send-message
                 {:host (:smtp-host config/env)
-                 :port 587
-                 ;; FIXME: Always assume a tls connection (or configure)?
-                 :tls  true
+                 :port (:smtp-port config/env)
+                 :tls  (:smtp-use-tls config/env)
                  :user (:smtp-login config/env)
                  :pass (:smtp-password config/env)}
                 (merge

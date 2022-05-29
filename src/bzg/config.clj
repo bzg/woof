@@ -1,4 +1,5 @@
-(ns bzg.config)
+(ns bzg.config
+  (:require [clojure.edn :as edn]))
 
 (def env
   {
@@ -29,7 +30,10 @@
    :mail-url-format (System/getenv "WOOF_MAIL_URL_FORMAT")
 
    ;; Send notification emails
-   :smtp-host     (System/getenv "WOOF_SMTP_HOST")
+   :smtp-host    (System/getenv "WOOF_SMTP_HOST")
+   :smtp-port    (edn/read-string (System/getenv "WOOF_SMTP_PORT"))
+   :smtp-use-tls (edn/read-string (System/getenv "WOOF_SMTP_USE_TLS"))
+
    :smtp-login    (System/getenv "WOOF_SMTP_LOGIN")
    :smtp-password (System/getenv "WOOF_SMTP_PASSWORD")
 

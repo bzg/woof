@@ -19,6 +19,8 @@
 (spec/def ::mailing-list-address (spec/nilable string?))
 (spec/def ::mail-url-format (spec/nilable string?))
 (spec/def ::smtp-host (spec/nilable string?))
+(spec/def ::smtp-port integer?)
+(spec/def ::smtp-use-tls boolean?)
 (spec/def ::smtp-login (spec/nilable string?))
 (spec/def ::smtp-password (spec/nilable string?))
 (spec/def ::title (spec/nilable string?))
@@ -41,6 +43,8 @@
             ::inbox-password
             ::smtp-host
             ::smtp-login
+            ::smtp-port
+            ::smtp-use-tls
             ::smtp-password
             ::title
             ::project-name
@@ -71,6 +75,8 @@
     (is (spec/valid? ::inbox-folder (:inbox-folder config/env)))
     (is (spec/valid? ::smtp-host (:smtp-host config/env)))
     (is (spec/valid? ::smtp-login (:smtp-login config/env)))
+    (is (spec/valid? ::smtp-port (:smtp-port config/env)))
+    (is (spec/valid? ::smtp-use-tls (:smtp-use-tls config/env)))
     (is (spec/valid? ::smtp-password (:smtp-password config/env)))
     (is (spec/valid? ::title (:title config/env)))
     (is (spec/valid? ::project-name (:project-name config/env)))
