@@ -23,7 +23,8 @@
                com.taoensso/timbre       {:mvn/version "5.2.1"}
                selmer/selmer             {:mvn/version "1.12.50"}
                datalevin/datalevin       {:mvn/version "0.6.13"}
-               com.cognitect/transit-clj {:mvn/version "1.0.329"}}
+               com.cognitect/transit-clj {:mvn/version "1.0.329"}
+               medley/medley             {:mvn/version "1.4.0"}}
  :aliases
  {:run {:main-opts ["-m" "bzg.web"]
         :jvm-opts  ["--add-opens=java.base/java.nio=ALL-UNNAMED"
