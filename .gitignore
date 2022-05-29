@@ -12,7 +12,7 @@
 todo.org
 .envrc
 db.edn
-logs.txt
+log.txt
 .lsp
 .clj-kondo/
 .db/
