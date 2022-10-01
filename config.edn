@@ -1,0 +1,136 @@
+{
+ ;; Information on the mail server for sending emails
+ :smtp-host     #env WOOF_SMTP_HOST
+ :smtp-port     #long #env WOOF_SMTP_PORT
+ :smtp-login    #env WOOF_SMTP_LOGIN
+ :smtp-password #env WOOF_SMTP_PASSWORD
+ :smtp-use-tls  #env WOOF_SMTP_USE_TLS
+
+ ;; Information on the mailbox to monitor
+ ;; FIXME: Use aero secrets? env variables?
+ :inbox-user     #env WOOF_INBOX_USER
+ :inbox-server   #env WOOF_INBOX_SERVER
+ :inbox-password #env WOOF_INBOX_PASSWORD
+ :inbox-folder   #env WOOF_INBOX_FOLDER
+
+ ;; General information on the application
+ :hostname "localhost" ;; Default to locahost
+ :port     #long #or [#env WOOF_PORT 3000]
+ :db-dir   ".db"
+ :log-file "log.txt"
+ :theme    "default"
+
+ ;; Default application state
+ :defaults
+ {:maintenance   false
+  ;; FIXME: Explicit what kind of notations?
+  :notifications true
+  ;; Each feature corresponds to a dedicated tab
+  ;; FIXME: prevent from removing announcements?
+  :features      {:announcements true
+                  :bugs          true
+                  :patches       true
+                  :changes       true
+                  :releases      true
+                  :requests      true
+                  ;; :tops :mails
+                  }
+  
+  ;; Show only x latest releases/mails/announcements
+  :display-max    {:releases 4 :mails 100 :announcements 10}
+  :export-formats {:rss  true
+                   :json true
+                   :org  true
+                   :md   true}
+  }
+
+ ;; FIXME: When implementing multiple lists
+ ;; ;; The mailing lists addresses that Woof! to which the monitored
+ ;; ;; mailbox is subscribed.
+ ;; :mailing-lists
+ ;; [{:address         "woof@bzg.fr"
+ ;;   ;; The formatting string for links.  It should contain one and only
+ ;;   ;; one %s occurrence that will be filled with the Message-Id of the
+ ;;   ;; report.  This can be the URL of the mailing list archive, e.g.
+ ;;   ;; https://list.orgmode.org/%s/
+ ;;   :mail-url-format ""
+ ;;   ;; The path as in http://localhost:3000/[SLUG]/
+ ;;   ;; :slug "test"
+ ;;   }]
+ :mailing-list-address "public-ml@lists.io"
+ :mail-url-format      "https://public-ml-archive.org/%s/"
+ 
+ ;; Default application admin
+ :admin-address  "admin@address.io"
+ :admin-username "Big Bad Woof"
+
+ :reports {:bugs          #{:confirmed :canceled :fixed}
+           :patches       #{:approved :canceled :applied}
+           ;; FIXME: Allow to approve requests and announcements
+           :requests      #{:handled :canceled :done}
+           :announcements #{:canceled}
+           :changes       #{:canceled}
+           :releases      #{:canceled}}
+
+ ;; FIXME: should this be hardcoded?
+ :report-types [:bug :patch :request :change :announcement :release]
+
+ :admin-report-strings
+ ;; FIXME: add i18n
+ {;; Contributors actions
+  :notifications        "Notifications"
+  :home                 "Home"
+  :support              "Support"
+  ;; Maintainers actions
+  :add-maintainer       "Add maintainer"
+  :delete               "Delete"
+  :ignore               "Ignore"
+  ;; Admin actions
+  :add-admin            "Add admin"
+  :add-export           "Add export"
+  :add-feature          "Add feature"
+  :remove-admin         "Remove admin"
+  :remove-export        "Remove export"
+  :remove-feature       "Remove feature"
+  :remove-maintainer    "Remove maintainer"
+  :maintenance          "Maintenance"
+  :set-theme            "Set theme"
+  :undelete             "Undelete"
+  :unignore             "Unignore"
+  :global-notifications "Global notifications"
+  }
+
+ :permissions
+ ;; FIXME: Should this be hardcoded?
+ {:admin       #{:add-admin :remove-admin
+                 :add-feature :remove-feature
+                 :remove-maintainer :undelete :unignore
+                 :add-export :remove-export :set-theme
+                 :global-notifications}
+  :maintainer  #{:maintenance :add-maintainer :delete :ignore}
+  :contributor #{:notifications :home :support}}
+
+ ;; Configure HTML and RSS contents
+ :ui             {:title                "Example woof instance"
+                  :project-name         "Example project name"
+                  :project-url          "http://localhost:3000"
+                  :contribute-url       "https://bzg.fr"
+                  :contribute-cta       "Contribute"
+                  :contribute-cta-email "Please contribute"
+                  :support-url          "https://localhost:3000"
+                  :support-cta          "Donate"
+                  :support-cta-email    "Please support us with a donation"}
+ :action-words   {:patches       "PATCH"
+                  :bugs          "BUG"
+                  :requests      "HELP"
+                  :announcements "ANN"
+                  :changes       "CHANGE"
+                  :releases      "RELEASE"}
+ :report-strings {:applied   "Applied"
+                  :approved  "Approved"
+                  :canceled  "Canceled"
+                  :confirmed "Confirmed"
+                  :done      "Done"
+                  :fixed     "Fixed"
+                  :handled   "Handled"}
+ }

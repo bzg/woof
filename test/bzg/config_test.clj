@@ -1,7 +1,9 @@
 (ns bzg.config-test
-  (:require [bzg.config :as config]
+  (:require [aero.core :refer (read-config)]
             [clojure.spec.alpha :as spec]
             [clojure.test :refer [deftest is testing]]))
+
+(def config (read-config "config.edn"))
 
 (spec/def ::port string?)
 (spec/def ::db-dir string?)
@@ -52,7 +54,6 @@
    :opt-un [::port
             ::db-dir
             ::log-file
-            ::base-url
             ::admin-username
             ::inbox-folder
             ::mailing-list-address
@@ -67,18 +68,18 @@
 
 (deftest configuration
   (testing "Testing configuration"
-    (is (spec/valid? ::admin-address (:admin-address config/env)))
-    (is (spec/valid? ::inbox-user (:inbox-user config/env)))
-    (is (spec/valid? ::inbox-server (:inbox-server config/env)))
-    (is (spec/valid? ::inbox-user (:inbox-user config/env)))
-    (is (spec/valid? ::inbox-password (:inbox-password config/env)))
-    (is (spec/valid? ::inbox-folder (:inbox-folder config/env)))
-    (is (spec/valid? ::smtp-host (:smtp-host config/env)))
-    (is (spec/valid? ::smtp-login (:smtp-login config/env)))
-    (is (spec/valid? ::smtp-port (:smtp-port config/env)))
-    (is (spec/valid? ::smtp-use-tls (:smtp-use-tls config/env)))
-    (is (spec/valid? ::smtp-password (:smtp-password config/env)))
-    (is (spec/valid? ::title (:title config/env)))
-    (is (spec/valid? ::project-name (:project-name config/env)))
-    (is (spec/valid? ::project-url (:project-url config/env)))
-    (is (spec/valid? ::config config/env))))
+    (is (spec/valid? ::admin-address (:admin-address config)))
+    (is (spec/valid? ::inbox-user (:inbox-user config)))
+    (is (spec/valid? ::inbox-server (:inbox-server config)))
+    (is (spec/valid? ::inbox-user (:inbox-user config)))
+    (is (spec/valid? ::inbox-password (:inbox-password config)))
+    (is (spec/valid? ::inbox-folder (:inbox-folder config)))
+    (is (spec/valid? ::smtp-host (:smtp-host config)))
+    (is (spec/valid? ::smtp-login (:smtp-login config)))
+    (is (spec/valid? ::smtp-port (:smtp-port config)))
+    (is (spec/valid? ::smtp-use-tls (:smtp-use-tls config)))
+    (is (spec/valid? ::smtp-password (:smtp-password config)))
+    (is (spec/valid? ::title (:title config)))
+    (is (spec/valid? ::project-name (:project-name config)))
+    (is (spec/valid? ::project-url (:project-url config)))
+    (is (spec/valid? ::config config))))

@@ -1,6 +1,5 @@
 (ns bzg.process-test
   (:require [bzg.core :as core]
-            [bzg.config :as config]
             [clojure.test :refer [deftest is testing]]
             [datalevin.core :as d]
             [clojure-mail.core :as mail]
@@ -19,7 +18,7 @@
                 (constantly (d/db core/conn)))
 
 ;; Initialize root admin
-(d/transact! core/conn [(merge {:defaults "init"} config/defaults)])
+(d/transact! core/conn [(merge {:defaults "init"} (:defaults config))])
 (core/update-person! {:email "admin@woof.io" :role :admin} {:root true})
 
 ;; Define test emails

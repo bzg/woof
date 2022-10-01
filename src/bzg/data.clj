@@ -1,6 +1,5 @@
 (ns bzg.data
   (:require [bzg.core :as core]
-            [bzg.config :as config]
             [clojure.string :as string]))
 
 (defn- get-resources [what]
@@ -32,7 +31,7 @@
    (string/join
     "\n"
     (map #(format " - [[%s][%s: %s]] (%s)"
-                  (if-let [fmt (:mail-url-format config/env)]
+                  (if-let [fmt (:mail-url-format core/config)]
                     (format fmt (:message-id %))
                     (:message-id %))
                   (:username %)
@@ -49,7 +48,7 @@
     (map #(format " - [%s: %s](%s \"%s\")"
                   (:username %)
                   (string/replace (:subject %) #"^\[[^]]+\] " "")
-                  (if-let [fmt (:mail-url-format config/env)]
+                  (if-let [fmt (:mail-url-format core/config)]
                     (format fmt (:message-id %))
                     (:message-id %))
                   (:date %))

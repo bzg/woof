@@ -3,7 +3,6 @@
             [reitit.ring :as ring]
             [bzg.core :as core]
             [bzg.data :as data]
-            [bzg.config :as config]
             [bzg.feeds :as feeds]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             ;; FIXME: Remove in production
@@ -13,7 +12,6 @@
             [reitit.ring.middleware.parameters :as parameters]
             [ring.middleware.cors :refer [wrap-cors]]
             [mount.core :as mount]
-            [clojure.edn :as edn]
             [tea-time.core :as tt]
             [selmer.parser :as html]
             [selmer.filters :as selmer]
@@ -27,8 +25,8 @@
 
 (defn- entries-format [{:keys [entries search sorting-by]}]
   (let [linkify-maybe
-        (if (not-empty (:mail-url-format config/env))
-          #(assoc-in % [:link] (format (:mail-url-format config/env)
+        (if (not-empty (:mail-url-format core/config))
+          #(assoc-in % [:link] (format (:mail-url-format core/config)
                                        (:message-id %)))
           identity)]
     (->>
@@ -44,13 +42,13 @@
      (map linkify-maybe))))
 
 (def html-defaults
-  {:title          (:title config/env)
-   :project-name   (:project-name config/env)
-   :project-url    (:project-url config/env)
-   :contribute-url (:contribute-url config/env)
-   :contribute-cta (:contribute-cta config/env)
-   :support-url    (:support-url config/env)
-   :support-cta    (:support-cta config/env)})
+  {:title          (:title (:ui core/config))
+   :project-name   (:project-name (:ui core/config))
+   :project-url    (:project-url (:ui core/config))
+   :contribute-url (:contribute-url (:ui core/config))
+   :contribute-cta (:contribute-cta (:ui core/config))
+   :support-url    (:support-url (:ui core/config))
+   :support-cta    (:support-cta (:ui core/config))})
 
 (defn- with-html-defaults [config-defaults m]
   (merge html-defaults {:config config-defaults} m))
@@ -68,8 +66,9 @@
      (when (-> config-defaults :features :bug)
        {:releases
         (entries-format
-         (merge {:entries (->> (core/get-releases)
-                               (take (-> config-defaults :max :releases)))}
+         (merge {:entries
+                 (->> (core/get-releases)
+                      (take (-> config-defaults :display-max :releases)))}
                 format-params))})
      (when (-> config-defaults :features :change)
        {:changes
@@ -179,7 +178,7 @@
               {:status  200
                :headers {"Content-Type" "text/html"}
                :body    (html/render-file
-                         (str "html/" (:theme config/env) "/index.html")
+                         (str "html/" (:theme core/config) "/index.html")
                          (merge html-defaults
                                 {:howto (md/md-to-html-string
                                          (slurp (io/resource "md/howto.md")))}))})}]
@@ -279,10 +278,10 @@
 (mount/defstate ^{:on-reload :noop} woof-server
   :start (do (server/run-server
               (reload/wrap-reload handler {:dirs ["src" "resources"]})
-              {:port (edn/read-string (:port config/env))})
+              {:port (:port core/config)})
              (timbre/info (format "Woof web server started on %s (port %s)"
-                                  (:base-url config/env)
-                                  (:port config/env))))
+                                  (:hostname core/config)
+                                  (:port core/config))))
   ;; FIXME: Use in production
   ;; :start (server/run-server
   ;;         handler {:port (edn/read-string (:port config/env))})
@@ -291,11 +290,11 @@
           (timbre/info "Woof web server stopped")))
 
 (defn -main []
-  (let [admin-address (:admin-address config/env)]
+  (let [admin-address (:admin-address core/config)]
     (tt/start!)
     (core/set-defaults)
     (core/update-person! {:email    admin-address
-                          :username (or (:admin-username config/env)
+                          :username (or (:admin-username core/config)
                                         admin-address)
                           :role     :admin}
                          ;; The root admin cannot be removed

@@ -1,6 +1,5 @@
 (ns bzg.feeds
   (:require [clj-rss.core :as rss]
-            [bzg.config :as config]
             [bzg.core :as core]
             [clojure.string :as string]
             [selmer.parser :as html]
@@ -11,14 +10,14 @@
         msgid (:message-id msg)]
     (format
      "<![CDATA[ %s ]]>"
-     (if-let [fmt (:mail-url-format config/env)]
+     (if-let [fmt (:mail-url-format core/config)]
        (html/render-file
-        (io/resource (str "html/" (:theme config/env) "/link.html"))
+        (io/resource (str "html/" (:theme core/config) "/link.html"))
         (assoc msg :link (format fmt msgid) :what what))
        (str msgid (format " (%s)" what))))))
 
 (defn feed-item [{:keys [message-id subject date from] :as msg} what]
-  (let [link (if-let [fmt (:mail-url-format config/env)]
+  (let [link (if-let [fmt (:mail-url-format core/config)]
                (format fmt message-id)
                message-id)]
     {:title       subject
@@ -33,11 +32,11 @@
    :headers {"Content-Type" "application/xml"}
    :body
    (rss/channel-xml
-    {:title       (str (:project-name config/env) " - " path)
+    {:title       (str (:project-name core/config) " - " path)
      :link        (string/replace
-                   (:base-url config/env)
+                   (:hostname core/config)
                    #"([^/])/*$" (str "$1/" path))
-     :description (str (:title config/env) " - " path)}
+     :description (str (:title core/config) " - " path)}
     items)})
 
 (defn feed-updates [_]

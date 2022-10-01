@@ -6,7 +6,6 @@
             [clojure.string :as string]
             [clojure.walk :as walk]
             [mount.core :as mount]
-            [bzg.config :as config]
             [tea-time.core :as tt]
             [postal.core :as postal]
             [postal.support]
@@ -15,10 +14,13 @@
             [taoensso.timbre.appenders.core :as appenders]
             [taoensso.timbre.appenders (postal :as postal-appender)]
             [datalevin.core :as d]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [aero.core :refer (read-config)]))
+
+;; Set up configuration
+(def config (read-config "config.edn"))
 
 ;; Set up the database
-
 (def schema
   {:defaults {:db/valueType :db.type/string
               :db/unique    :db.unique/identity}
@@ -33,12 +35,13 @@
    :fixed     {:db/valueType :db.type/ref}
    :handled   {:db/valueType :db.type/ref}
 
-   :message-id   {:db/valueType :db.type/string
-                  :db/unique    :db.unique/identity}
-   :email        {:db/valueType :db.type/string
-                  :db/unique    :db.unique/identity}
-   :references   {:db/valueType   :db.type/string
-                  :db/cardinality :db.cardinality/many}
+   :message-id {:db/valueType :db.type/string
+                :db/unique    :db.unique/identity}
+   :email      {:db/valueType :db.type/string
+                :db/unique    :db.unique/identity}
+   :references {:db/valueType   :db.type/string
+                :db/cardinality :db.cardinality/many}
+
    :bug          {:db/valueType :db.type/ref
                   :db/unique    :db.unique/identity}
    :patch        {:db/valueType :db.type/ref
@@ -52,18 +55,71 @@
    :release      {:db/valueType :db.type/ref
                   :db/unique    :db.unique/identity}})
 
-(def conn (d/get-conn (:db-dir config/env) schema))
+(def conn (d/get-conn (:db-dir config) schema))
 
 (def db (d/db conn))
 
 ;; Set config defaults
 
+(def action-re
+  (let [action-words (:action-words config)]
+    {:patches       (re-pattern
+                     (format "^\\[%s(?: [^\\s]+)?(?: [0-9]+/[0-9]+)?\\].*$" (:patches action-words)))
+     :bugs          (re-pattern (format "^\\[%s\\].*$" (:bugs action-words)))
+     :requests      (re-pattern (format "^\\[%s\\].*$" (:requests action-words)))
+     :announcements (re-pattern (format "^\\[%s\\].*$" (:announcements action-words)))
+     :changes       (re-pattern (format "^\\[%s\\s*([^]]+)\\].*$" (:changes action-words)))
+     :releases      (re-pattern (format "^\\[%s\\s*([^]]+)\\].*$" (:releases action-words)))}))
+
+;; FIXME: How to initialize the app?
 (defn set-defaults []
-  (d/transact! conn [(merge {:defaults "init"} config/defaults)]))
+  (d/transact! conn [(merge {:defaults "init"} (:defaults config))]))
+
+;; Set default priority for all reports
+;; FIXME: Use priority?
+(def priority 0)
 
 ;; Small utility functions
 
+(def report-keywords-all
+  (let [ks (keys (:report-strings config))]
+    (concat ks (map #(keyword (str "un" (name %))) ks))))
+
 (def email-re #"[^<@\s;,]+@[^>@\s;,]+")
+
+(defn format-email-notification
+  [{:keys [notification-type from id
+           action-string status-string]}]
+  (str
+   (condp = notification-type
+     :new
+     (str (format "Thanks for sharing this %s!\n\n" action-string)
+          (when (and (:support-url config)
+                     (some #{"bug" "request"} (list action-string)))
+            (str (or (:support-cta-email config)
+                     (:support-cta config)
+                     "Please support this project")
+                 ":\n"
+                 (:support-url config)
+                 "\n\n")))
+     :action-reporter
+     (format "Thanks for marking this %s as %s.\n\n"
+             action-string status-string)
+     :action-op
+     (format "%s marked your %s as %s.\n\n"
+             from action-string status-string))
+
+   (when-let [link-format (not-empty (:mail-url-format config))]
+     (format "You can find your email here:\n%s\n\n"
+             (format link-format id)))
+
+   (when-let [contribute-url (not-empty (:contribute-url config))]
+     (str (or (:contribute-cta-email config)
+              (:contribute-cta config)
+              (format "Please contribute to %s"
+                      (:project-name config)))
+          ":\n"
+          contribute-url))))
 
 (defn- make-to [username address]
   (str username " <" address ">"))
@@ -81,7 +137,7 @@
 (defn- trim-subject-prefix [^String s]
   (let [p (re-pattern
            (format "^\\[(?:%s)\\] .*$"
-                   (string/join "|" (vals config/action-words))))]
+                   (string/join "|" (vals (:action-words config)))))]
     (if-let [s (re-matches p s)]
       s
       (string/replace s #"^\[[^]]+\] " ""))))
@@ -116,7 +172,7 @@
        (remove :deleted)
        (sort-by :date)
        (map add-role)
-       (take (-> (d/entity db [:defaults "init"]) :max :mails))))
+       (take (-> (d/entity db [:defaults "init"]) :display-max :mails))))
 
 (defn get-bugs [] (get-reports-msgs :bug (get-reports :bug)))
 (defn get-patches [] (get-reports-msgs :patch (get-reports :patch)))
@@ -137,7 +193,7 @@
   (->> (get-reports :announcement)
        (remove :canceled)
        (get-reports-msgs :announcement)
-       (take (-> (d/entity db [:defaults "init"]) :max :announcements))))
+       (take (-> (d/entity db [:defaults "init"]) :display-max :announcements))))
 
 ;; FIXME: Handle priority:
 ;; (remove #(if-let [p (:priority %)] (< p 2) true))
@@ -372,9 +428,9 @@
 ;; Check whether a report is an action against a known entity
 
 (def config-strings-re
-  (let [{:keys [admin maintainer contributor]} config/permissions]
+  (let [{:keys [admin maintainer contributor]} (:permissions config)]
     (->> (concat admin maintainer contributor)
-         (map #(% config/admin-report-strings))
+         (map #(% (:admin-report-strings config)))
          (string/join "|")
          (format "(%s): (.+)\\s*$")
          re-pattern)))
@@ -387,17 +443,17 @@
           :change        :changes :announcement
           :announcements :release :releases
           nil)
-        report-do   (map #(% config/report-strings)
-                         (report-type config/reports))
+        report-do   (map #(% (:report-strings config))
+                         (report-type (:reports config)))
         report-undo (map #(string/capitalize (str "Un" %)) report-do)]
     (into #{} (concat report-do report-undo))))
 
 (def report-strings-re
-  (let [all-do   (->> config/reports
+  (let [all-do   (->> (:reports config)
                       (map val)
                       (map concat)
                       flatten
-                      (map #(% config/report-strings)))
+                      (map #(% (:report-strings config))))
         all-undo (map #(string/capitalize (str "Un" %)) all-do)
         all      (into #{} (concat all-do all-undo))]
     (->> all
@@ -447,17 +503,17 @@
   :appenders
   {:datalevin-appender (datalevin-appender)
    :println            (appenders/println-appender {:stream :auto})
-   :spit               (appenders/spit-appender {:fname (:log-file config/env)})
+   :spit               (appenders/spit-appender {:fname (:log-file config)})
    :postal             (merge (postal-appender/postal-appender ;; :min-level :warn
-                               ^{:host (:smtp-host config/env)
-                                 :user (:smtp-login config/env)
-                                 :port (:smtp-port config/env)
-                                 :pass (:smtp-password config/env)
-                                 :tls  (:smtp-use-tls config/env)}
-                               {:from (:smtp-login config/env)
+                               ^{:host (:smtp-host config)
+                                 :user (:smtp-login config)
+                                 :port (:smtp-port config)
+                                 :pass (:smtp-password config)
+                                 :tls  (:smtp-use-tls config)}
+                               {:from (:smtp-login config)
                                 :to   (make-to
-                                       (:admin-username config/env)
-                                       (:admin-address config/env))}))}})
+                                       (:admin-username config)
+                                       (:admin-address config))}))}})
 
 ;; Email notifications
 
@@ -468,16 +524,16 @@
     (try
       (when-let
           [res (postal/send-message
-                {:host (:smtp-host config/env)
-                 :port (:smtp-port config/env)
-                 :tls  (:smtp-use-tls config/env)
-                 :user (:smtp-login config/env)
-                 :pass (:smtp-password config/env)}
+                {:host (:smtp-host config)
+                 :port (:smtp-port config)
+                 :tls  (:smtp-use-tls config)
+                 :user (:smtp-login config)
+                 :pass (:smtp-password config)}
                 (merge
-                 {:from       (:smtp-login config/env)
-                  :message-id #(postal.support/message-id (:base-url config/env))
-                  :reply-to   (or reply-to (make-to (:admin-username config/env)
-                                                    (:admin-address config/env)))
+                 {:from       (:smtp-login config)
+                  :message-id #(postal.support/message-id (:hostname config))
+                  :reply-to   (or reply-to (make-to (:admin-username config)
+                                                    (:admin-address config)))
                   :to         to
                   :subject    (or new-subject (str "Re: " (trim-subject subject)))
                   :body       body}
@@ -520,7 +576,7 @@
 (defn- new-patch? [msg]
   (or
    ;; New patches with a subject starting with "[PATCH"
-   (re-matches (:patches config/action-re) (:subject msg))
+   (re-matches (:patches action-re) (:subject msg))
    ;; New patches with a text/x-diff or text/x-patch MIME part
    (and (:multipart? msg)
         (not-empty
@@ -528,20 +584,20 @@
                  (map :content-type (:body msg)))))))
 
 (defn- new-bug? [msg]
-  (re-matches (:bugs config/action-re) (:subject msg)))
+  (re-matches (:bugs action-re) (:subject msg)))
 
 (defn- new-request? [msg]
-  (re-matches (:requests config/action-re) (:subject msg)))
+  (re-matches (:requests action-re) (:subject msg)))
 
 (defn- new-announcement? [msg]
-  (re-matches (:announcements config/action-re) (:subject msg)))
+  (re-matches (:announcements action-re) (:subject msg)))
 
 (defn- new-change? [msg]
-  (when-let [m (re-matches (:changes config/action-re) (:subject msg))]
+  (when-let [m (re-matches (:changes action-re) (:subject msg))]
     (peek m)))
 
 (defn- new-release? [msg]
-  (when-let [m (re-matches (:releases config/action-re) (:subject msg))]
+  (when-let [m (re-matches (:releases action-re) (:subject msg))]
     (peek m)))
 
 (defn- add-admin! [cmd-val from]
@@ -553,10 +609,10 @@
 \nSee this page on how to use Woof! as an admin:\n%s/howto\n\nThanks!"
                             (:username person)
                             from
-                            (:base-url config/env))
+                            (:hostname config))
                 :add-admin
                 (format "[%s] You are now a Woof! admin"
-                        (:project-name config/env))
+                        (:project-name config))
                 from)
           (timbre/info (format "%s has been granted admin permissions" email))
           output)))))
@@ -582,10 +638,10 @@
 \nSee this page on how to use Woof! as an maintainer:\n%s/howto\n\nThanks!"
                             (:username person)
                             from
-                            (:base-url config/env))
+                            (:hostname config))
                 :add-maintainer
                 (format "[%s] You are now a Woof! maintainer"
-                        (:project-name config/env))
+                        (:project-name config))
                 from)
           (timbre/info (format "%s has been granted maintainer permissions" email))
           output)))))
@@ -679,7 +735,8 @@
       (let [defaults     (d/entity db [:defaults "init"])
             new-defaults (update-in
                           defaults
-                          [:export (keyword export-format)] (fn [_] (empty? remove?)))]
+                          [:export-formats
+                           (keyword export-format)] (fn [_] (empty? remove?)))]
         (when (d/transact! conn [new-defaults])
           (timbre/info
            (format "Export format \"%s\" is %s"
@@ -756,8 +813,8 @@
 
 ;; FIXME: Factor out report-update! from report! ?
 (defn- report! [action]
-  (let [action-type   (contained action config/report-types)
-        action-status (contained action config/report-keywords-all)
+  (let [action-type   (contained action (:report-types config))
+        action-status (contained action report-keywords-all)
         action-string (name action-type)
         status-string (when action-status (name action-status))
 
@@ -812,14 +869,14 @@
 
         ;; Send email to the action reporter, if he's not an admin/maintainer
         (if-not admin-or-maintainer?
-          (mail msg (config/format-email-notification
+          (mail msg (format-email-notification
                      (merge msg action-status {:notification-type :action-reporter}))
                 :ack-reporter)
           (timbre/info "Skipping email ack for admin or maintainer"))
 
         ;; Send email to the original poster, unless it is the action reporter
         (if-not (= from op-from)
-          (mail op-msg (config/format-email-notification
+          (mail op-msg (format-email-notification
                         (merge msg action-status {:notification-type :action-op}))
                 :ack-op-reporter)
           (timbre/info "Do not ack original poster, same as reporter")))
@@ -831,7 +888,7 @@
          (format "%s (%s) reported a new %s" from msgid action-string))
         ;; Send email to the original poster
         (if-not admin-or-maintainer?
-          (mail op-msg (config/format-email-notification
+          (mail op-msg (format-email-notification
                         (merge msg {:notification-type :new} action-status))
                 :ack-op)
           (timbre/info "Skipping email ack for admin or maintainer"))))))
@@ -879,7 +936,7 @@
               (or (some maintainers (list from))
                   ;; A mailing list, only process mails sent there
                   (some #{to X-Original-To}
-                        (list (:mailing-list-address config/env)))))))
+                        (list (:mailing-list-address config)))))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
@@ -1018,10 +1075,10 @@
    woof-inbox-monitor
    (let [session      (mail/get-session "imaps")
          mystore      (mail/store "imaps" session
-                                  (:inbox-server config/env)
-                                  (:inbox-user config/env)
-                                  (:inbox-password config/env))
-         folder       (mail/open-folder mystore (:inbox-folder config/env)
+                                  (:inbox-server config)
+                                  (:inbox-user config)
+                                  (:inbox-password config))
+         folder       (mail/open-folder mystore (:inbox-folder config)
                                         :readonly)
          idle-manager (events/new-idle-manager session)]
      (events/add-message-count-listener
