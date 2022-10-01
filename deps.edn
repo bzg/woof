@@ -24,7 +24,8 @@
                selmer/selmer             {:mvn/version "1.12.55"}
                datalevin/datalevin       {:mvn/version "0.6.19"}
                com.cognitect/transit-clj {:mvn/version "1.0.329"}
-               medley/medley             {:mvn/version "1.4.0"}}
+               medley/medley             {:mvn/version "1.4.0"}
+               aero/aero                 {:mvn/version "1.1.6"}}
  :aliases
  {:run {:main-opts ["-m" "bzg.web"]
         :jvm-opts  ["--add-opens=java.base/java.nio=ALL-UNNAMED"
