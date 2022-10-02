@@ -39,27 +39,27 @@
      :description (str (:title core/config) " - " path)}
     items)})
 
-(defn feed-updates [_]
+(defn feed-updates [list-id]
   (feed "/updates.rss"
         (sort-by
          :pubDate
          (concat
-          (map #(feed-item % :confirmed-bugs) (core/get-confirmed-bugs))
-          (map #(feed-item % :unconfirmed-bugs) (core/get-unconfirmed-bugs))
-          (map #(feed-item % :bugs) (core/get-unfixed-bugs))
-          (map #(feed-item % :mails) (core/get-mails))
-          (map #(feed-item % :unhandled-requests) (core/get-unhandled-requests))
-          (map #(feed-item % :handled-requests) (core/get-handled-requests))
-          (map #(feed-item % :requests) (core/get-undone-requests))
-          (map #(feed-item % :unapproved-patches) (core/get-unapproved-patches))
-          (map #(feed-item % :approved-patches) (core/get-approved-patches))
-          (map #(feed-item % :patches) (core/get-unapplied-patches))
-          (map #(feed-item % :changes) (core/get-upcoming-changes))
-          (map #(feed-item % :released-changes) (core/get-latest-released-changes))
-          (map #(feed-item % :announcements) (core/get-announcements))
-          (map #(feed-item % :releases) (core/get-releases))))))
+          (map #(feed-item % :confirmed-bugs) (core/get-confirmed-bugs list-id))
+          (map #(feed-item % :unconfirmed-bugs) (core/get-unconfirmed-bugs list-id))
+          (map #(feed-item % :bugs) (core/get-unfixed-bugs list-id))
+          (map #(feed-item % :mails) (core/get-mails list-id))
+          (map #(feed-item % :unhandled-requests) (core/get-unhandled-requests list-id))
+          (map #(feed-item % :handled-requests) (core/get-handled-requests list-id))
+          (map #(feed-item % :requests) (core/get-undone-requests list-id))
+          (map #(feed-item % :unapproved-patches) (core/get-unapproved-patches list-id))
+          (map #(feed-item % :approved-patches) (core/get-approved-patches list-id))
+          (map #(feed-item % :patches) (core/get-unapplied-patches list-id))
+          (map #(feed-item % :changes) (core/get-upcoming-changes list-id))
+          (map #(feed-item % :released-changes) (core/get-latest-released-changes list-id))
+          (map #(feed-item % :announcements) (core/get-announcements list-id))
+          (map #(feed-item % :releases) (core/get-releases list-id))))))
 
-(defn- make-feed [{:keys [path what]}]
+(defn- make-feed [{:keys [path what list-id]}]
   (feed path
         (sort-by
          :pubDate
@@ -67,21 +67,21 @@
           (map #(feed-item % what)
                (condp = what
                  ;; FIXME: Check config.features
-                 :confirmed-bugs     (core/get-confirmed-bugs)
-                 :unconfirmed-bugs   (core/get-unconfirmed-bugs)
-                 :bugs               (core/get-unfixed-bugs)
-                 :unhandled-requests (core/get-unhandled-requests)
-                 :handled-requests   (core/get-handled-requests)
-                 :requests           (core/get-undone-requests)
-                 :unapproved-patches (core/get-unapproved-patches)
-                 :approved-patches   (core/get-approved-patches)
-                 :patches            (core/get-unapplied-patches)
-                 :mails              (core/get-mails)
-                 :announcements      (core/get-announcements)
-                 :changes            (core/get-upcoming-changes)
-                 :released-changes   (core/get-latest-released-changes)
-                 :releases           (core/get-releases)
-                 :updates            (core/get-updates)
+                 :confirmed-bugs     (core/get-confirmed-bugs list-id)
+                 :unconfirmed-bugs   (core/get-unconfirmed-bugs list-id)
+                 :bugs               (core/get-unfixed-bugs list-id)
+                 :unhandled-requests (core/get-unhandled-requests list-id)
+                 :handled-requests   (core/get-handled-requests list-id)
+                 :requests           (core/get-undone-requests list-id)
+                 :unapproved-patches (core/get-unapproved-patches list-id)
+                 :approved-patches   (core/get-approved-patches list-id)
+                 :patches            (core/get-unapplied-patches list-id)
+                 :mails              (core/get-mails list-id)
+                 :announcements      (core/get-announcements list-id)
+                 :changes            (core/get-upcoming-changes list-id)
+                 :released-changes   (core/get-latest-released-changes list-id)
+                 :releases           (core/get-releases list-id)
+                 :updates            (core/get-updates list-id)
                  ))))))
 
 (defn feed-confirmed-bugs [_] (make-feed {:path "bugs.rss" :what :confirmed-bugs}))

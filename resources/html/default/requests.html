@@ -15,10 +15,10 @@
 	  <h1 id="unhandled-requests" class="title is-size-4">
 	    <span>
 	      {{unhandled-requests|count}} request{{unhandled-requests|pluralize}} to handle
-	      {% if config.export.rss %}<a class="tag is-info is-light" href="unhandled-requests.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-success is-light" href="unhandled-requests.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-danger is-light" href="unhandled-requests.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-warning is-light" href="unhandled-requests.md">MD</a>{% endif %}
+	      {% if config.export-formats.rss %}<a class="tag is-info is-light" href="unhandled-requests.rss">RSS</a>{% endif %}
+	      {% if config.export-formats.json %}<a class="tag is-success is-light" href="unhandled-requests.json">JSON</a>{% endif %}
+	      {% if config.export-formats.org %}<a class="tag is-danger is-light" href="unhandled-requests.org">ORG</a>{% endif %}
+	      {% if config.export-formats.md %}<a class="tag is-warning is-light" href="unhandled-requests.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
@@ -79,10 +79,10 @@
 	  <h1 id="handled-requests" class="title is-size-4">
 	    <span>
 	      {{handled-requests|count}} request{{handled-requests|pluralize}} currently handled
-	      {% if config.export.rss %}<a class="tag is-info is-light" href="handled-requests.rss">RSS</a>{% endif %}
-	      {% if config.export.json %}<a class="tag is-success is-light" href="handled-requests.json">JSON</a>{% endif %}
-	      {% if config.export.org %}<a class="tag is-danger is-light" href="handled-requests.org">ORG</a>{% endif %}
-	      {% if config.export.md %}<a class="tag is-warning is-light" href="handled-requests.md">MD</a>{% endif %}
+	      {% if config.export-formats.rss %}<a class="tag is-info is-light" href="handled-requests.rss">RSS</a>{% endif %}
+	      {% if config.export-formats.json %}<a class="tag is-success is-light" href="handled-requests.json">JSON</a>{% endif %}
+	      {% if config.export-formats.org %}<a class="tag is-danger is-light" href="handled-requests.org">ORG</a>{% endif %}
+	      {% if config.export-formats.md %}<a class="tag is-warning is-light" href="handled-requests.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">

@@ -81,11 +81,17 @@
 
 ;; Small utility functions
 
+(defn slug-to-list-id [slug]
+  (:address (first (filter #(= (:slug %) slug) (:mailing-lists config)))))
+
 (def report-keywords-all
   (let [ks (keys (:report-strings config))]
     (concat ks (map #(keyword (str "un" (name %))) ks))))
 
 (def email-re #"[^<@\s;,]+@[^>@\s;,]+")
+
+(defn- get-email-address [s]
+  (re-find email-re (string/replace s #"mailto:" "")))
 
 (defn format-email-notification
   [{:keys [notification-type from id
@@ -144,9 +150,12 @@
 
 ;; Main reports functions
 
-(defn- get-reports [report-type]
-  (->> (d/q `[:find ?e :where [?e ~report-type _]] db)
+(defn- get-reports [{:keys [list-id report-type]}]
+  (->> (d/q `[:find ?r :where
+              [?r ~report-type ?m]
+              [?m :list-id ~list-id]] db)
        (map first)
+       ;; FIXME: (d/touch (d/entity ...) ? or just (d/entity ?)
        (map #(d/pull db '[*] %))
        ;; Always remove canceled reports, we never need them
        (remove :deleted)
@@ -164,8 +173,20 @@
        (remove :deleted)
        (map add-role)))
 
-(defn get-mails []
-  (->> (d/q '[:find ?e :where [?e :message-id _]] db)
+;; (defn get-all-mails []
+;;   (->> (d/q '[:find ?e :where [?e :message-id _]] db)
+;;        (map first)
+;;        (map #(d/pull db '[*] %))
+;;        (remove :private)
+;;        (remove :deleted)
+;;        (sort-by :date)
+;;        (map add-role)
+;;        (take (-> (d/entity db [:defaults "init"]) :display-max :mails))))
+
+(defn get-mails [list-id]
+  (->> (d/q `[:find ?e :where
+              [?e :message-id _]
+              [?e :list-id ~list-id]] db)
        (map first)
        (map #(d/pull db '[*] %))
        (remove :private)
@@ -174,13 +195,17 @@
        (map add-role)
        (take (-> (d/entity db [:defaults "init"]) :display-max :mails))))
 
-(defn get-bugs [] (get-reports-msgs :bug (get-reports :bug)))
-(defn get-patches [] (get-reports-msgs :patch (get-reports :patch)))
-(defn get-requests [] (get-reports-msgs :request (get-reports :request)))
-(defn get-releases [] (get-reports-msgs :release (get-reports :release)))
+(defn get-bugs [list-id]
+  (get-reports-msgs :bug (get-reports {:list-id list-id :report-type :bug})))
+(defn get-patches [list-id]
+  (get-reports-msgs :patch (get-reports {:list-id list-id :report-type :patch})))
+(defn get-requests [list-id]
+  (get-reports-msgs :request (get-reports {:list-id list-id :report-type :request})))
+(defn get-releases [list-id]
+  (get-reports-msgs :release (get-reports {:list-id list-id :report-type :release})))
 
-(defn get-changes []
-  (->> (get-reports :change)
+(defn get-changes [list-id]
+  (->> (get-reports {:list-id list-id :report-type :change})
        (remove :released)
        (get-reports-msgs :change)))
 
@@ -189,71 +214,73 @@
        (map first)
        (map #(d/pull db '[*] %))))
 
-(defn get-announcements []
-  (->> (get-reports :announcement)
+(defn get-announcements [list-id]
+  (->> (get-reports {:list-id list-id :report-type :announcement})
        (remove :canceled)
        (get-reports-msgs :announcement)
        (take (-> (d/entity db [:defaults "init"]) :display-max :announcements))))
 
 ;; FIXME: Handle priority:
 ;; (remove #(if-let [p (:priority %)] (< p 2) true))
-(defn get-confirmed-bugs []
-  (->> (get-reports :bug)
+(defn get-confirmed-bugs [list-id]
+  (->> (get-reports {:list-id list-id :report-type :bug})
        (filter :confirmed)
        (remove :fixed)
        (get-reports-msgs :bug)))
 
-(defn get-unconfirmed-bugs []
-  (->> (get-reports :bug)
+(defn get-unconfirmed-bugs [list-id]
+  (->> (get-reports {:list-id list-id :report-type :bug})
        (remove :confirmed)
        (remove :fixed)
        (get-reports-msgs :bug)))
 
-(defn get-unfixed-bugs []
-  (->> (get-reports :bug)
+(defn get-unfixed-bugs [list-id]
+  (->> (get-reports {:list-id list-id :report-type :bug})
        (remove :fixed)
        (get-reports-msgs :bug)))
 
-(defn get-approved-patches []
-  (->> (get-reports :patch)
+(defn get-approved-patches [list-id]
+  (->> (get-reports {:list-id list-id :report-type :patch})
        (filter :approved)
        (remove :applied)
        (get-reports-msgs :patch)))
 
-(defn get-unapproved-patches []
-  (->> (get-reports :patch)
+(defn get-unapproved-patches [list-id]
+  (->> (get-reports {:list-id list-id :report-type :patch})
        (remove :approved)
        (remove :applied)
        (get-reports-msgs :patch)))
 
-(defn get-unapplied-patches []
-  (->> (get-reports :patch)
+(defn get-unapplied-patches [list-id]
+  (->> (get-reports {:list-id list-id :report-type :patch})
        (remove :applied)
        (get-reports-msgs :patch)))
 
-(defn get-handled-requests []
-  (->> (get-reports :request)
+(defn get-handled-requests [list-id]
+  (->> (get-reports {:list-id list-id :report-type :request})
        (filter :handled)
        (remove :done)
        (get-reports-msgs :request)))
 
-(defn get-unhandled-requests []
-  (->> (get-reports :request)
+(defn get-unhandled-requests [list-id]
+  (->> (get-reports {:list-id list-id :report-type :request})
        (remove :handled)
        (get-reports-msgs :request)))
 
-(defn get-undone-requests []
-  (->> (get-reports :request)
+(defn get-undone-requests [list-id]
+  (->> (get-reports {:list-id list-id :report-type :request})
        (remove :done)
        (get-reports-msgs :request)))
 
-(defn get-upcoming-changes []
-  (->> (get-reports :change)
+(defn get-upcoming-changes [list-id]
+  (->> (get-reports {:list-id list-id :report-type :change})
        (remove :released)
        (get-reports-msgs :change)))
 
-(defn get-latest-release []
-  (->> (d/q '[:find ?e :where [?e :release _]] db)
+(defn get-latest-release [list-id]
+  (->> (d/q `[:find ?e :where
+              [?e :release ?m]
+              [?m :list-id ~list-id]] db)
        (map first)
        (map #(d/pull db '[*] %))
        (remove :canceled)
@@ -265,30 +292,32 @@
        (sort-by :date)
        last))
 
-(defn get-all-releases []
-  (->> (d/q '[:find ?e :where [?e :release _]] db)
+(defn get-all-releases [list-id]
+  (->> (d/q `[:find ?e :where
+              [?e :release ?m]
+              [?m :list-id ~list-id]] db)
        (map first)
        (map #(d/pull db '[*] %))
        (remove :canceled)
        (map :version)
        (into #{})))
 
-(defn get-latest-released-changes []
-  (let [latest-version (:version (get-latest-release))]
+(defn get-latest-released-changes [list-id]
+  (let [latest-version (:version (get-latest-release list-id))]
     (->> (filter #(and (= latest-version (:version %))
                        (:released %))
-                 (get-reports :change))
+                 (get-reports {:list-id list-id :report-type :change}))
          (get-reports-msgs :change))))
 
-(defn get-updates []
+(defn get-updates [list-id]
   (let [features (:features (d/entity db [:defaults "init"]))]
     (->> (list
-          (when (:bugs features) (get-confirmed-bugs))
-          (when (:patches features) (get-approved-patches))
-          (when (:requests features) (get-unhandled-requests))
-          (when (:changes features) (get-upcoming-changes))
-          (when (:releases features) (get-releases))
-          (get-announcements))
+          (when (:bugs features) (get-confirmed-bugs list-id))
+          (when (:patches features) (get-approved-patches list-id))
+          (when (:requests features) (get-unhandled-requests list-id))
+          (when (:changes features) (get-upcoming-changes list-id))
+          (when (:releases features) (get-releases list-id))
+          (get-announcements list-id))
          (remove nil?)
          flatten)))
 
@@ -328,33 +357,52 @@
        (sort-by :cnt)
        reverse))
 
-(defn get-top-bug-contributors []
+(defn get-top-bug-contributors [list-id]
   (let [bugs-confirmed
-        (d/q '[:find ?br ?r :where [?b :bug ?br] [?b :confirmed ?r]] db)
+        (d/q `[:find ?br ?r :where
+               [?b :bug ?br]
+               [?b :confirmed ?r]
+               [?r :list-id ~list-id]] db)
         bugs-fixed
-        (d/q '[:find ?br ?r :where [?b :bug ?br] [?b :fixed ?r]] db)]
+        (d/q `[:find ?br ?r :where
+               [?b :bug ?br]
+               [?b :fixed ?r]
+               [?r :list-id ~list-id]] db)]
     ;; FIXME: Factor out
     (grouped-from-reports (concat bugs-confirmed bugs-fixed))))
 
-(defn get-top-patch-contributors []
+(defn get-top-patch-contributors [list-id]
   (let [patches-approved
-        (d/q '[:find ?br ?r :where [?b :patch ?br] [?b :approved ?r]] db)
+        (d/q `[:find ?br ?r :where
+               [?b :patch ?br]
+               [?b :approved ?r]
+               [?r :list-id ~list-id]] db)
         patches-applied
-        (d/q '[:find ?br ?r :where [?b :patch ?br] [?b :applied ?r]] db)]
+        (d/q `[:find ?br ?r :where
+               [?b :patch ?br]
+               [?b :applied ?r]
+               [?r :list-id ~list-id]] db)]
     (grouped-from-reports (concat patches-approved patches-applied))))
 
-(defn get-top-request-contributors []
+(defn get-top-request-contributors [list-id]
   (let [requests-handled
-        (d/q '[:find ?r :where [?b :request _] [?b :handled ?r]] db)
+        (d/q `[:find ?r :where
+               [?b :request _]
+               [?b :handled ?r]
+               [?r :list-id ~list-id]] db)
         requests-done
-        (d/q '[:find ?r :where [?b :request _] [?b :done ?r]] db)]
+        (d/q `[:find ?r :where
+               [?b :request _]
+               [?b :done ?r]
+               [?r :list-id ~list-id]] db)]
     (grouped-from-reports (concat requests-handled requests-done))))
 
-(defn get-top-announcement-contributors []
+(defn get-top-announcement-contributors [list-id]
   (grouped-from-reports
    (concat
-    (d/q '[:find ?r :where
+    (d/q `[:find ?r :where
            [?b :announcement ?r]
+           [?r :list-id ~list-id]
            (not [?b :canceled _])] db))))
 
 ;; Core db functions to add and update entities
@@ -363,12 +411,16 @@
   (d/transact! conn [{:log date :msg msg}]))
 
 (defn- add-mail! [{:keys [id from subject] :as msg} & private]
-  (let [headers     (walk/keywordize-keys (apply conj (:headers msg)))
+  (let [{:keys [List-Post X-BeenThere References]}
+        (walk/keywordize-keys (apply conj (:headers msg)))
         id          (get-id id)
-        refs-string (:References headers)
+        list-id     (when-let [lid (or List-Post X-BeenThere)]
+                      (get-email-address lid))
+        refs-string References
         refs        (if refs-string
                       (into #{} (string/split refs-string #"\s")) #{})]
     (d/transact! conn [{:message-id id
+                        :list-id    list-id
                         :subject    (trim-subject-prefix subject)
                         :references refs
                         :private    (not (nil? private))
@@ -910,13 +962,14 @@
       (d/transact! conn [[:db/retract r :released]]))))
 
 (defn- process-mail [{:keys [from] :as msg}]
-  (let [{:keys [To X-Original-To References]}
+  (let [{:keys [List-Post X-BeenThere References]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         references  (when (not-empty References)
                       (->> (string/split References #"\s")
                            (keep not-empty)
                            (map get-id)))
-        to          (when (string? To) (re-matches email-re To))
+        list-id     (when-let [lid (or List-Post X-BeenThere)]
+                      (get-email-address lid))
         from        (:address (first from))
         admins      (get-admins)
         maintainers (get-maintainers)
@@ -935,8 +988,8 @@
               ;; mails from maintainers
               (or (some maintainers (list from))
                   ;; A mailing list, only process mails sent there
-                  (some #{to X-Original-To}
-                        (list (:mailing-list-address config)))))))
+                  (some #{list-id}
+                        (map :address (:mailing-lists config)))))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
@@ -962,7 +1015,7 @@
          (when (some maintainers (list from))
            (when (-> defaults :features :changes)
              (when-let [version (new-change? msg)]
-               (if (some (get-all-releases) (list version))
+               (if (some (get-all-releases list-id) (list version))
                  (timbre/error
                   (format "%s tried to announce a change against released version %s"
                           from version))

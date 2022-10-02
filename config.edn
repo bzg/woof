@@ -47,18 +47,16 @@
  ;; FIXME: When implementing multiple lists
  ;; ;; The mailing lists addresses that Woof! to which the monitored
  ;; ;; mailbox is subscribed.
- ;; :mailing-lists
- ;; [{:address         "woof@bzg.fr"
- ;;   ;; The formatting string for links.  It should contain one and only
- ;;   ;; one %s occurrence that will be filled with the Message-Id of the
- ;;   ;; report.  This can be the URL of the mailing list archive, e.g.
- ;;   ;; https://list.orgmode.org/%s/
- ;;   :mail-url-format ""
- ;;   ;; The path as in http://localhost:3000/[SLUG]/
- ;;   ;; :slug "test"
- ;;   }]
- :mailing-list-address "public-ml@lists.io"
- :mail-url-format      "https://public-ml-archive.org/%s/"
+ :mailing-lists
+ [{;; The mailing list email address:
+   :address "my-list@lists.org"
+
+   ;; The formatting string for public email archive, where a unique
+   ;; %s stands for the message id of the email.
+   :mail-url-format "https://mail-archive.org/first-list/<%s>"
+
+   ;; The path as in http://localhost:3000/[SLUG]/:
+   :slug "list1"}]
  
  ;; Default application admin
  :admin-address  "admin@address.io"

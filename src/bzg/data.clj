@@ -2,102 +2,105 @@
   (:require [bzg.core :as core]
             [clojure.string :as string]))
 
-(defn- get-resources [what]
+(defn- get-resources [what list-id]
   (condp = what
-    :confirmed-bugs     (core/get-confirmed-bugs)
-    :unconfirmed-bugs   (core/get-unconfirmed-bugs)
-    :bugs               (core/get-unfixed-bugs)
-    :unhandled-requests (core/get-unhandled-requests)
-    :handled-requests   (core/get-handled-requests)
-    :requests           (core/get-undone-requests)
-    :unapproved-patches (core/get-unapproved-patches)
-    :approved-patches   (core/get-approved-patches)
-    :patches            (core/get-unapplied-patches)
-    :mails              (core/get-mails)
-    :changes            (core/get-upcoming-changes)
-    :released-changes   (core/get-latest-released-changes)
-    :announcements      (core/get-announcements)
-    :releases           (core/get-releases)
-    :updates            (core/get-updates)))
+    :confirmed-bugs     (core/get-confirmed-bugs list-id)
+    :unconfirmed-bugs   (core/get-unconfirmed-bugs list-id)
+    :bugs               (core/get-unfixed-bugs list-id)
+    :unhandled-requests (core/get-unhandled-requests list-id)
+    :handled-requests   (core/get-handled-requests list-id)
+    :requests           (core/get-undone-requests list-id)
+    :unapproved-patches (core/get-unapproved-patches list-id)
+    :approved-patches   (core/get-approved-patches list-id)
+    :patches            (core/get-unapplied-patches list-id)
+    :mails              (core/get-mails list-id)
+    :changes            (core/get-upcoming-changes list-id)
+    :released-changes   (core/get-latest-released-changes list-id)
+    :announcements      (core/get-announcements list-id)
+    :releases           (core/get-releases list-id)
+    :updates            (core/get-updates list-id)))
 
-(defn- get-data [what]
-  {:status 200
-   :body   (get-resources what)})
+(defn- get-data [what list-slug]
+  (let [list-id (core/slug-to-list-id list-slug)]
+    {:status 200
+     :body   (get-resources what list-id)}))
 
-(defn- get-org [what]
-  {:status  200
-   :headers {"Content-Type" "text/plain; charset=utf-8"}
-   :body
-   (string/join
-    "\n"
-    (map #(format " - [[%s][%s: %s]] (%s)"
-                  (if-let [fmt (:mail-url-format core/config)]
-                    (format fmt (:message-id %))
-                    (:message-id %))
-                  (:username %)
-                  (string/replace (:subject %) #"^\[[^]]+\] " "")
-                  (:date %)) 
-         (get-resources what)))})
+(defn- get-org [what list-slug]
+  (let [list-id (core/slug-to-list-id list-slug)]
+    {:status  200
+     :headers {"Content-Type" "text/plain; charset=utf-8"}
+     :body
+     (string/join
+      "\n"
+      (map #(format " - [[%s][%s: %s]] (%s)"
+                    (if-let [fmt (:mail-url-format core/config)]
+                      (format fmt (:message-id %))
+                      (:message-id %))
+                    (:username %)
+                    (string/replace (:subject %) #"^\[[^]]+\] " "")
+                    (:date %)) 
+           (get-resources what list-id)))}))
 
-(defn- get-md [what]
-  {:status  200
-   :headers {"Content-Type" "text/plain; charset=utf-8"}
-   :body
-   (string/join
-    "\n"
-    (map #(format " - [%s: %s](%s \"%s\")"
-                  (:username %)
-                  (string/replace (:subject %) #"^\[[^]]+\] " "")
-                  (if-let [fmt (:mail-url-format core/config)]
-                    (format fmt (:message-id %))
-                    (:message-id %))
-                  (:date %))
-         (get-resources what)))})
+(defn- get-md [what list-slug]
+  (let [list-id (core/slug-to-list-id list-slug)]
+    {:status  200
+     :headers {"Content-Type" "text/plain; charset=utf-8"}
+     :body
+     (string/join
+      "\n"
+      (map #(format " - [%s: %s](%s \"%s\")"
+                    (:username %)
+                    (string/replace (:subject %) #"^\[[^]]+\] " "")
+                    (if-let [fmt (:mail-url-format core/config)]
+                      (format fmt (:message-id %))
+                      (:message-id %))
+                    (:date %))
+           (get-resources what list-id)))}))
 
-(defn get-data-bugs [_] (get-data :bugs))
-(defn get-data-confirmed-bugs [_] (get-data :confirmed-bugs))
-(defn get-data-unconfirmed-bugs [_] (get-data :unconfirmed-bugs))
-(defn get-data-patches [_] (get-data :patches))
-(defn get-data-approved-patches [_] (get-data :approved-patches))
-(defn get-data-unapproved-patches [_] (get-data :unapproved-patches))
-(defn get-data-requests [_] (get-data :requests))
-(defn get-data-handled-requests [_] (get-data :handled-requests))
-(defn get-data-unhandled-requests [_] (get-data :unhandled-requests))
-(defn get-data-updates [_] (get-data :updates))
-(defn get-data-mails [_] (get-data :mails))
-(defn get-data-releases [_] (get-data :releases))
-(defn get-data-changes [_] (get-data :changes))
-(defn get-data-released-changes [_] (get-data :released-changes))
-(defn get-data-announcements [_] (get-data :announcements))
+(defn get-data-bugs [list-slug] (get-data :bugs list-slug))
+(defn get-data-confirmed-bugs [list-slug] (get-data :confirmed-bugs list-slug))
+(defn get-data-unconfirmed-bugs [list-slug] (get-data :unconfirmed-bugs list-slug))
+(defn get-data-patches [list-slug] (get-data :patches list-slug))
+(defn get-data-approved-patches [list-slug] (get-data :approved-patches list-slug))
+(defn get-data-unapproved-patches [list-slug] (get-data :unapproved-patches list-slug))
+(defn get-data-requests [list-slug] (get-data :requests list-slug))
+(defn get-data-handled-requests [list-slug] (get-data :handled-requests list-slug))
+(defn get-data-unhandled-requests [list-slug] (get-data :unhandled-requests list-slug))
+(defn get-data-updates [list-slug] (get-data :updates list-slug))
+(defn get-data-mails [list-slug] (get-data :mails list-slug))
+(defn get-data-releases [list-slug] (get-data :releases list-slug))
+(defn get-data-changes [list-slug] (get-data :changes list-slug))
+(defn get-data-released-changes [list-slug] (get-data :released-changes list-slug))
+(defn get-data-announcements [list-slug] (get-data :announcements list-slug))
 
-(defn get-org-bugs [_] (get-org :bugs))
-(defn get-org-confirmed-bugs [_] (get-org :confirmed-bugs))
-(defn get-org-unconfirmed-bugs [_] (get-org :unconfirmed-bugs))
-(defn get-org-patches [_] (get-org :patches))
-(defn get-org-approved-patches [_] (get-org :approved-patches))
-(defn get-org-unapproved-patches [_] (get-org :unapproved-patches))
-(defn get-org-requests [_] (get-org :requests))
-(defn get-org-handled-requests [_] (get-org :handled-requests))
-(defn get-org-unhandled-requests [_] (get-org :unhandled-requests))
-(defn get-org-updates [_] (get-org :updates))
-(defn get-org-mails [_] (get-org :mails))
-(defn get-org-releases [_] (get-org :releases))
-(defn get-org-changes [_] (get-org :changes))
-(defn get-org-released-changes [_] (get-org :released-changes))
-(defn get-org-announcements [_] (get-org :announcements))
+(defn get-org-bugs [list-slug] (get-org :bugs list-slug))
+(defn get-org-confirmed-bugs [list-slug] (get-org :confirmed-bugs list-slug))
+(defn get-org-unconfirmed-bugs [list-slug] (get-org :unconfirmed-bugs list-slug))
+(defn get-org-patches [list-slug] (get-org :patches list-slug))
+(defn get-org-approved-patches [list-slug] (get-org :approved-patches list-slug))
+(defn get-org-unapproved-patches [list-slug] (get-org :unapproved-patches list-slug))
+(defn get-org-requests [list-slug] (get-org :requests list-slug))
+(defn get-org-handled-requests [list-slug] (get-org :handled-requests list-slug))
+(defn get-org-unhandled-requests [list-slug] (get-org :unhandled-requests list-slug))
+(defn get-org-updates [list-slug] (get-org :updates list-slug))
+(defn get-org-mails [list-slug] (get-org :mails list-slug))
+(defn get-org-releases [list-slug] (get-org :releases list-slug))
+(defn get-org-changes [list-slug] (get-org :changes list-slug))
+(defn get-org-released-changes [list-slug] (get-org :released-changes list-slug))
+(defn get-org-announcements [list-slug] (get-org :announcements list-slug))
 
-(defn get-md-bugs [_] (get-md :bugs))
-(defn get-md-confirmed-bugs [_] (get-md :confirmed-bugs))
-(defn get-md-unconfirmed-bugs [_] (get-md :unconfirmed-bugs))
-(defn get-md-patches [_] (get-md :patches))
-(defn get-md-approved-patches [_] (get-md :approved-patches))
-(defn get-md-unapproved-patches [_] (get-md :unapproved-patches))
-(defn get-md-requests [_] (get-md :requests))
-(defn get-md-handled-requests [_] (get-md :handled-requests))
-(defn get-md-unhandled-requests [_] (get-md :unhandled-requests))
-(defn get-md-updates [_] (get-md :updates))
-(defn get-md-mails [_] (get-md :mails))
-(defn get-md-releases [_] (get-md :releases))
-(defn get-md-changes [_] (get-md :changes))
-(defn get-md-released-changes [_] (get-md :released-changes))
-(defn get-md-announcements [_] (get-md :announcements))
+(defn get-md-bugs [list-slug] (get-md :bugs list-slug))
+(defn get-md-confirmed-bugs [list-slug] (get-md :confirmed-bugs list-slug))
+(defn get-md-unconfirmed-bugs [list-slug] (get-md :unconfirmed-bugs list-slug))
+(defn get-md-patches [list-slug] (get-md :patches list-slug))
+(defn get-md-approved-patches [list-slug] (get-md :approved-patches list-slug))
+(defn get-md-unapproved-patches [list-slug] (get-md :unapproved-patches list-slug))
+(defn get-md-requests [list-slug] (get-md :requests list-slug))
+(defn get-md-handled-requests [list-slug] (get-md :handled-requests list-slug))
+(defn get-md-unhandled-requests [list-slug] (get-md :unhandled-requests list-slug))
+(defn get-md-updates [list-slug] (get-md :updates list-slug))
+(defn get-md-mails [list-slug] (get-md :mails list-slug))
+(defn get-md-releases [list-slug] (get-md :releases list-slug))
+(defn get-md-changes [list-slug] (get-md :changes list-slug))
+(defn get-md-released-changes [list-slug] (get-md :released-changes list-slug))
+(defn get-md-announcements [list-slug] (get-md :announcements list-slug))
