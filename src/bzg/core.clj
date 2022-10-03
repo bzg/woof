@@ -426,7 +426,7 @@
                         :list-id    list-id
                         :subject    (trim-subject-prefix subject)
                         :references refs
-                        :private    (not (nil? private))
+                        :private    (or private false)
                         :from       (:address (first from))
                         :username   (:name (first from))
                         :date       (java.util.Date.)
