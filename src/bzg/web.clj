@@ -152,13 +152,13 @@
    :mails    {:html "/mails.html" :fn page-mails}
    :tops     {:html "/tops.html" :fn page-tops}})
 
-(defn- get-page [list-slug query-params page]
+(defn- get-page [page {:keys [query-params path-params]}]
   (let [format-params   {:search     (get query-params "search")
                          :sorting-by (get query-params "sorting-by")}
         config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
                                format-params)
         html-page       (get html-page-fn page)
-        list-id         (core/slug-to-list-id list-slug)]
+        list-id         (core/slug-to-list-id (:list-slug path-params))]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
@@ -166,41 +166,17 @@
       (io/resource (str "html/" (:theme core/config) (:html html-page)))
       ((:fn html-page) list-id format-params config-defaults))}))
 
-(defn- get-page-home [{:keys [query-params]}]
-  (get-page nil query-params :home))
-
-(defn- get-page-index [{:keys [query-params path-params]}]
-  (get-page (:list-slug path-params) query-params :index))
-
-(defn- get-page-changes [{:keys [query-params path-params]}]
-  (get-page (:list-slug path-params) query-params :changes))
-
-(defn- get-page-mails [{:keys [query-params path-params]}]
-  (get-page (:list-slug path-params) query-params :mails))
-
-(defn- get-page-bugs [{:keys [query-params path-params]}]
-  (get-page (:list-slug path-params) query-params :bugs))
-
-(defn- get-page-requests [{:keys [query-params path-params]}]
-  (get-page (:list-slug path-params) query-params :requests))
-
-(defn- get-page-patches [{:keys [query-params path-params]}]
-  (get-page (:list-slug path-params) query-params :patches))
-
-(defn- get-page-tops [{:keys [query-params path-params]}]
-  (get-page (:list-slug path-params) query-params :tops))
-
 (def handler
   (ring/ring-handler
    (ring/router
-    [["/" {:get (fn [params] (get-page-home params))}]
-     ["/:list-slug/" {:get (fn [params] (get-page-index params))}]
-     ["/:list-slug/changes" {:get (fn [params] (get-page-changes params))}]
-     ["/:list-slug/requests" {:get (fn [params] (get-page-requests params))}]
-     ["/:list-slug/bugs" {:get (fn [params] (get-page-bugs params))}]
-     ["/:list-slug/patches" {:get (fn [params] (get-page-patches params))}]
-     ["/:list-slug/mails" {:get (fn [params] (get-page-mails params))}]
-     ["/:list-slug/tops" {:get (fn [params] (get-page-tops params))}]
+    [["/" {:get (fn [params] (get-page :home params))}]
+     ["/:list-slug/" {:get (fn [params] (get-page :index params))}]
+     ["/:list-slug/changes" {:get (fn [params] (get-page :changes params))}]
+     ["/:list-slug/requests" {:get (fn [params] (get-page :requests params))}]
+     ["/:list-slug/bugs" {:get (fn [params] (get-page :bugs params))}]
+     ["/:list-slug/patches" {:get (fn [params] (get-page :patches params))}]
+     ["/:list-slug/mails" {:get (fn [params] (get-page :mails params))}]
+     ["/:list-slug/tops" {:get (fn [params] (get-page :tops params))}]
      ["/howto"
       {:get (fn [_]
               {:status  200
