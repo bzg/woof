@@ -162,7 +162,7 @@
               [?m :list-id ~list-id]] db)
        (map first)
        ;; FIXME: (d/touch (d/entity ...) ? or just (d/entity ?)
-       (map #(d/pull db '[*] %))
+       (map #(d/entity db %))
        ;; Always remove canceled reports, we never need them
        (remove :deleted)
        (remove :canceled)))
@@ -182,7 +182,7 @@
 ;; (defn get-all-mails []
 ;;   (->> (d/q '[:find ?e :where [?e :message-id _]] db)
 ;;        (map first)
-;;        (map #(d/pull db '[*] %))
+;;        (map #(d/entity db %))
 ;;        (remove :private)
 ;;        (remove :deleted)
 ;;        (sort-by :date)
@@ -194,7 +194,7 @@
               [?e :message-id _]
               [?e :list-id ~list-id]] db)
        (map first)
-       (map #(d/pull db '[*] %))
+       (map #(d/entity db %))
        (remove :private)
        (remove :deleted)
        (sort-by :date)
@@ -215,7 +215,7 @@
 (defn get-logs []
   (->> (d/q '[:find ?e :where [?e :log _]] db)
        (map first)
-       (map #(d/pull db '[*] %))))
+       (map #(d/entity db %))))
 
 (defn get-announcements [list-id]
   (->> (get-reports {:list-id list-id :report-type :announcement})
@@ -285,7 +285,7 @@
               [?e :release ?m]
               [?m :list-id ~list-id]] db)
        (map first)
-       (map #(d/pull db '[*] %))
+       (map #(d/entity db %))
        (remove :canceled)
        (map (juxt :release #(hash-map :version (:version %))))
        (map (juxt #(select-keys (d/entity db (:db/id (first %)))
@@ -300,7 +300,7 @@
               [?e :release ?m]
               [?m :list-id ~list-id]] db)
        (map first)
-       (map #(d/pull db '[*] %))
+       (map #(d/entity db %))
        (remove :canceled)
        (map :version)
        (into #{})))
@@ -329,7 +329,7 @@
 (defn- get-persons []
   (->> (d/q '[:find ?p :where [?p :email ?_]] db)
        (map first)
-       (map #(d/pull db '[*] %))))
+       (map #(d/entity db %))))
 
 (defn get-admins []
   (->> (filter :admin (get-persons))
@@ -346,7 +346,7 @@
 (defn- grouped-from-reports [reports]
   (->> reports
        flatten
-       (map #(d/pull db '[*] %))
+       (map #(d/entity db %))
        (map :from)
        (group-by identity)
        (map (fn [[key val]]
