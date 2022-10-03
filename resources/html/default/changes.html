@@ -47,7 +47,7 @@
 		  </td>
 		  <td>
 		    {% if change.link %}
-		    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
+		    <a href="{{change.link}}" target="_blank" title="Sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
 		    {% else %}
 		    {{change.subject}}
 		    {% endif %}
@@ -115,7 +115,7 @@
 		  </td>
 		  <td>
 		    {% if change.link %}
-		    <a href="{{change.link}}" target="_blank" title="Visit email sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
+		    <a href="{{change.link}}" target="_blank" title="Sent by {{change.from}} on {{change.date}}">{{change.subject}}</a>
 		    {% else %}
 		    {{change.subject}}
 		    {% endif %}
@@ -185,7 +185,7 @@
 		  </td>
 		  <td>
 		    {% if release.link %}
-		    <a href="{{release.link}}" target="_blank" title="Visit email sent by {{release.from}} on {{release.date}}">{{release.subject}}</a>
+		    <a href="{{release.link}}" target="_blank" title="Sent by {{release.from}} on {{release.date}}">{{release.subject}}</a>
 		    {% else %}
 		    {{release.subject}}
 		    {% endif %}

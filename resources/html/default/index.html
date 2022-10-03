@@ -65,7 +65,7 @@
 	      </td>
 	      <td>
 		{% if announcement.link %}
-		<a href="{{announcement.link}}" target="_blank" title="Visit email sent by {{announcement.from}} on {{announcement.date}}">{{announcement.subject}}</a>
+		<a href="{{announcement.link}}" target="_blank" title="Sent by {{announcement.from}} on {{announcement.date}}">{{announcement.subject}}</a>
 		{% else %}
 		{{announcement.subject}}
 		{% endif %}

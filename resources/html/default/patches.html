@@ -49,7 +49,7 @@
 		  </td>
 		  <td>
 		    {% if patch.link %}
-		    <a href="{{patch.link}}" target="_blank" title="Visit email sent by {{patch.from}} on {{patch.date}}">{{patch.subject}}</a>
+		    <a href="{{patch.link}}" target="_blank" title="Sent by {{patch.from}} on {{patch.date}}">{{patch.subject}}</a>
 		    {% else %}
 		    {{patch.subject}}
 		    {% endif %}
@@ -114,7 +114,7 @@
 		  </td>
 		  <td>
 		    {% if patch.link %}
-		    <a href="{{patch.link}}" target="_blank" title="Visit email sent by {{patch.from}} on {{patch.date}}">{{patch.subject}}</a>
+		    <a href="{{patch.link}}" target="_blank" title="Sent by {{patch.from}} on {{patch.date}}">{{patch.subject}}</a>
 		    {% else %}
 		    {{patch.subject}}
 		    {% endif %}

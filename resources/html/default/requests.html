@@ -48,7 +48,7 @@
 		  </td>
 		  <td>
 		    {% if request.link %}
-		    <a href="{{request.link}}" target="_blank" title="Visit email sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>
+		    <a href="{{request.link}}" target="_blank" title="Sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>
 		    {% else %}
 		    {{request.subject}}
 		    {% endif %}
@@ -112,7 +112,7 @@
 		  </td>
 		  <td>
 		    {% if request.link %}
-		    <a href="{{request.link}}" target="_blank" title="Visit email sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>
+		    <a href="{{request.link}}" target="_blank" title="Sent by {{request.from}} on {{request.date}}">{{request.subject}}</a>
 		    {% else %}
 		    {{request.subject}}
 		    {% endif %}
