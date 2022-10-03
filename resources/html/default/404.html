@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" class="has-navbar-fixed-top">
+  {% include "html/default/head.html" %}
+  <body>
+    {% include "html/default/hero.html"%}
+    <div class="container">
+      {% if config.maintenance %}
+      <div class="content colum is-size-1 is-offset-4 is-4 has-text-centered">
+	<p class="button is-size-4 is-info is-light">
+	  <a title="Send an email to the admin" href="mailto:{{config.admin}}">
+	    Under maintenance, sorry.
+	  </a>
+	</p>
+      </div>
+      {% else %}
+      <section>
+	<p>404 error.</p>
+      </section>
+      {% endif %}
+    </div>
+    {% include "html/default/footer.html" %}
+  </body>
+</html>

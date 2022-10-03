@@ -211,7 +211,15 @@
     {:data {:muuntaja   m/instance
       	    :middleware [params/wrap-params
                          muuntaja/format-middleware]}})
-   (ring/create-default-handler)
+   (ring/create-default-handler
+    {:not-found
+     (fn [{:keys [query-params path-params]}]
+       {:status  200
+        :headers {"Content-Type" "text/html"}
+        :body    (html/render-file
+                  (io/resource (str "html/" (:theme core/config) "/404.html"))
+                  (merge (into {} (d/entity core/db [:defaults "init"]))
+                         html-defaults query-params path-params))})})
    {:middleware
     [parameters/parameters-middleware
      #(wrap-cors
