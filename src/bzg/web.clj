@@ -28,7 +28,9 @@
                  (not-empty (:mail-url-format
                              (first (filter #(= (:address %) list-id)
                                             (:mailing-lists core/config)))))]
-          #(assoc-in % [:link] (format mail-url-format (:message-id %)))
+          #(assoc-in % [:link]
+                     (or (:archived-at %)
+                         (format mail-url-format (:message-id %))))
           identity)]
     (->>
      entries

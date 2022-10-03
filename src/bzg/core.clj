@@ -145,6 +145,9 @@
       (string/replace #" *\([^)]+\)" "")
       (string/trim)))
 
+(defn- trim-url-brackets [^String s]
+  (-> s (string/replace #"^<?([^>]+)>?$" "$1")))
+
 ;; Trim subject prefixes in mailing list
 (defn- trim-subject-prefix [^String s]
   (let [p (re-pattern
@@ -414,7 +417,7 @@
   (d/transact! conn [{:log date :msg msg}]))
 
 (defn- add-mail! [{:keys [id from subject] :as msg} & private]
-  (let [{:keys [List-Post X-BeenThere References]}
+  (let [{:keys [List-Post X-BeenThere References Archived-At]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         id          (get-id id)
         list-id     (when-let [lid (or List-Post X-BeenThere)]
@@ -424,6 +427,13 @@
                       (into #{} (string/split refs-string #"\s")) #{})]
     (d/transact! conn [{:message-id id
                         :list-id    list-id
+                        :archived-at
+                        (if-let [aa Archived-At]
+                          (trim-url-brackets aa)
+                          (if-let [fmt (list-id-or-slug-to-mail-url-format
+                                        {:list-id list-id})]
+                            (format fmt id)
+                            (format (:mail-url-format config) id)))                                       
                         :subject    (trim-subject-prefix subject)
                         :references refs
                         :private    (or private false)
