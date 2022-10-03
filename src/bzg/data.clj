@@ -1,106 +1,113 @@
 (ns bzg.data
   (:require [bzg.core :as core]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [clj-rss.core :as rss]
+            [selmer.parser :as html]
+            [clojure.java.io :as io]))
 
-(defn- get-resources [what list-id]
-  (condp = what
-    :confirmed-bugs     (core/get-confirmed-bugs list-id)
-    :unconfirmed-bugs   (core/get-unconfirmed-bugs list-id)
-    :bugs               (core/get-unfixed-bugs list-id)
-    :unhandled-requests (core/get-unhandled-requests list-id)
-    :handled-requests   (core/get-handled-requests list-id)
-    :requests           (core/get-undone-requests list-id)
-    :unapproved-patches (core/get-unapproved-patches list-id)
-    :approved-patches   (core/get-approved-patches list-id)
-    :patches            (core/get-unapplied-patches list-id)
-    :mails              (core/get-mails list-id)
-    :changes            (core/get-upcoming-changes list-id)
-    :released-changes   (core/get-latest-released-changes list-id)
-    :announcements      (core/get-announcements list-id)
-    :releases           (core/get-releases list-id)
-    :updates            (core/get-updates list-id)))
+(defn- format-org [resources list-id]
+  (let [fmt (core/list-id-or-slug-to-mail-url-format {:list-id list-id})]
+    (->> resources
+         (map #(format " - [[%s][%s: %s]] (%s)"
+                       (if fmt (format fmt (:message-id %))
+                           (:message-id %))
+                       (:username %)
+                       (string/replace (:subject %) #"^\[[^]]+\] " "")
+                       (:date %)))
+         (string/join "\n"))))
 
-(defn- get-data [what list-slug]
-  (let [list-id (core/slug-to-list-id list-slug)]
-    {:status 200
-     :body   (get-resources what list-id)}))
+(defn- format-md [resources list-id]
+  (let [fmt (core/list-id-or-slug-to-mail-url-format {:list-id list-id})]
+    (->> resources
+         (map #(format " - [%s: %s](%s \"%s\")"
+                       (:username %)
+                       (string/replace (:subject %) #"^\[[^]]+\] " "")
+                       (if fmt (format fmt (:message-id %))
+                           (:message-id %))
+                       (:date %)))
+         (string/join "\n"))))
 
-(defn- get-org [what list-slug]
-  (let [list-id (core/slug-to-list-id list-slug)]
+(defn feed-item-description [msg fmt]
+  (let [msgid (:message-id msg)]
+    (format
+     "<![CDATA[ %s ]]>"
+     (if fmt
+       (html/render-file
+        (io/resource (str "html/" (:theme core/config) "/link.html"))
+        (assoc msg :link (format fmt msgid)))
+       msgid))))
+
+(defn feed-item [{:keys [message-id subject date from] :as msg} list-id]
+  (let [fmt  (core/list-id-or-slug-to-mail-url-format {:list-id list-id})
+        link (if fmt (format fmt message-id) message-id)]
+    {:title       subject
+     :link        link
+     :description (feed-item-description msg fmt)
+     :author      from
+     :guid        link
+     :pubDate     (.toInstant date)}))
+
+(defn- format-rss [resources list-id]
+  (rss/channel-xml
+   {:title       (str (:project-name (:ui core/config)) " - " list-id)
+    :link        (string/replace
+                  (:hostname core/config)
+                  #"([^/])/*$" (str "$1/" list-id))
+    :description (str (:title core/config) " - " list-id)}
+   (sort-by :pubDate (map #(feed-item % list-id) resources))))
+
+(defn get-data [what {:keys [path-params]}]
+  (let [list-id   (core/slug-to-list-id (:list-slug path-params))
+        format    (subs (:format path-params) 1)
+        resources (condp = what
+                    :confirmed-bugs     (core/get-confirmed-bugs list-id)
+                    :unconfirmed-bugs   (core/get-unconfirmed-bugs list-id)
+                    :bugs               (core/get-unfixed-bugs list-id)
+                    :handled-requests   (core/get-handled-requests list-id)
+                    :unhandled-requests (core/get-unhandled-requests list-id)
+                    :requests           (core/get-undone-requests list-id)
+                    :approved-patches   (core/get-approved-patches list-id)
+                    :unapproved-patches (core/get-unapproved-patches list-id)
+                    :patches            (core/get-unapplied-patches list-id)
+                    :unreleased-changes (core/get-unreleased-changes list-id)
+                    :released-changes   (core/get-latest-released-changes list-id)
+                    :changes            (core/get-changes list-id)
+                    :announcements      (core/get-announcements list-id)
+                    :mails              (core/get-mails list-id)
+                    :releases           (core/get-releases list-id)
+                    :updates            (core/get-updates list-id))
+        headers   (condp = format
+                    "rss"  {"Content-Type" "application/xml"}                    
+                    "md"   {"Content-Type" "text/plain; charset=utf-8"}
+                    "org"  {"Content-Type" "text/plain; charset=utf-8"}
+                    "json" nil ;; FIXME: Weird?
+                    )]
     {:status  200
-     :headers {"Content-Type" "text/plain; charset=utf-8"}
+     :headers headers
      :body
-     (string/join
-      "\n"
-      (map #(format " - [[%s][%s: %s]] (%s)"
-                    (if-let [fmt (:mail-url-format core/config)]
-                      (format fmt (:message-id %))
-                      (:message-id %))
-                    (:username %)
-                    (string/replace (:subject %) #"^\[[^]]+\] " "")
-                    (:date %)) 
-           (get-resources what list-id)))}))
+     (condp = format
+       "rss"  (format-rss resources list-id)
+       "json" resources
+       "md"   (format-md resources list-id)
+       "org"  (format-org resources list-id))}))
 
-(defn- get-md [what list-slug]
-  (let [list-id (core/slug-to-list-id list-slug)]
-    {:status  200
-     :headers {"Content-Type" "text/plain; charset=utf-8"}
-     :body
-     (string/join
-      "\n"
-      (map #(format " - [%s: %s](%s \"%s\")"
-                    (:username %)
-                    (string/replace (:subject %) #"^\[[^]]+\] " "")
-                    (if-let [fmt (:mail-url-format core/config)]
-                      (format fmt (:message-id %))
-                      (:message-id %))
-                    (:date %))
-           (get-resources what list-id)))}))
+(defn get-bugs-data [params] (get-data :bugs params))
+(defn get-unconfirmed-bugs-data [params] (get-data :unconfirmed-bugs params))
+(defn get-confirmed-bugs-data [params] (get-data :confirmed-bugs params))
 
-(defn get-data-bugs [list-slug] (get-data :bugs list-slug))
-(defn get-data-confirmed-bugs [list-slug] (get-data :confirmed-bugs list-slug))
-(defn get-data-unconfirmed-bugs [list-slug] (get-data :unconfirmed-bugs list-slug))
-(defn get-data-patches [list-slug] (get-data :patches list-slug))
-(defn get-data-approved-patches [list-slug] (get-data :approved-patches list-slug))
-(defn get-data-unapproved-patches [list-slug] (get-data :unapproved-patches list-slug))
-(defn get-data-requests [list-slug] (get-data :requests list-slug))
-(defn get-data-handled-requests [list-slug] (get-data :handled-requests list-slug))
-(defn get-data-unhandled-requests [list-slug] (get-data :unhandled-requests list-slug))
-(defn get-data-updates [list-slug] (get-data :updates list-slug))
-(defn get-data-mails [list-slug] (get-data :mails list-slug))
-(defn get-data-releases [list-slug] (get-data :releases list-slug))
-(defn get-data-changes [list-slug] (get-data :changes list-slug))
-(defn get-data-released-changes [list-slug] (get-data :released-changes list-slug))
-(defn get-data-announcements [list-slug] (get-data :announcements list-slug))
+(defn get-requests-data [params] (get-data :requests params))
+(defn get-unhandled-requests-data [params] (get-data :unhandled-requests params))
+(defn get-handled-requests-data [params] (get-data :handled-requests params))
 
-(defn get-org-bugs [list-slug] (get-org :bugs list-slug))
-(defn get-org-confirmed-bugs [list-slug] (get-org :confirmed-bugs list-slug))
-(defn get-org-unconfirmed-bugs [list-slug] (get-org :unconfirmed-bugs list-slug))
-(defn get-org-patches [list-slug] (get-org :patches list-slug))
-(defn get-org-approved-patches [list-slug] (get-org :approved-patches list-slug))
-(defn get-org-unapproved-patches [list-slug] (get-org :unapproved-patches list-slug))
-(defn get-org-requests [list-slug] (get-org :requests list-slug))
-(defn get-org-handled-requests [list-slug] (get-org :handled-requests list-slug))
-(defn get-org-unhandled-requests [list-slug] (get-org :unhandled-requests list-slug))
-(defn get-org-updates [list-slug] (get-org :updates list-slug))
-(defn get-org-mails [list-slug] (get-org :mails list-slug))
-(defn get-org-releases [list-slug] (get-org :releases list-slug))
-(defn get-org-changes [list-slug] (get-org :changes list-slug))
-(defn get-org-released-changes [list-slug] (get-org :released-changes list-slug))
-(defn get-org-announcements [list-slug] (get-org :announcements list-slug))
+(defn get-changes-data [params] (get-data :changes params))
+(defn get-released-changes-data [params] (get-data :released-changes params))
+(defn get-unreleased-changes-data [params] (get-data :unreleased-changes params))
 
-(defn get-md-bugs [list-slug] (get-md :bugs list-slug))
-(defn get-md-confirmed-bugs [list-slug] (get-md :confirmed-bugs list-slug))
-(defn get-md-unconfirmed-bugs [list-slug] (get-md :unconfirmed-bugs list-slug))
-(defn get-md-patches [list-slug] (get-md :patches list-slug))
-(defn get-md-approved-patches [list-slug] (get-md :approved-patches list-slug))
-(defn get-md-unapproved-patches [list-slug] (get-md :unapproved-patches list-slug))
-(defn get-md-requests [list-slug] (get-md :requests list-slug))
-(defn get-md-handled-requests [list-slug] (get-md :handled-requests list-slug))
-(defn get-md-unhandled-requests [list-slug] (get-md :unhandled-requests list-slug))
-(defn get-md-updates [list-slug] (get-md :updates list-slug))
-(defn get-md-mails [list-slug] (get-md :mails list-slug))
-(defn get-md-releases [list-slug] (get-md :releases list-slug))
-(defn get-md-changes [list-slug] (get-md :changes list-slug))
-(defn get-md-released-changes [list-slug] (get-md :released-changes list-slug))
-(defn get-md-announcements [list-slug] (get-md :announcements list-slug))
+(defn get-patches-data [params] (get-data :patches params))
+(defn get-unapproved-patches-data [params] (get-data :unapproved-patches params))
+(defn get-approved-patches-data [params] (get-data :approved-patches params))
+
+(defn get-announcements-data [params] (get-data :announcements params))
+(defn get-mails-data [params] (get-data :mails params))
+(defn get-releases-data [params] (get-data :releases params))
+(defn get-updates-data [params] (get-data :updates params))

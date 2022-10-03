@@ -5,27 +5,26 @@
             [selmer.parser :as html]
             [clojure.java.io :as io]))
 
-(defn feed-description [msg what]
-  (let [what  (name what)
-        msgid (:message-id msg)]
-    (format
-     "<![CDATA[ %s ]]>"
-     (if-let [fmt (:mail-url-format core/config)]
-       (html/render-file
-        (io/resource (str "html/" (:theme core/config) "/link.html"))
-        (assoc msg :link (format fmt msgid) :what what))
-       (str msgid (format " (%s)" what))))))
+;; (defn feed-description [msg fmt]
+;;   (let [msgid (:message-id msg)]
+;;     (format
+;;      "<![CDATA[ %s ]]>"
+;;      (if-let [fmt (:mail-url-format core/config)]
+;;        (html/render-file
+;;         (io/resource (str "html/" (:theme core/config) "/link.html"))
+;;         (assoc msg :link (format fmt msgid)))
+;;        msgid))))
 
-(defn feed-item [{:keys [message-id subject date from] :as msg} what]
-  (let [link (if-let [fmt (:mail-url-format core/config)]
-               (format fmt message-id)
-               message-id)]
-    {:title       subject
-     :link        link
-     :description (feed-description msg what)
-     :author      from
-     :guid        link
-     :pubDate     (.toInstant date)}))
+;; (defn feed-item [{:keys [message-id subject date from] :as msg} list-id]
+;;   (let [link (if-let [fmt (:mail-url-format core/config)]
+;;                (format fmt message-id)
+;;                message-id)]
+;;     {:title       subject
+;;      :link        link
+;;      :description (feed-description msg)
+;;      :author      from
+;;      :guid        link
+;;      :pubDate     (.toInstant date)}))
 
 (defn feed [path items]
   {:status  200
@@ -39,25 +38,25 @@
      :description (str (:title core/config) " - " path)}
     items)})
 
-(defn feed-updates [list-id]
-  (feed "/updates.rss"
-        (sort-by
-         :pubDate
-         (concat
-          (map #(feed-item % :confirmed-bugs) (core/get-confirmed-bugs list-id))
-          (map #(feed-item % :unconfirmed-bugs) (core/get-unconfirmed-bugs list-id))
-          (map #(feed-item % :bugs) (core/get-unfixed-bugs list-id))
-          (map #(feed-item % :mails) (core/get-mails list-id))
-          (map #(feed-item % :unhandled-requests) (core/get-unhandled-requests list-id))
-          (map #(feed-item % :handled-requests) (core/get-handled-requests list-id))
-          (map #(feed-item % :requests) (core/get-undone-requests list-id))
-          (map #(feed-item % :unapproved-patches) (core/get-unapproved-patches list-id))
-          (map #(feed-item % :approved-patches) (core/get-approved-patches list-id))
-          (map #(feed-item % :patches) (core/get-unapplied-patches list-id))
-          (map #(feed-item % :changes) (core/get-upcoming-changes list-id))
-          (map #(feed-item % :released-changes) (core/get-latest-released-changes list-id))
-          (map #(feed-item % :announcements) (core/get-announcements list-id))
-          (map #(feed-item % :releases) (core/get-releases list-id))))))
+;; (defn feed-updates [list-id]
+;;   (feed "/updates.rss"
+;;         (sort-by
+;;          :pubDate
+;;          (concat
+;;           (map #(feed-item % :confirmed-bugs) (core/get-confirmed-bugs list-id))
+;;           (map #(feed-item % :unconfirmed-bugs) (core/get-unconfirmed-bugs list-id))
+;;           (map #(feed-item % :bugs) (core/get-unfixed-bugs list-id))
+;;           (map #(feed-item % :mails) (core/get-mails list-id))
+;;           (map #(feed-item % :unhandled-requests) (core/get-unhandled-requests list-id))
+;;           (map #(feed-item % :handled-requests) (core/get-handled-requests list-id))
+;;           (map #(feed-item % :requests) (core/get-undone-requests list-id))
+;;           (map #(feed-item % :unapproved-patches) (core/get-unapproved-patches list-id))
+;;           (map #(feed-item % :approved-patches) (core/get-approved-patches list-id))
+;;           (map #(feed-item % :patches) (core/get-unapplied-patches list-id))
+;;           (map #(feed-item % :changes) (core/get-released-changes list-id))
+;;           (map #(feed-item % :released-changes) (core/get-latest-released-changes list-id))
+;;           (map #(feed-item % :announcements) (core/get-announcements list-id))
+;;           (map #(feed-item % :releases) (core/get-releases list-id))))))
 
 (defn- make-feed [{:keys [path what list-id]}]
   (feed path
@@ -78,7 +77,7 @@
                  :patches            (core/get-unapplied-patches list-id)
                  :mails              (core/get-mails list-id)
                  :announcements      (core/get-announcements list-id)
-                 :changes            (core/get-upcoming-changes list-id)
+                 :changes            (core/get-unreleased-changes list-id)
                  :released-changes   (core/get-latest-released-changes list-id)
                  :releases           (core/get-releases list-id)
                  :updates            (core/get-updates list-id)

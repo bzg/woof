@@ -3,7 +3,6 @@
             [reitit.ring :as ring]
             [bzg.core :as core]
             [bzg.data :as data]
-            [bzg.feeds :as feeds]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             ;; FIXME: Remove in production
             [ring.middleware.reload :as reload]
@@ -82,7 +81,7 @@
        {:changes
         (entries-format
          (merge {:list-id list-id
-                 :entries (core/get-upcoming-changes list-id)}
+                 :entries (core/get-unreleased-changes list-id)}
                 format-params))})
      (when (-> config-defaults :features :release)
        {:released-changes
@@ -169,105 +168,46 @@
 (def handler
   (ring/ring-handler
    (ring/router
-    [["/" {:get (fn [params] (get-page :home params))}]
-     ["/:list-slug/" {:get (fn [params] (get-page :index params))}]
-     ["/:list-slug/changes" {:get (fn [params] (get-page :changes params))}]
-     ["/:list-slug/requests" {:get (fn [params] (get-page :requests params))}]
-     ["/:list-slug/bugs" {:get (fn [params] (get-page :bugs params))}]
-     ["/:list-slug/patches" {:get (fn [params] (get-page :patches params))}]
-     ["/:list-slug/mails" {:get (fn [params] (get-page :mails params))}]
-     ["/:list-slug/tops" {:get (fn [params] (get-page :tops params))}]
-     ["/howto"
-      {:get (fn [_]
-              {:status  200
-               :headers {"Content-Type" "text/html"}
-               :body    (html/render-file
-                         (str "html/" (:theme core/config) "/index.html")
-                         (merge html-defaults
-                                {:howto (md/md-to-html-string
-                                         (slurp (io/resource "md/howto.md")))}))})}]
-
-     ;; FIXME: only expose enabled export formats?
-     ;; Json data
-     ["/:list-slug/updates.json" {:get (fn [{:keys [path-params]}] (data/get-data-updates (:list-slug path-params)))}]
-     ["/:list-slug/mails.json" {:get (fn [{:keys [path-params]}] (data/get-data-mails (:list-slug path-params)))}]
-     ["/:list-slug/changes.json" {:get (fn [{:keys [path-params]}] (data/get-data-changes (:list-slug path-params)))}]
-     ["/:list-slug/released-changes.json" {:get (fn [{:keys [path-params]}] (data/get-data-released-changes (:list-slug path-params)))}]
-     ["/:list-slug/announcements.json" {:get (fn [{:keys [path-params]}] (data/get-data-announcements (:list-slug path-params)))}]
-     ["/:list-slug/releases.json" {:get (fn [{:keys [path-params]}] (data/get-data-releases (:list-slug path-params)))}]
-
-     ["/:list-slug/bugs.json" {:get (fn [{:keys [path-params]}] (data/get-data-bugs (:list-slug path-params)))}]
-     ["/:list-slug/confirmed-bugs.json" {:get (fn [{:keys [path-params]}] (data/get-data-confirmed-bugs (:list-slug path-params)))}]
-     ["/:list-slug/unconfirmed-bugs.json" {:get (fn [{:keys [path-params]}] (data/get-data-unconfirmed-bugs (:list-slug path-params)))}]
-
-     ["/:list-slug/patches.json" {:get (fn [{:keys [path-params]}] (data/get-data-patches (:list-slug path-params)))}]
-     ["/:list-slug/approved-patches.json" {:get (fn [{:keys [path-params]}] (data/get-data-approved-patches (:list-slug path-params)))}]
-     ["/:list-slug/unapproved-patches.json" {:get (fn [{:keys [path-params]}] (data/get-data-unapproved-patches (:list-slug path-params)))}]
-
-     ["/:list-slug/requests.json" {:get (fn [{:keys [path-params]}] (data/get-data-requests (:list-slug path-params)))}]
-     ["/:list-slug/handled-requests.json" {:get (fn [{:keys [path-params]}] (data/get-data-handled-requests (:list-slug path-params)))}]
-     ["/:list-slug/unhandled-requests.json" {:get (fn [{:keys [path-params]}] (data/get-data-unhandled-requests (:list-slug path-params)))}]
-
-     ;; Org data
-     ["/:list-slug/updates.org" {:get (fn [{:keys [path-params]}] (data/get-org-updates (:list-slug path-params)))}]
-     ["/:list-slug/mails.org" {:get (fn [{:keys [path-params]}] (data/get-org-mails (:list-slug path-params)))}]
-     ["/:list-slug/changes.org" {:get (fn [{:keys [path-params]}] (data/get-org-changes (:list-slug path-params)))}]
-     ["/:list-slug/released-changes.org" {:get (fn [{:keys [path-params]}] (data/get-org-released-changes (:list-slug path-params)))}]
-     ["/:list-slug/announcements.org" {:get (fn [{:keys [path-params]}] (data/get-org-announcements (:list-slug path-params)))}]
-     ["/:list-slug/releases.org" {:get (fn [{:keys [path-params]}] (data/get-org-releases (:list-slug path-params)))}]
-
-     ["/:list-slug/bugs.org" {:get (fn [{:keys [path-params]}] (data/get-org-bugs (:list-slug path-params)))}]
-     ["/:list-slug/confirmed-bugs.org" {:get (fn [{:keys [path-params]}] (data/get-org-confirmed-bugs (:list-slug path-params)))}]
-     ["/:list-slug/unconfirmed-bugs.org" {:get (fn [{:keys [path-params]}] (data/get-org-unconfirmed-bugs (:list-slug path-params)))}]
-
-     ["/:list-slug/patches.org" {:get (fn [{:keys [path-params]}] (data/get-org-patches (:list-slug path-params)))}]
-     ["/:list-slug/approved-patches.org" {:get (fn [{:keys [path-params]}] (data/get-org-approved-patches (:list-slug path-params)))}]
-     ["/:list-slug/unapproved-patches.org" {:get (fn [{:keys [path-params]}] (data/get-org-unapproved-patches (:list-slug path-params)))}]
-
-     ["/:list-slug/requests.org" {:get (fn [{:keys [path-params]}] (data/get-org-requests (:list-slug path-params)))}]
-     ["/:list-slug/handled-requests.org" {:get (fn [{:keys [path-params]}] (data/get-org-handled-requests (:list-slug path-params)))}]
-     ["/:list-slug/unhandled-requests.org" {:get (fn [{:keys [path-params]}] (data/get-org-unhandled-requests (:list-slug path-params)))}]
-
-     ;; Markdown data
-     ["/:list-slug/updates.md" {:get (fn [{:keys [path-params]}] (data/get-md-updates (:list-slug path-params)))}]
-     ["/:list-slug/mails.md" {:get (fn [{:keys [path-params]}] (data/get-md-mails (:list-slug path-params)))}]
-     ["/:list-slug/changes.md" {:get (fn [{:keys [path-params]}] (data/get-md-changes (:list-slug path-params)))}]
-     ["/:list-slug/released-changes.md" {:get (fn [{:keys [path-params]}] (data/get-md-released-changes (:list-slug path-params)))}]
-     ["/:list-slug/announcements.md" {:get (fn [{:keys [path-params]}] (data/get-md-announcements (:list-slug path-params)))}]
-     ["/:list-slug/releases.md" {:get (fn [{:keys [path-params]}] (data/get-md-releases (:list-slug path-params)))}]
-
-     ["/:list-slug/bugs.md" {:get (fn [{:keys [path-params]}] (data/get-md-bugs (:list-slug path-params)))}]
-     ["/:list-slug/confirmed-bugs.md" {:get (fn [{:keys [path-params]}] (data/get-md-confirmed-bugs (:list-slug path-params)))}]
-     ["/:list-slug/unconfirmed-bugs.md" {:get (fn [{:keys [path-params]}] (data/get-md-unconfirmed-bugs (:list-slug path-params)))}]
-
-     ["/:list-slug/patches.md" {:get (fn [{:keys [path-params]}] (data/get-md-patches (:list-slug path-params)))}]
-     ["/:list-slug/approved-patches.md" {:get (fn [{:keys [path-params]}] (data/get-md-approved-patches (:list-slug path-params)))}]
-     ["/:list-slug/unapproved-patches.md" {:get (fn [{:keys [path-params]}] (data/get-md-unapproved-patches (:list-slug path-params)))}]
-
-     ["/:list-slug/requests.md" {:get (fn [{:keys [path-params]}] (data/get-md-requests (:list-slug path-params)))}]
-     ["/:list-slug/handled-requests.md" {:get (fn [{:keys [path-params]}] (data/get-md-handled-requests (:list-slug path-params)))}]
-     ["/:list-slug/unhandled-requests.md" {:get (fn [{:keys [path-params]}] (data/get-md-unhandled-requests (:list-slug path-params)))}]
-
-     ;; RSS feeds
-     ["/:list-slug/updates.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-updates (:list-slug path-params)))}]
-     ["/:list-slug/mails.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-mails (:list-slug path-params)))}]
-     ["/:list-slug/changes.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-changes (:list-slug path-params)))}]
-     ["/:list-slug/released-changes.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-released-changes (:list-slug path-params)))}]
-     ["/:list-slug/announcements.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-announcements (:list-slug path-params)))}]
-     ["/:list-slug/releases.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-releases (:list-slug path-params)))}]
-
-     ["/:list-slug/bugs.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-bugs (:list-slug path-params)))}]
-     ["/:list-slug/confirmed-bugs.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-confirmed-bugs (:list-slug path-params)))}]
-     ["/:list-slug/unconfirmed-bugs.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-unconfirmed-bugs (:list-slug path-params)))}]
-
-     ["/:list-slug/patches.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-patches (:list-slug path-params)))}]
-     ["/:list-slug/approved-patches.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-approved-patches (:list-slug path-params)))}]
-     ["/:list-slug/unapproved-patches.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-unapproved-patches (:list-slug path-params)))}]
-
-     ["/:list-slug/requests.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-requests (:list-slug path-params)))}]
-     ["/:list-slug/handled-requests.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-handled-requests (:list-slug path-params)))}]
-     ["/:list-slug/unhandled-requests.rss" {:get (fn [{:keys [path-params]}] (feeds/feed-unhandled-requests (:list-slug path-params)))}]
-     ]
+    [["/"
+      ["" {:get #(get-page :home %)}]
+      ["howto"
+       {:get (fn [_]
+               {:status  200
+                :headers {"Content-Type" "text/html"}
+                :body    (html/render-file
+                          (str "html/" (:theme core/config) "/index.html")
+                          (merge html-defaults
+                                 {:howto (md/md-to-html-string
+                                          (slurp (io/resource "md/howto.md")))}))})}]
+      [":list-slug/"
+       ["" {:get #(get-page :index %)}]
+       ["updates:format" {:get #(data/get-updates-data %)}]
+       ["announcements:format" {:get #(data/get-announcements-data %)}]
+       ["bugs"
+        ["" {:get #(get-page :bugs %)}]
+        [":format" {:get #(data/get-bugs-data %)}]
+        ["-unconfirmed:format" {:get #(data/get-unconfirmed-bugs-data %)}]
+        ["-confirmed:format" {:get #(data/get-confirmed-bugs-data %)}]]
+       ["requests"
+        ["" {:get #(get-page :requests %)}]
+        [":format" {:get #(data/get-requests-data %)}]
+        ["-unhandled:format" {:get #(data/get-unhandled-requests-data %)}]
+        ["-handled:format" {:get #(data/get-handled-requests-data %)}]]
+       ["changes"
+        ["" {:get #(get-page :changes %)}]
+        [":format" {:get #(data/get-changes-data %)}]
+        ["-released:format" {:get #(data/get-released-changes-data %)}]]
+       ["patches"
+        ["" {:get #(get-page :patches %)}]
+        [":format" {:get #(data/get-patches-data %)}]
+        ["-unapproved:format" {:get #(data/get-unapproved-patches-data %)}]
+        ["-approved:format" {:get #(data/get-approved-patches-data %)}]]
+       ["mails"
+        ["" {:get #(get-page :mails %)}]
+        [":format" {:get #(data/get-mails-data %)}]]
+       ["tops"
+        ["" {:get #(get-page :tops %)}]
+        [":format" {:get #(data/get-mails-data %)}]]]]]
     {:data {:muuntaja   m/instance
       	    :middleware [params/wrap-params
                          muuntaja/format-middleware]}})

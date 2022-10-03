@@ -14,10 +14,10 @@
 	  <h1 id="upcoming-changes" class="title is-size-4">
 	    <span>
 	      {{changes|count}} upcoming change{{changes|pluralize}} to anticipate
-	      {% if config.export-formats.rss %}<a class="tag is-info is-light" href="/changes.rss">RSS</a>{% endif %}
-	      {% if config.export-formats.json %}<a class="tag is-success is-light" href="/changes.json">JSON</a>{% endif %}
-	      {% if config.export-formats.org %}<a class="tag is-danger is-light" href="/changes.org">ORG</a>{% endif %}
-	      {% if config.export-formats.md %}<a class="tag is-warning is-light" href="/changes.md">MD</a>{% endif %}
+	      {% if config.export-formats.rss %}<a class="tag is-info is-light" href="/changes-unreleased.rss">RSS</a>{% endif %}
+	      {% if config.export-formats.json %}<a class="tag is-success is-light" href="/changes-unreleased.json">JSON</a>{% endif %}
+	      {% if config.export-formats.org %}<a class="tag is-danger is-light" href="/changes-unreleased.org">ORG</a>{% endif %}
+	      {% if config.export-formats.md %}<a class="tag is-warning is-light" href="/changes-unreleased.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">
@@ -82,10 +82,10 @@
 	  <h1 id="released-changes" class="title is-size-4">
 	    <span>
 	      {{released-changes|count}} released change{{released-changes|pluralize}} to be aware of
-	      {% if config.export-formats.rss %}<a class="tag is-info is-light" href="/released-changes.rss">RSS</a>{% endif %}
-	      {% if config.export-formats.json %}<a class="tag is-success is-light" href="/released-changes.json">JSON</a>{% endif %}
-	      {% if config.export-formats.org %}<a class="tag is-danger is-light" href="/released-changes.org">ORG</a>{% endif %}
-	      {% if config.export-formats.md %}<a class="tag is-warning is-light" href="/released-changes.md">MD</a>{% endif %}
+	      {% if config.export-formats.rss %}<a class="tag is-info is-light" href="/changes-released.rss">RSS</a>{% endif %}
+	      {% if config.export-formats.json %}<a class="tag is-success is-light" href="/changes-released.json">JSON</a>{% endif %}
+	      {% if config.export-formats.org %}<a class="tag is-danger is-light" href="/changes-released.org">ORG</a>{% endif %}
+	      {% if config.export-formats.md %}<a class="tag is-warning is-light" href="/changes-released.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
 	  <div class="table-container">

@@ -84,6 +84,12 @@
 (defn slug-to-list-id [slug]
   (:address (first (filter #(= (:slug %) slug) (:mailing-lists config)))))
 
+(defn list-id-or-slug-to-mail-url-format [{:keys [list-id list-slug]}]
+  (not-empty (:mail-url-format
+              (first (filter #(or (= (:address %) list-id)
+                                  (= (:slug %) list-slug))
+                             (:mailing-lists config))))))
+
 (def report-keywords-all
   (let [ks (keys (:report-strings config))]
     (concat ks (map #(keyword (str "un" (name %))) ks))))
@@ -203,11 +209,8 @@
   (get-reports-msgs :request (get-reports {:list-id list-id :report-type :request})))
 (defn get-releases [list-id]
   (get-reports-msgs :release (get-reports {:list-id list-id :report-type :release})))
-
 (defn get-changes [list-id]
-  (->> (get-reports {:list-id list-id :report-type :change})
-       (remove :released)
-       (get-reports-msgs :change)))
+  (get-reports-msgs :change (get-reports {:list-id list-id :report-type :change})))
 
 (defn get-logs []
   (->> (d/q '[:find ?e :where [?e :log _]] db)
@@ -272,7 +275,7 @@
        (remove :done)
        (get-reports-msgs :request)))
 
-(defn get-upcoming-changes [list-id]
+(defn get-unreleased-changes [list-id]
   (->> (get-reports {:list-id list-id :report-type :change})
        (remove :released)
        (get-reports-msgs :change)))
@@ -315,7 +318,7 @@
           (when (:bugs features) (get-confirmed-bugs list-id))
           (when (:patches features) (get-approved-patches list-id))
           (when (:requests features) (get-unhandled-requests list-id))
-          (when (:changes features) (get-upcoming-changes list-id))
+          (when (:changes features) (get-unreleased-changes list-id))
           (when (:releases features) (get-releases list-id))
           (get-announcements list-id))
          (remove nil?)
