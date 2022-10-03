@@ -37,6 +37,8 @@
 
    :message-id {:db/valueType :db.type/string
                 :db/unique    :db.unique/identity}
+   :subject    {:db/valueType :db.type/string
+                :db/fulltext  true}
    :email      {:db/valueType :db.type/string
                 :db/unique    :db.unique/identity}
    :references {:db/valueType   :db.type/string
