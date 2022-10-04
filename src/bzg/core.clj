@@ -161,13 +161,20 @@
 
 ;; Main reports functions
 
+;; FIXME: Use fulltext search for reports?
+;; (d/q '[:find ?r
+;;        :in $ ?q
+;;        :where
+;;        [(fulltext $ ?q) [[?e]]]
+;;        [?e :list-id "my@list.io"]
+;;        [?r :bug ?e]]
+;;      db
+;;      "query")
 (defn- get-reports [{:keys [list-id report-type]}]
   (->> (d/q `[:find ?r :where
               [?r ~report-type ?m]
               [?m :list-id ~list-id]] db)
-       (map first)
-       ;; FIXME: (d/touch (d/entity ...) ? or just (d/entity ?)
-       (map #(d/entity db %))
+       (map #(d/entity db (first %)))
        ;; Always remove canceled reports, we never need them
        (remove :deleted)
        (remove :canceled)))
@@ -181,6 +188,8 @@
 (defn- get-reports-msgs [report-type reports]
   (->> (map #(assoc (into {} (d/entity db (:db/id (report-type %))))
                     :priority (:priority %)) reports)
+       ;; FIXME: is it necessary to remove deleted messages on top
+       ;; of (already removed upstream via get-reports) deleted reports?
        (remove :deleted)
        (map add-role)))
 
@@ -198,8 +207,7 @@
   (->> (d/q `[:find ?e :where
               [?e :message-id _]
               [?e :list-id ~list-id]] db)
-       (map first)
-       (map #(d/entity db %))
+       (map #(d/entity db (first %)))
        (remove :private)
        (remove :deleted)
        (sort-by :date)
