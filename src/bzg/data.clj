@@ -61,7 +61,7 @@
         format    (subs (:format path-params) 1)
         resources (condp = what
                     :confirmed-bugs     (core/get-confirmed-bugs list-id)
-                    :unconfirmed-bugs   (core/get-unconfirmed-bugs list-id nil)
+                    :unconfirmed-bugs   (core/get-unconfirmed-bugs list-id)
                     ;; FIXME: Displayed?
                     :bugs               (core/get-unfixed-bugs list-id)
                     :handled-requests   (core/get-handled-requests list-id)
