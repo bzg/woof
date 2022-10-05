@@ -968,18 +968,18 @@
                 :ack-op)
           (timbre/info "Skipping email ack for admin or maintainer"))))))
 
-(defn- release-changes! [version release-id]
+(defn- release-changes! [list-id version release-id]
   (let [changes-reports
         (->> (filter #(= version (:version %))
-                     (get-reports :change))
+                     (get-reports {:list-id list-id :report-type :change}))
              (map #(get % :db/id)))]
     (doseq [r changes-reports]
       (d/transact! conn [{:db/id r :released release-id}]))))
 
-(defn- unrelease-changes! [release-id]
+(defn- unrelease-changes! [list-id release-id]
   (let [changes-to-unrelease
         (->> (filter #(= release-id (:released %))
-                     (get-reports :change))
+                     (get-reports {:list-id list-id :report-type :change}))
              (map #(get % :db/id)))]
     (doseq [r changes-to-unrelease]
       (d/transact! conn [[:db/retract r :released]]))))
@@ -1047,7 +1047,7 @@
              (when-let [version (new-release? msg)]
                (let [release-id (add-mail! msg)]
                  (report! {:release release-id :version version})
-                 (release-changes! version release-id)))))
+                 (release-changes! list-id version release-id)))))
 
          ;; Or detect admin commands or new actions against known reports
          (let [body-parts
@@ -1134,7 +1134,7 @@
                                  (is-report-update? :release body-report references)]
                         (report! {:release  report-eid status (add-mail! msg)
                                   :priority priority})
-                        (unrelease-changes! report-eid))))))))))))))
+                        (unrelease-changes! list-id report-eid))))))))))))))
 
 ;;; Inbox monitoring
 
