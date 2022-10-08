@@ -267,11 +267,6 @@
        (remove :applied)
        (get-reports-msgs :patch)))
 
-(defn get-unapplied-patches [list-id]
-  (->> (get-reports {:list-id list-id :report-type :patch})
-       (remove :applied)
-       (get-reports-msgs :patch)))
-
 (defn get-handled-requests [list-id]
   (->> (get-reports {:list-id list-id :report-type :request})
        (filter :handled)

@@ -130,10 +130,10 @@
       (merge {:list-id list-id
               :entries (core/get-unapproved-patches list-id)}
              format-params))
-     :unapplied-patches
+     :approved-patches
      (entries-format
       (merge {:list-id list-id
-              :entries (core/get-unapplied-patches list-id)}
+              :entries (core/get-approved-patches list-id)}
              format-params))}))
 
 (defn- page-tops [list-id _ config-defaults]

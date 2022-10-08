@@ -60,29 +60,32 @@
   (let [list-id   (core/slug-to-list-id (:list-slug path-params))
         format    (subs (:format path-params) 1)
         resources (condp = what
-                    :confirmed-bugs     (core/get-confirmed-bugs list-id)
-                    :unconfirmed-bugs   (core/get-unconfirmed-bugs list-id)
-                    ;; FIXME: Displayed?
-                    :bugs               (core/get-unfixed-bugs list-id)
+                    :confirmed-bugs   (core/get-confirmed-bugs list-id)
+                    :unconfirmed-bugs (core/get-unconfirmed-bugs list-id)
+                    :bugs             (core/get-unfixed-bugs list-id)
+
                     :handled-requests   (core/get-handled-requests list-id)
                     :unhandled-requests (core/get-unhandled-requests list-id)
                     :requests           (core/get-undone-requests list-id)
+
                     :approved-patches   (core/get-approved-patches list-id)
                     :unapproved-patches (core/get-unapproved-patches list-id)
-                    :patches            (core/get-unapplied-patches list-id)
+                    :patches            (core/get-patches list-id)
+
                     :unreleased-changes (core/get-unreleased-changes list-id)
                     :released-changes   (core/get-latest-released-changes list-id)
                     :changes            (core/get-changes list-id)
-                    :announcements      (core/get-announcements list-id)
-                    :mails              (core/get-mails list-id)
-                    :releases           (core/get-releases list-id)
-                    :updates            (core/get-updates list-id))
-        headers   (condp = format
-                    "rss"  {"Content-Type" "application/xml"}                    
-                    "md"   {"Content-Type" "text/plain; charset=utf-8"}
-                    "org"  {"Content-Type" "text/plain; charset=utf-8"}
-                    "json" nil ;; FIXME: Weird?
-                    )]
+
+                    :announcements (core/get-announcements list-id)
+                    :mails         (core/get-mails list-id)
+                    :releases      (core/get-releases list-id)
+                    :updates       (core/get-updates list-id))
+        headers (condp = format
+                  "rss"  {"Content-Type" "application/xml"}
+                  "md"   {"Content-Type" "text/plain; charset=utf-8"}
+                  "org"  {"Content-Type" "text/plain; charset=utf-8"}
+                  "json" nil ;; FIXME: Weird?
+                  )]
     {:status  200
      :headers headers
      :body
