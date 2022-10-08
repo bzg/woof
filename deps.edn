@@ -22,7 +22,7 @@
                org.clojure/core.async    {:mvn/version "1.5.648"}
                com.taoensso/timbre       {:mvn/version "5.2.1"}
                selmer/selmer             {:mvn/version "1.12.55"}
-               datalevin/datalevin       {:mvn/version "0.6.21"}
+               datalevin/datalevin       {:mvn/version "0.6.22"}
                com.cognitect/transit-clj {:mvn/version "1.0.329"}
                medley/medley             {:mvn/version "1.4.0"}
                aero/aero                 {:mvn/version "1.1.6"}}
@@ -35,7 +35,7 @@
              :main-opts  ["-m" "uberdeps.uberjar"]}
 
   :test {:extra-paths ["test"]
-         :extra-deps  {lambdaisland/kaocha {:mvn/version "1.0.700"}}
+         :extra-deps  {lambdaisland/kaocha {:mvn/version "1.70.1086"}}
          :main-opts   ["-m" "kaocha.runner"]
          :jvm-opts    ["--add-opens=java.base/java.nio=ALL-UNNAMED"
                        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]}
