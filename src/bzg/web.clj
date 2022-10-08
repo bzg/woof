@@ -23,15 +23,17 @@
 (selmer/add-filter! :e-pluralize #(when (> (count %) 1) "es"))
 
 (defn- entries-format [{:keys [list-id entries search sorting-by]}]
-  (let [linkify-maybe
-        (if-let [archived-message-format
-                 (not-empty (:archived-message-format
-                             (first (filter #(= (:address %) list-id)
-                                            (:mailing-lists core/config)))))]
-          #(assoc-in % [:link]
-                     (or (:archived-at %)
-                         (format archived-message-format (:message-id %))))
-          identity)]
+  (let [message-format
+        (not-empty (:archived-message-format
+                    (first (filter #(= (:address %) list-id)
+                                   (:mailing-lists core/config)))))
+        linkify-maybe
+        (cond
+          message-format
+          #(assoc-in % [:link] (format message-format (:message-id %)))
+          (:archived-at (first entries))
+          #(assoc-in % [:link] (:archived-at %))
+          :else identity)]
     (->>
      entries
      (sort-by (condp = sorting-by "date" :date "user" :role :backrefs))

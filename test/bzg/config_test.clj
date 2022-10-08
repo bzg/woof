@@ -35,7 +35,8 @@
 (spec/def ::action-words string?)
 (spec/def ::report-strings string?)
 
-(spec/def ::archived-message-format (spec/nilable string?))
+(spec/def ::archived-message-format string?)
+(spec/def ::archived-list-message-format string?)
 
 (spec/def ::maintenance boolean?)
 (spec/def ::notifications boolean?)
@@ -103,8 +104,9 @@
             ::db-dir
             ::log-file
             ::defaults
-            ::archived-message-format
-            ::mailing-lists]))
+            ::mailing-lists
+            ::archived-list-message-format]
+   :opt-un [::archived-message-format]))
 
 (deftest configuration
   (testing "Testing configuration"

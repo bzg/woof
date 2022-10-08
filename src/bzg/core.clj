@@ -86,11 +86,16 @@
 (defn slug-to-list-id [slug]
   (:address (first (filter #(= (:slug %) slug) (:mailing-lists config)))))
 
-(defn archived-message-format [{:keys [list-id list-slug]}]
-  (not-empty (:archived-message-format
-              (first (filter #(or (= (:address %) list-id)
-                                  (= (:slug %) list-slug))
-                             (:mailing-lists config))))))
+(defn archived-message [{:keys [list-id list-slug message-id]}]
+  (if-let [fmt (not-empty
+                (:archived-message-format
+                 (first (filter #(or (= (:address %) list-id)
+                                     (= (:slug %) list-slug))
+                                (:mailing-lists config)))))]
+    (format fmt message-id)
+    (if-let [fmt (:archived-list-message-format config)]
+      (format fmt list-id message-id)
+      "")))
 
 (def report-keywords-all
   (let [ks (keys (:report-strings config))]
@@ -102,7 +107,7 @@
   (re-find email-re (string/replace s #"mailto:" "")))
 
 (defn format-email-notification
-  [{:keys [notification-type from id
+  [{:keys [notification-type from id list-id
            action-string status-string]}]
   (str
    (condp = notification-type
@@ -123,9 +128,10 @@
      (format "%s marked your %s as %s.\n\n"
              from action-string status-string))
 
-   (when-let [link-format (not-empty (:archived-message-format config))]
-     (format "You can find your email here:\n%s\n\n"
-             (format link-format id)))
+   (when-let [archived-at
+              (not-empty (archived-message
+                          {:list-id list-id :message-id id}))]
+     (format "You can find your email here:\n%s\n\n" archived-at))
 
    (when-let [contribute-url (not-empty (:contribute-url config))]
      (str (or (:contribute-cta-email config)
@@ -220,8 +226,9 @@
   (get-reports-msgs :patch (get-reports {:list-id list-id :report-type :patch})))
 (defn get-requests [list-id]
   (get-reports-msgs :request (get-reports {:list-id list-id :report-type :request})))
-(defn get-releases [list-id]
-  (get-reports-msgs :release (get-reports {:list-id list-id :report-type :release})))
+;; FIXME: Make names for get- functions more consistent (see get-releases below)
+;; (defn get-releases [list-id]
+;;   (get-reports-msgs :release (get-reports {:list-id list-id :report-type :release})))
 (defn get-changes [list-id]
   (get-reports-msgs :change (get-reports {:list-id list-id :report-type :change})))
 
@@ -443,12 +450,10 @@
     (d/transact! conn [{:message-id id
                         :list-id    list-id
                         :archived-at
-                        (if-let [aa Archived-At]
-                          (trim-url-brackets aa)
-                          (if-let [fmt (archived-message-format
-                                        {:list-id list-id})]
-                            (format fmt id)
-                            (format (:archived-message-format config) id)))
+                        (or (and Archived-At (trim-url-brackets Archived-At))
+                            (archived-message {:list-id    list-id
+                                               :message-id id})
+                            "")
                         :subject    (trim-subject-prefix subject)
                         :references refs
                         :private    (or private false)

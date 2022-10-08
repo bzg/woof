@@ -60,8 +60,8 @@
    ;; The path as in http://localhost:3000/[SLUG]/:
    :slug "list1"}]
 
- :archived-message-format "https://mail-archive.org/list/<%s>"
- 
+ :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
+
  ;; Default application admin
  :admin-address  "admin@address.io"
  :admin-username "Big Bad Woof"

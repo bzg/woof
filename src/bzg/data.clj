@@ -6,26 +6,24 @@
             [clojure.java.io :as io]))
 
 (defn- format-org [resources list-id]
-  (let [fmt (core/archived-message-format {:list-id list-id})]
-    (->> resources
-         (map #(format " - [[%s][%s: %s]] (%s)"
-                       (if fmt (format fmt (:message-id %))
-                           (:message-id %))
-                       (:username %)
-                       (string/replace (:subject %) #"^\[[^]]+\] " "")
-                       (:date %)))
-         (string/join "\n"))))
+  (->> resources
+       (map #(format " - [[%s][%s: %s]] (%s)"
+                     (core/archived-message {:list-id    list-id
+                                             :message-id (:message-id %)})
+                     (:username %)
+                     (string/replace (:subject %) #"^\[[^]]+\] " "")
+                     (:date %)))
+       (string/join "\n")))
 
 (defn- format-md [resources list-id]
-  (let [fmt (core/archived-message-format {:list-id list-id})]
-    (->> resources
-         (map #(format " - [%s: %s](%s \"%s\")"
-                       (:username %)
-                       (string/replace (:subject %) #"^\[[^]]+\] " "")
-                       (if fmt (format fmt (:message-id %))
-                           (:message-id %))
-                       (:date %)))
-         (string/join "\n"))))
+  (->> resources
+       (map #(format " - [%s: %s](%s \"%s\")"
+                     (:username %)
+                     (string/replace (:subject %) #"^\[[^]]+\] " "")
+                     (core/archived-message {:list-id    list-id
+                                             :message-id (:message-id %)})
+                     (:date %)))
+       (string/join "\n")))
 
 (defn feed-item-description [msg fmt]
   (let [msgid (:message-id msg)]
@@ -38,7 +36,8 @@
        msgid))))
 
 (defn feed-item [{:keys [message-id subject date from] :as msg} list-id]
-  (let [fmt  (core/archived-message-format {:list-id list-id})
+  (let [fmt  (core/archived-message
+              {:list-id list-id :message-id message-id})
         link (if fmt (format fmt message-id) message-id)]
     {:title       subject
      :link        link
