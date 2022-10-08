@@ -35,8 +35,11 @@
 (spec/def ::action-words string?)
 (spec/def ::report-words string?)
 
-(spec/def ::archived-message-format string?)
-(spec/def ::archived-list-message-format string?)
+(spec/def ::archived-message-format
+  (spec/and string? #(re-matches #".*%s.*" %)))
+
+(spec/def ::archived-list-message-format
+  (spec/and string? #(re-matches #".*%s.*%s.*" %)))
 
 (spec/def ::maintenance boolean?)
 (spec/def ::notifications boolean?)
