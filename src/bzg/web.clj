@@ -24,13 +24,13 @@
 
 (defn- entries-format [{:keys [list-id entries search sorting-by]}]
   (let [linkify-maybe
-        (if-let [mail-url-format
-                 (not-empty (:mail-url-format
+        (if-let [archived-message-format
+                 (not-empty (:archived-message-format
                              (first (filter #(= (:address %) list-id)
                                             (:mailing-lists core/config)))))]
           #(assoc-in % [:link]
                      (or (:archived-at %)
-                         (format mail-url-format (:message-id %))))
+                         (format archived-message-format (:message-id %))))
           identity)]
     (->>
      entries

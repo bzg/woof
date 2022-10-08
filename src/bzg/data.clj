@@ -6,7 +6,7 @@
             [clojure.java.io :as io]))
 
 (defn- format-org [resources list-id]
-  (let [fmt (core/list-id-or-slug-to-mail-url-format {:list-id list-id})]
+  (let [fmt (core/archived-message-format {:list-id list-id})]
     (->> resources
          (map #(format " - [[%s][%s: %s]] (%s)"
                        (if fmt (format fmt (:message-id %))
@@ -17,7 +17,7 @@
          (string/join "\n"))))
 
 (defn- format-md [resources list-id]
-  (let [fmt (core/list-id-or-slug-to-mail-url-format {:list-id list-id})]
+  (let [fmt (core/archived-message-format {:list-id list-id})]
     (->> resources
          (map #(format " - [%s: %s](%s \"%s\")"
                        (:username %)
@@ -38,7 +38,7 @@
        msgid))))
 
 (defn feed-item [{:keys [message-id subject date from] :as msg} list-id]
-  (let [fmt  (core/list-id-or-slug-to-mail-url-format {:list-id list-id})
+  (let [fmt  (core/archived-message-format {:list-id list-id})
         link (if fmt (format fmt message-id) message-id)]
     {:title       subject
      :link        link

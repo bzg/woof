@@ -35,7 +35,7 @@
 (spec/def ::action-words string?)
 (spec/def ::report-strings string?)
 
-(spec/def ::mail-url-format (spec/nilable string?))
+(spec/def ::archived-message-format (spec/nilable string?))
 
 (spec/def ::maintenance boolean?)
 (spec/def ::notifications boolean?)
@@ -103,7 +103,7 @@
             ::db-dir
             ::log-file
             ::defaults
-            ::mail-url-format
+            ::archived-message-format
             ::mailing-lists]))
 
 (deftest configuration

@@ -55,12 +55,12 @@
 
    ;; The formatting string for public email archive, where a unique
    ;; %s stands for the message id of the email.
-   :mail-url-format "https://mail-archive.org/first-list/<%s>"
+   :archived-message-format "https://mail-archive.org/first-list/<%s>"
 
    ;; The path as in http://localhost:3000/[SLUG]/:
    :slug "list1"}]
 
- :mail-url-format "https://mail-archive.org/list/<%s>"
+ :archived-message-format "https://mail-archive.org/list/<%s>"
  
  ;; Default application admin
  :admin-address  "admin@address.io"

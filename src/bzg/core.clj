@@ -86,8 +86,8 @@
 (defn slug-to-list-id [slug]
   (:address (first (filter #(= (:slug %) slug) (:mailing-lists config)))))
 
-(defn list-id-or-slug-to-mail-url-format [{:keys [list-id list-slug]}]
-  (not-empty (:mail-url-format
+(defn archived-message-format [{:keys [list-id list-slug]}]
+  (not-empty (:archived-message-format
               (first (filter #(or (= (:address %) list-id)
                                   (= (:slug %) list-slug))
                              (:mailing-lists config))))))
@@ -123,7 +123,7 @@
      (format "%s marked your %s as %s.\n\n"
              from action-string status-string))
 
-   (when-let [link-format (not-empty (:mail-url-format config))]
+   (when-let [link-format (not-empty (:archived-message-format config))]
      (format "You can find your email here:\n%s\n\n"
              (format link-format id)))
 
@@ -445,10 +445,10 @@
                         :archived-at
                         (if-let [aa Archived-At]
                           (trim-url-brackets aa)
-                          (if-let [fmt (list-id-or-slug-to-mail-url-format
+                          (if-let [fmt (archived-message-format
                                         {:list-id list-id})]
                             (format fmt id)
-                            (format (:mail-url-format config) id)))
+                            (format (:archived-message-format config) id)))
                         :subject    (trim-subject-prefix subject)
                         :references refs
                         :private    (or private false)
