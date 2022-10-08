@@ -1,0 +1,11 @@
+From: Admin <admin@woof.io>
+Subject: [CHANGE 1.0] Announce a change for 1.0
+To: test@woof.io
+Message-ID: <change1@woof.io>
+List-Post: <mailto:test@list.io>
+Date: Sun, 24 Oct 2021 13:20:44 +0200
+
+This is a change.
+
+-- 
+ Woof!

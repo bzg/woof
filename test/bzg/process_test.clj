@@ -31,6 +31,8 @@
 (def bug1-confirmed (read-mail "bug1-confirmed"))
 (def patch1 (read-mail "patch1"))
 (def patch1-approved (read-mail "patch1-approved"))
+(def change1 (read-mail "change1"))
+(def release1 (read-mail "release1"))
 
 ;; Run tests
 (deftest processes
@@ -49,7 +51,14 @@
   (testing "Approving a patch"
     (do (core/read-and-process-mail (list patch1-approved))
         (is (= 1 (count (core/get-approved-patches "test@list.io"))))
-        (is (= 0 (count (core/get-unapproved-patches "test@list.io")))))))
+        (is (= 0 (count (core/get-unapproved-patches "test@list.io"))))))
+  (testing "Adding a change"
+    (do (core/read-and-process-mail (list change1))
+        (is (= 1 (count (core/get-unreleased-changes "test@list.io"))))))
+  (testing "Adding a release"
+    (do (core/read-and-process-mail (list release1))
+        (is (= 1 (count (core/get-released-versions "test@list.io"))))
+        (is (= 1 (count (core/get-latest-released-changes "test@list.io")))))))
 
 ;; Clean up behind tests
 (sh/sh "rm" "-fr" "db-test")
