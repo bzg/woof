@@ -77,7 +77,7 @@
  ;; FIXME: should this be hardcoded?
  :report-types [:bug :patch :request :change :announcement :release]
 
- :admin-report-strings
+ :admin-report-words
  ;; FIXME: add i18n
  {;; Contributors actions
   :notifications        "Notifications"
@@ -122,17 +122,17 @@
       :support-cta          "Donate"
       :support-cta-email    "Please support us with a donation"}
 
- :action-words   {:patches       "PATCH"
-                  :bugs          "BUG"
-                  :requests      "HELP"
-                  :announcements "ANN"
-                  :changes       "CHANGE"
-                  :releases      "RELEASE"}
- :report-strings {:applied   "Applied"
-                  :approved  "Approved"
-                  :canceled  "Canceled"
-                  :confirmed "Confirmed"
-                  :done      "Done"
-                  :fixed     "Fixed"
-                  :handled   "Handled"}
+ :action-words {:patches       "PATCH"
+                :bugs          "BUG"
+                :requests      "HELP"
+                :announcements "ANN"
+                :changes       "CHANGE"
+                :releases      "RELEASE"}
+ :report-words {:applied   "Applied"
+                :approved  "Approved"
+                :canceled  "Canceled"
+                :confirmed "Confirmed"
+                :done      "Done"
+                :fixed     "Fixed"
+                :handled   "Handled"}
  }

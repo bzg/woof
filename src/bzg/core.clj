@@ -98,7 +98,7 @@
       "")))
 
 (def report-keywords-all
-  (let [ks (keys (:report-strings config))]
+  (let [ks (keys (:report-words config))]
     (into #{} (concat ks (map #(keyword (str "un" (name %))) ks)))))
 
 (def email-re #"[^<@\s;,]+@[^>@\s;,]+")
@@ -516,12 +516,12 @@
 (def config-strings-re
   (let [{:keys [admin maintainer contributor]} (:permissions config)]
     (->> (concat admin maintainer contributor)
-         (map #(% (:admin-report-strings config)))
+         (map #(% (:admin-report-words config)))
          (string/join "|")
          (format "(%s): (.+)\\s*$")
          re-pattern)))
 
-(defn- report-strings-all [report-type]
+(defn- report-words-all [report-type]
   (let [report-type
         (condp = report-type
           :bug           :bugs    :patch
@@ -529,17 +529,17 @@
           :change        :changes :announcement
           :announcements :release :releases
           nil)
-        report-do   (map #(% (:report-strings config))
+        report-do   (map #(% (:report-words config))
                          (report-type (:reports config)))
         report-undo (map #(string/capitalize (str "Un" %)) report-do)]
     (into #{} (concat report-do report-undo))))
 
-(def report-strings-re
+(def report-words-re
   (let [all-do   (->> (:reports config)
                       (map val)
                       (map concat)
                       flatten
-                      (map #(% (:report-strings config))))
+                      (map #(% (:report-words config))))
         all-undo (map #(string/capitalize (str "Un" %)) all-do)
         all      (into #{} (concat all-do all-undo))]
     (->> all
@@ -555,7 +555,7 @@
 (defn- is-report-update? [report-type body-report references]
   ;; Is there a known action (e.g. "Canceled") for this report type
   ;; in the body of the email?
-  (when-let [action (some (report-strings-all report-type)
+  (when-let [action (some (report-words-all report-type)
                           (list body-report))]
     ;; Is this action against a known report, and if so, which one?
     (when-let [e (-> #(ffirst (d/q `[:find ?e
@@ -1096,7 +1096,7 @@
              (when-let
                  [body-report
                   (->> body-seq
-                       (map #(re-find report-strings-re %))
+                       (map #(re-find report-words-re %))
                        (remove nil?)
                        first)]
 

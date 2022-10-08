@@ -30,10 +30,10 @@
 (spec/def ::reports string?)
 (spec/def ::report-types string?)
 
-(spec/def ::admin-report-strings string?)
+(spec/def ::admin-report-words string?)
 (spec/def ::permissions string?)
 (spec/def ::action-words string?)
-(spec/def ::report-strings string?)
+(spec/def ::report-words string?)
 
 (spec/def ::archived-message-format string?)
 (spec/def ::archived-list-message-format string?)
