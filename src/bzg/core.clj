@@ -930,7 +930,7 @@
 (defn- report! [{:keys [report-type msg-eid] :as report}]
   (let [;; action-type   type
         status            (some report-keywords-all (keys report))
-        status-report-eid (when status (status report))
+        ;; status-report-eid (when status (status report))
         ;; status-msg-eid    (d/entity db [report-type status-report-eid])
 
         ;;;; Get the original report
