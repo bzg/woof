@@ -22,6 +22,8 @@
 (spec/def ::log-file string?)
 (spec/def ::theme string?)
 
+(spec/def ::log vector?)
+
 (spec/def ::admin-address string?)
 (spec/def ::admin-username string?)
 

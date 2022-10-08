@@ -574,23 +574,31 @@
    :fn
    (fn [data] (add-log! (java.util.Date.) (force (:msg_ data))))})
 
-(timbre/set-config!
- {:level     :debug
-  :output-fn (partial timbre/default-output-fn {:stacktrace-fonts {}})
-  :appenders
-  {:datalevin-appender (datalevin-appender)
-   :println            (appenders/println-appender {:stream :auto})
-   :spit               (appenders/spit-appender {:fname (:log-file config)})
-   :postal             (merge (postal-appender/postal-appender ;; :min-level :warn
-                               ^{:host (:smtp-host config)
-                                 :user (:smtp-login config)
-                                 :port (:smtp-port config)
-                                 :pass (:smtp-password config)
-                                 :tls  (:smtp-use-tls config)}
-                               {:from (:smtp-login config)
-                                :to   (make-to
-                                       (:admin-username config)
-                                       (:admin-address config))}))}})
+(let [appenders
+      (cond-> {:println (appenders/println-appender {:stream :auto})}
+        ;; Shall we log in log-file?
+        (and (some #{:file} (:log config)) (not-empty (:log-file config)))
+        (conj {:spit (appenders/spit-appender {:fname (:log-file config)})})
+        ;; Shall we log in db too?
+        (some #{:db} (:log config))
+        (conj {:datalevin-appender (datalevin-appender)})
+        ;; Shall we log as mails?
+        (some #{:mail} (:log config))
+        ( conj
+         {:postal (merge (postal-appender/postal-appender ;; :min-level :warn
+                          ^{:host (:smtp-host config)
+                            :user (:smtp-login config)
+                            :port (:smtp-port config)
+                            :pass (:smtp-password config)
+                            :tls  (:smtp-use-tls config)}
+                          {:from (:smtp-login config)
+                           :to   (make-to
+                                  (:admin-username config)
+                                  (:admin-address config))}))}))]
+  (timbre/set-config!
+   {:level     :debug
+    :output-fn (partial timbre/default-output-fn {:stacktrace-fonts {}})
+    :appenders appenders}))
 
 ;; Email notifications
 
