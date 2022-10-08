@@ -35,7 +35,8 @@
                   :change       true
                   :release      true
                   :request      true
-                  ;; :top :mail
+                  ;; :top true
+                  ;; :mail true
                   }
 
   ;; Show only x latest releases/mails/announcements
@@ -47,18 +48,13 @@
   }
 
  :mailing-lists
- {"my-list@lists.org"
-  {;; The formatting string for public email archive, where a unique
-   ;; %s stands for the message id of the email.
-   :archived-message-format "https://mail-archive.org/first-list/<%s>"
+ {"~bzg/wooff@lists.sr.ht"
+  {:slug "wooff"}}
 
-   ;; The path as in http://localhost:3000/[SLUG]/:
-   :slug "list1"}}
- 
- :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
+ ;; :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
 
  ;; Default application admin
- :admin-address  "admin@address.io"
+ :admin-address  "bzg@bzg.fr"
  :admin-username "Big Bad Woof"
 
  :reports {:bug          #{:confirmed :canceled :fixed}

@@ -660,32 +660,23 @@
 
 ;;; Core functions to return db entries
 
-(defn- new-patch? [msg]
-  (or
-   ;; New patches with a subject starting with "[PATCH"
-   (re-matches (:patch action-re) (:subject msg))
-   ;; New patches with a text/x-diff or text/x-patch MIME part
-   (and (:multipart? msg)
-        (not-empty
-         (filter #(re-matches #"^text/x-(diff|patch).*" %)
-                 (map :content-type (:body msg)))))))
-
-(defn- new-bug? [msg]
-  (re-matches (:bug action-re) (:subject msg)))
-
-(defn- new-request? [msg]
-  (re-matches (:request action-re) (:subject msg)))
-
-(defn- new-announcement? [msg]
-  (re-matches (:announcement action-re) (:subject msg)))
-
-(defn- new-change? [msg]
-  (when-let [m (re-matches (:change action-re) (:subject msg))]
-    (peek m)))
-
-(defn- new-release? [msg]
-  (when-let [m (re-matches (:release action-re) (:subject msg))]
-    (peek m)))
+(defn- new? [feature msg]
+  (condp = feature
+    :patch        (or
+                   ;; New patches with a subject starting with "[PATCH"
+                   (re-matches (:patch action-re) (:subject msg))
+                   ;; New patches with a text/x-diff or text/x-patch MIME part
+                   (and (:multipart? msg)
+                        (not-empty
+                         (filter #(re-matches #"^text/x-(diff|patch).*" %)
+                                 (map :content-type (:body msg))))))
+    :bug          (re-matches (:bug action-re) (:subject msg))
+    :request      (re-matches (:request action-re) (:subject msg))
+    :announcement (re-matches (:announcement action-re) (:subject msg))
+    :change       (when-let [m (re-matches (:change action-re) (:subject msg))]
+                    (peek m))
+    :release      (when-let [m (re-matches (:release action-re) (:subject msg))]
+                    (peek m))))
 
 (defn- add-admin! [cmd-val from]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
@@ -1003,162 +994,116 @@
         maintainers (get-maintainers)
         defaults    (d/entity db [:defaults "init"])]
 
-    (when
-        (and
-         ;; First check whether this user should be ignored
-         (not (:ignored (d/entity db [:email from])))
-         ;; Always process messages from an admin
-         (or (some admins (list from))
-             (and
-              ;; Don't process anything when under maintenance
-              (not (:maintenance defaults))
-              ;; When not under maintenance, always process direct
-              ;; mails from maintainers
-              (or (some maintainers (list from))
-                  ;; A mailing list, only process mails sent there
-                  (some #{list-id}
-                        (keys (:mailing-lists config)))))))
+    (when (and
+           ;; First check whether this user should be ignored
+           (not (:ignored (d/entity db [:email from])))
+           ;; Always process messages from an admin
+           (or (some admins (list from))
+               (and
+                ;; Don't process anything when under maintenance
+                (not (:maintenance defaults))
+                ;; When not under maintenance, always process direct
+                ;; mails from maintainers
+                (or (some maintainers (list from))
+                    ;; A mailing list, only process mails sent there
+                    (some #{list-id}
+                          (keys (:mailing-lists config)))))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
 
-      (cond
-        ;; Detect a new bug/patch/request/announcement
-        ;; FIXME: Factoriser
-        (and (-> defaults :features :patch) (new-patch? msg))
-        (report! {:report-type :patch :msg-eid (add-mail! msg)})
+      ;; Detect a new bug/patch/request/announcement
+      (let [done (atom false)]
+        (doseq [feature [:patch :bug :request :announcement]
+                :while  (false? @done)]
+          (when (and (-> defaults :features feature)
+                     (new? feature msg))
+            (report! {:report-type feature :msg-eid (add-mail! msg)})
+            (swap! done false?))))
 
-        (and (-> defaults :features :bug) (new-bug? msg))
-        (report! {:report-type :bug :msg-eid (add-mail! msg)})
+      ;; Or detect new release/change
+      (or
+       ;; Only maintainers can push changes and releases
+       (when (some maintainers (list from))
+         (or
+          (when (-> defaults :features :change)
+            (when-let [version (new? :change msg)]
+              (if (some (get-released-versions list-id) (list version))
+                (timbre/error
+                 (format "%s tried to announce a change against released version %s"
+                         from version))
+                (report! {:report-type :change
+                          :msg-eid     (add-mail! msg)
+                          :version     version}))))
+          (when (-> defaults :features :release)
+            (when-let [version (new? :release msg)]
+              (let [release-report-eid (add-mail! msg)]
+                (report! {:report-type :release
+                          :msg-eid     release-report-eid
+                          :version     version})
+                (release-changes! list-id version release-report-eid))))))
 
-        (and (-> defaults :features :request) (new-request? msg))
-        (report! {:report-type :request :msg-eid (add-mail! msg)})
+       ;; Or an admin command or new actions against known reports
+       (let [body-parts
+             (if (:multipart? msg) (:body msg) (list (:body msg)))
+             body-seq
+             (->> body-parts
+                  (map #(condp (fn [a b]
+                                 (re-matches
+                                  (re-pattern (str "text/" a ".*")) b))
+                            (:content-type %)
+                          "plain" (:body %)
+                          "html"  (parser/html->text (:body %))))
+                  (string/join "\n")
+                  string/split-lines
+                  (map string/trim)
+                  (filter not-empty))]
 
-        (and (-> defaults :features :announcement) (new-announcement? msg))
-        (report! {:report-type :announcement :msg-eid (add-mail! msg)})
+         (if (empty? references)
 
-        :else
-        ;; Or detect new release/change
-        (or
-         ;; Only maintainers can push changes and releases
-         (when (some maintainers (list from))
-           (when (-> defaults :features :change)
-             (when-let [version (new-change? msg)]
-               (if (some (get-released-versions list-id) (list version))
-                 (timbre/error
-                  (format "%s tried to announce a change against released version %s"
-                          from version))
-                 (report! {:report-type :change
-                           :msg-eid     (add-mail! msg)
-                           :version     version}))))
-           (when (-> defaults :features :release)
-             (when-let [version (new-release? msg)]
-               (let [release-report-eid (add-mail! msg)]
-                 (report! {:report-type :release
-                           :msg-eid     release-report-eid
-                           :version     version})
-                 (release-changes! list-id version release-report-eid)))))
+           ;; This is a configuration command
+           (when-let [cmds
+                      (->> body-seq
+                           (map #(when-let [m (re-matches config-strings-re %)]
+                                   (rest m)))
+                           (remove nil?))]
+             (config! {:commands cmds :msg msg}))
 
-         ;; Or detect admin commands or new actions against known reports
-         (let [body-parts
-               (if (:multipart? msg) (:body msg) (list (:body msg)))
-               body-seq
-               (->> body-parts
-                    (map #(condp (fn [a b]
-                                   (re-matches
-                                    (re-pattern (str "text/" a ".*")) b))
-                              (:content-type %)
-                            "plain" (:body %)
-                            "html"  (parser/html->text (:body %))))
-                    (string/join "\n")
-                    string/split-lines
-                    (map string/trim)
-                    (filter not-empty))]
+           ;; Or a report against a known patch, bug, etc
+           (when-let
+               [body-report
+                (->> body-seq
+                     (map #(re-find report-words-re %))
+                     (remove nil?)
+                     first)]
 
-           (if (empty? references) ;; FIXME: required?
-
-             ;; Check whether this is a configuration command
-             (when-let [cmds
-                        (->> body-seq
-                             (map #(when-let [m (re-matches config-strings-re %)]
-                                     (rest m)))
-                             (remove nil?))]
-               (config! {:commands cmds :msg msg}))
-
-             ;; Or a report against a known patch, bug, etc
-             (when-let
-                 [body-report
-                  (->> body-seq
-                       (map #(re-find report-words-re %))
-                       (remove nil?)
-                       first)]
-
-               (or
-                ;; New action against a known patch
-                (when (-> defaults :features :patch)
+             (or
+              ;; New action against a known patch/bug/request/announcement
+              (doseq [feature [:patch :bug :request :announcement]]
+                (when (-> defaults :features feature)
                   (when-let [{:keys [upstream-report-eid status priority]}
-                             (is-report-update? :patch body-report references)]
-                    (report! {:report-type :patch
+                             (is-report-update? feature body-report references)]
+                    (report! {:report-type feature
                               :msg-eid     upstream-report-eid
                               status       (add-mail! msg)
-                              :priority    priority})))
+                              :priority    priority}))))
 
-                ;; New action against a known bug
-                (when (-> defaults :features :bug)
-                  (when-let [{:keys [upstream-report-eid status priority]}
-                             (is-report-update? :bug body-report references)]
-                    (report! {:report-type :bug
-                              :msg-eid     upstream-report-eid
-                              status       (add-mail! msg)
-                              :priority    priority})))
-
-                ;; New action against a known help request
-                (when  (-> defaults :features :request)
-                  (when-let [{:keys [upstream-report-eid status priority]}
-                             (is-report-update? :request body-report references)]
-                    (report! {:report-type :request
-                              :msg-eid     upstream-report-eid
-                              status       (add-mail! msg)
-                              :priority    priority})))
-
-                ;; New action against a known announcement
-                (when  (-> defaults :features :announcement)
-                  (when-let [{:keys [upstream-report-eid status priority]}
-                             (is-report-update? :announcement body-report references)]
-                    (report! {:report-type :announcement
-                              :msg-eid     upstream-report-eid
-                              status       (add-mail! msg)
-                              :priority    priority})))
-
-                ;; Finally, maintainers can perform actions against
-                ;; existing changes/releases
-                (if-not (some maintainers (list from))
-                  (timbre/warn
-                   (format
-                    "%s tried to update a change/release while not a maintainer"
-                    from))
-                  (do
-                    ;; New action against a known change announcement?
-                    (when (-> defaults :features :change)
-                      (when-let [{:keys [upstream-report-eid status priority]}
-                                 (is-report-update? :change body-report references)]
-                        (report! {:report-type :change
-                                  :msg-eid     upstream-report-eid
-                                  status       (add-mail! msg)
-                                  :priority    priority})))
-
-                    ;; New action against a known release announcement?
-                    (when (-> defaults :features :release)
-                      (when-let [{:keys [upstream-report-eid status priority]}
-                                 (is-report-update? :release body-report references)]
-                        (report! {:report-type :release
-                                  :msg-eid     upstream-report-eid
-                                  status       (add-mail! msg)
-                                  :priority    priority})
-                        (unrelease-changes! list-id upstream-report-eid))))))))))))))
+              ;; Or an action against existing changes/releases by a maintainer
+              (if (some maintainers (list from))
+                (doseq [feature [:change :release]]
+                  (when (-> defaults :features feature)
+                    (when-let [{:keys [upstream-report-eid status priority]}
+                               (is-report-update? feature body-report references)]
+                      (report! {:report-type feature
+                                :msg-eid     upstream-report-eid
+                                status       (add-mail! msg)
+                                :priority    priority}))))
+                (timbre/warn
+                 (format
+                  "%s tried to update a change or a release while not a maintainer"
+                  from)))))))))))
 
 ;;; Inbox monitoring
-
 (def woof-inbox-monitor (atom nil))
 
 (defn read-and-process-mail [mails]
