@@ -5,13 +5,13 @@
     {% include "html/default/hero.html"%}
     <div class="container">
       {% include "html/default/tabs.html" with active="top" action-path="/top" %}
-      {% if config.features.tops %}
+      {% if config.features.top %}
 
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  <div class="content">
 
-	    {% if config.features.bugs %}
+	    {% if config.features.bug %}
 	    {% ifequal top-bug-contributors|count 0 %}
 	    <h1 id="top-bug-contributors|count" class="title is-size-4">No bug contribution</h1>
 	    {% else %}
@@ -38,7 +38,7 @@
 	    {% endifequal %}
 	    {% endif %}
 
-	    {% if config.features.patches %}
+	    {% if config.features.patch %}
 	    {% ifequal top-patch-contributors|count 0 %}
 	    <h1 id="top-patch-contributors|count" class="title is-size-4">No patch contribution</h1>
 	    {% else %}
@@ -62,7 +62,7 @@
 	    {% endifequal %}
 	    {% endif %}
 
-	    {% if config.features.requests %}
+	    {% if config.features.request %}
 	    {% ifequal top-request-contributors|count 0 %}
 	    <h1 id="top-request-contributors|count" class="title is-size-4">No help request handled</h1>
 	    {% else %}
@@ -85,7 +85,7 @@
 	    {% endifequal %}
 	    {% endif %}
 
-	    {% if config.features.announcements %}
+	    {% if config.features.announcement %}
 	    {% ifequal top-announcement-contributors|count 0 %}
 	    <h1 id="top-announcement-contributors|count" class="title is-size-4">No announcement yet</h1>
 	    {% else %}

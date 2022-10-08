@@ -29,15 +29,15 @@
   :notifications true
   ;; Each feature corresponds to a dedicated tab
   ;; FIXME: prevent from removing announcements?
-  :features      {:announcements true
-                  :bugs          true
-                  :patches       true
-                  :changes       true
-                  :releases      true
-                  :requests      true
-                  ;; :tops :mails
+  :features      {:announcement true
+                  :bug          true
+                  :patch        true
+                  :change       true
+                  :release      true
+                  :request      true
+                  ;; :top :mail
                   }
-  
+
   ;; Show only x latest releases/mails/announcements
   :display-max    {:releases 4 :mails 100 :announcements 10}
   :export-formats {:rss  true
@@ -46,9 +46,6 @@
                    :md   true}
   }
 
- ;; FIXME: When implementing multiple lists
- ;; ;; The mailing lists addresses that Woof! to which the monitored
- ;; ;; mailbox is subscribed.
  :mailing-lists
  {"my-list@lists.org"
   {;; The formatting string for public email archive, where a unique
@@ -57,20 +54,20 @@
 
    ;; The path as in http://localhost:3000/[SLUG]/:
    :slug "list1"}}
-
+ 
  :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
 
  ;; Default application admin
  :admin-address  "admin@address.io"
  :admin-username "Big Bad Woof"
 
- :reports {:bugs          #{:confirmed :canceled :fixed}
-           :patches       #{:approved :canceled :applied}
+ :reports {:bug          #{:confirmed :canceled :fixed}
+           :patch        #{:approved :canceled :applied}
            ;; FIXME: Allow to approve requests and announcements
-           :requests      #{:handled :canceled :done}
-           :announcements #{:canceled}
-           :changes       #{:canceled}
-           :releases      #{:canceled}}
+           :request      #{:handled :canceled :done}
+           :announcement #{:canceled}
+           :change       #{:canceled}
+           :release      #{:canceled}}
 
  ;; FIXME: should this be hardcoded?
  :report-types [:bug :patch :request :change :announcement :release]
@@ -120,12 +117,12 @@
       :support-cta          "Donate"
       :support-cta-email    "Please support us with a donation"}
 
- :action-words {:patches       "PATCH"
-                :bugs          "BUG"
-                :requests      "HELP"
-                :announcements "ANN"
-                :changes       "CHANGE"
-                :releases      "RELEASE"}
+ :action-words {:patch        "PATCH"
+                :bug          "BUG"
+                :request      "HELP"
+                :announcement "ANN"
+                :change       "CHANGE"
+                :release      "RELEASE"}
  :report-words {:applied   "Applied"
                 :approved  "Approved"
                 :canceled  "Canceled"

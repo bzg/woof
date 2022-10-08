@@ -71,7 +71,7 @@
 (defn- page-changes [list-id format-params config-defaults]
   (with-html-defaults config-defaults
     (merge
-     (when (-> config-defaults :features :changes)
+     (when (-> config-defaults :features :change)
        {:changes
         (entries-format
          (merge {:list-id list-id
@@ -82,7 +82,7 @@
          (merge {:list-id list-id
                  :entries (core/get-latest-released-changes list-id)}
                 format-params))})
-     (when (-> config-defaults :features :releases)
+     (when (-> config-defaults :features :release)
        {:releases
         (entries-format
          (merge {:list-id list-id

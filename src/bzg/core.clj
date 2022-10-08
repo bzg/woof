@@ -65,13 +65,13 @@
 
 (def action-re
   (let [action-words (:action-words config)]
-    {:patches       (re-pattern
-                     (format "^\\[%s(?: [^\\s]+)?(?: [0-9]+/[0-9]+)?\\].*$" (:patches action-words)))
-     :bugs          (re-pattern (format "^\\[%s\\].*$" (:bugs action-words)))
-     :requests      (re-pattern (format "^\\[%s\\].*$" (:requests action-words)))
-     :announcements (re-pattern (format "^\\[%s\\].*$" (:announcements action-words)))
-     :changes       (re-pattern (format "^\\[%s\\s*([^]]+)\\].*$" (:changes action-words)))
-     :releases      (re-pattern (format "^\\[%s\\s*([^]]+)\\].*$" (:releases action-words)))}))
+    {:patch        (re-pattern
+                    (format "^\\[%s(?: [^\\s]+)?(?: [0-9]+/[0-9]+)?\\].*$" (:patch action-words)))
+     :bug          (re-pattern (format "^\\[%s\\].*$" (:bug action-words)))
+     :request      (re-pattern (format "^\\[%s\\].*$" (:request action-words)))
+     :announcement (re-pattern (format "^\\[%s\\].*$" (:announcement action-words)))
+     :change       (re-pattern (format "^\\[%s\\s*([^]]+)\\].*$" (:change action-words)))
+     :release      (re-pattern (format "^\\[%s\\s*([^]]+)\\].*$" (:release action-words)))}))
 
 ;; FIXME: How to initialize the app?
 (defn set-defaults []
@@ -339,11 +339,11 @@
 (defn get-updates [list-id]
   (let [features (:features (d/entity db [:defaults "init"]))]
     (->> (list
-          (when (:bugs features) (get-confirmed-bugs list-id))
-          (when (:patches features) (get-approved-patches list-id))
-          (when (:requests features) (get-unhandled-requests list-id))
-          (when (:changes features) (get-unreleased-changes list-id))
-          (when (:releases features) (get-releases list-id))
+          (when (:bug features) (get-confirmed-bugs list-id))
+          (when (:patch features) (get-approved-patches list-id))
+          (when (:request features) (get-unhandled-requests list-id))
+          (when (:change features) (get-unreleased-changes list-id))
+          (when (:release features) (get-releases list-id))
           (get-announcements list-id))
          (remove nil?)
          flatten)))
@@ -522,15 +522,8 @@
          re-pattern)))
 
 (defn- report-words-all [report-type]
-  (let [report-type
-        (condp = report-type
-          :bug           :bugs    :patch
-          :patches       :request :requests
-          :change        :changes :announcement
-          :announcements :release :releases
-          nil)
-        report-do   (map #(% (:report-words config))
-                         (report-type (:reports config)))
+  (let [report-do   (map #(% (:report-words config))
+                        (report-type (:reports config)))
         report-undo (map #(string/capitalize (str "Un" %)) report-do)]
     (into #{} (concat report-do report-undo))))
 
@@ -670,7 +663,7 @@
 (defn- new-patch? [msg]
   (or
    ;; New patches with a subject starting with "[PATCH"
-   (re-matches (:patches action-re) (:subject msg))
+   (re-matches (:patch action-re) (:subject msg))
    ;; New patches with a text/x-diff or text/x-patch MIME part
    (and (:multipart? msg)
         (not-empty
@@ -678,20 +671,20 @@
                  (map :content-type (:body msg)))))))
 
 (defn- new-bug? [msg]
-  (re-matches (:bugs action-re) (:subject msg)))
+  (re-matches (:bug action-re) (:subject msg)))
 
 (defn- new-request? [msg]
-  (re-matches (:requests action-re) (:subject msg)))
+  (re-matches (:request action-re) (:subject msg)))
 
 (defn- new-announcement? [msg]
-  (re-matches (:announcements action-re) (:subject msg)))
+  (re-matches (:announcement action-re) (:subject msg)))
 
 (defn- new-change? [msg]
-  (when-let [m (re-matches (:changes action-re) (:subject msg))]
+  (when-let [m (re-matches (:change action-re) (:subject msg))]
     (peek m)))
 
 (defn- new-release? [msg]
-  (when-let [m (re-matches (:releases action-re) (:subject msg))]
+  (when-let [m (re-matches (:release action-re) (:subject msg))]
     (peek m)))
 
 (defn- add-admin! [cmd-val from]
@@ -1024,7 +1017,7 @@
               (or (some maintainers (list from))
                   ;; A mailing list, only process mails sent there
                   (some #{list-id}
-                        (map :address (:mailing-lists config)))))))
+                        (keys (:mailing-lists config)))))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
@@ -1032,16 +1025,16 @@
       (cond
         ;; Detect a new bug/patch/request/announcement
         ;; FIXME: Factoriser
-        (and (-> defaults :features :patches) (new-patch? msg))
+        (and (-> defaults :features :patch) (new-patch? msg))
         (report! {:report-type :patch :msg-eid (add-mail! msg)})
 
-        (and (-> defaults :features :bugs) (new-bug? msg))
+        (and (-> defaults :features :bug) (new-bug? msg))
         (report! {:report-type :bug :msg-eid (add-mail! msg)})
 
-        (and (-> defaults :features :requests) (new-request? msg))
+        (and (-> defaults :features :request) (new-request? msg))
         (report! {:report-type :request :msg-eid (add-mail! msg)})
 
-        (and (-> defaults :features :announcements) (new-announcement? msg))
+        (and (-> defaults :features :announcement) (new-announcement? msg))
         (report! {:report-type :announcement :msg-eid (add-mail! msg)})
 
         :else
@@ -1049,7 +1042,7 @@
         (or
          ;; Only maintainers can push changes and releases
          (when (some maintainers (list from))
-           (when (-> defaults :features :changes)
+           (when (-> defaults :features :change)
              (when-let [version (new-change? msg)]
                (if (some (get-released-versions list-id) (list version))
                  (timbre/error
@@ -1058,7 +1051,7 @@
                  (report! {:report-type :change
                            :msg-eid     (add-mail! msg)
                            :version     version}))))
-           (when (-> defaults :features :releases)
+           (when (-> defaults :features :release)
              (when-let [version (new-release? msg)]
                (let [release-report-eid (add-mail! msg)]
                  (report! {:report-type :release
@@ -1102,7 +1095,7 @@
 
                (or
                 ;; New action against a known patch
-                (when (-> defaults :features :patches)
+                (when (-> defaults :features :patch)
                   (when-let [{:keys [upstream-report-eid status priority]}
                              (is-report-update? :patch body-report references)]
                     (report! {:report-type :patch
@@ -1111,7 +1104,7 @@
                               :priority    priority})))
 
                 ;; New action against a known bug
-                (when (-> defaults :features :bugs)
+                (when (-> defaults :features :bug)
                   (when-let [{:keys [upstream-report-eid status priority]}
                              (is-report-update? :bug body-report references)]
                     (report! {:report-type :bug
@@ -1120,7 +1113,7 @@
                               :priority    priority})))
 
                 ;; New action against a known help request
-                (when  (-> defaults :features :requests)
+                (when  (-> defaults :features :request)
                   (when-let [{:keys [upstream-report-eid status priority]}
                              (is-report-update? :request body-report references)]
                     (report! {:report-type :request
@@ -1129,7 +1122,7 @@
                               :priority    priority})))
 
                 ;; New action against a known announcement
-                (when  (-> defaults :features :announcements)
+                (when  (-> defaults :features :announcement)
                   (when-let [{:keys [upstream-report-eid status priority]}
                              (is-report-update? :announcement body-report references)]
                     (report! {:report-type :announcement
@@ -1146,7 +1139,7 @@
                     from))
                   (do
                     ;; New action against a known change announcement?
-                    (when (-> defaults :features :changes)
+                    (when (-> defaults :features :change)
                       (when-let [{:keys [upstream-report-eid status priority]}
                                  (is-report-update? :change body-report references)]
                         (report! {:report-type :change
@@ -1155,7 +1148,7 @@
                                   :priority    priority})))
 
                     ;; New action against a known release announcement?
-                    (when (-> defaults :features :releases)
+                    (when (-> defaults :features :release)
                       (when-let [{:keys [upstream-report-eid status priority]}
                                  (is-report-update? :release body-report references)]
                         (report! {:report-type :release
