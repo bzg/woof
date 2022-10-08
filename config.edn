@@ -40,7 +40,7 @@
                   }
 
   ;; Show only x latest releases/mails/announcements
-  :display-max    {:releases 4 :mails 100 :announcements 10}
+  :display-max    {:release 4 :mail 100 :announcement 10}
   :export-formats {:rss  true
                    :json true
                    :org  true

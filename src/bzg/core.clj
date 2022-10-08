@@ -167,81 +167,60 @@
 
 ;; Main reports functions
 
-;; FIXME: Use fulltext search for reports?
-;; (d/q '[:find ?r
-;;        :in $ ?q
-;;        :where
-;;        [(fulltext $ ?q) [[?e]]]
-;;        [?e :list-id "my@list.io"]
-;;        [?r :bug ?e]]
-;;      db
-;;      "query")
-(defn- get-reports [{:keys [list-id report-type]}]
-  (->> (d/q `[:find ?r :where
-              [?r ~report-type ?m]
-              [?m :list-id ~list-id]] db)
-       (map #(d/entity db (first %)))
-       ;; Always remove canceled reports, we never need them
-       (remove :deleted)
-       (remove :canceled)))
-
 (defn- add-role [e]
   (let [roles (count (select-keys
                       (d/entity db [:email (:from e)])
                       [:admin :maintainer]))]
     (merge e {:role roles})))
 
-(defn- get-reports-msgs [report-type reports]
-  (->> (map #(assoc (into {} (d/entity db (:db/id (report-type %))))
-                    :priority (:priority %)) reports)
-       ;; FIXME: is it necessary to remove deleted messages on top
-       ;; of (already removed upstream via get-reports) deleted reports?
-       (remove :deleted)
-       (map add-role)))
-
-;; (defn get-all-mails []
-;;   (->> (d/q '[:find ?e :where [?e :message-id _]] db)
-;;        (map first)
-;;        (map #(d/entity db %))
-;;        (remove :private)
-;;        (remove :deleted)
-;;        (sort-by :date)
-;;        (map add-role)
-;;        (take (-> (d/entity db [:defaults "init"]) :display-max :mails))))
+;; FIXME: Use fulltext search for reports?
+(defn- get-reports [{:keys [list-id report-type query as-mail]}]
+  (let [query   (or query "")
+        reports (->> (d/q `[:find ?e
+                            :where
+                            [?e ~report-type ?m]
+                            [?m :list-id ~list-id]]
+                          db)
+                     (map #(d/entity db (first %)))
+                     ;; Always remove canceled and deleted reports
+                     ;; (remove :private)
+                     (remove :deleted)
+                     (remove :canceled)
+                     (filter #(re-find (re-pattern query) (:subject (report-type %))))
+                     (take (or (-> (d/entity db [:defaults "init"]) :display-max report-type)
+                               100)))]
+    (if as-mail
+      (->> reports
+           (map report-type)
+           (map #(assoc (d/touch (d/entity db (:db/id %)))
+                        :priority (:priority %)))
+           (map add-role))
+      reports)))
 
 (defn get-mails [list-id]
-  (->> (d/q `[:find ?e :where
+  (->> (d/q `[:find (d/pull ?e [*])
+              :where
               [?e :message-id _]
-              [?e :list-id ~list-id]] db)
-       (map #(d/entity db (first %)))
+              [?e :list-id ~list-id]]
+            db)
+       (map first)
        (remove :private)
        (remove :deleted)
        (sort-by :date)
        (map add-role)
-       (take (-> (d/entity db [:defaults "init"]) :display-max :mails))))
+       (take (-> (d/entity db [:defaults "init"]) :display-max :mail))))
 
-(defn get-bugs [list-id]
-  (get-reports-msgs :bug (get-reports {:list-id list-id :report-type :bug})))
 (defn get-patches [list-id]
-  (get-reports-msgs :patch (get-reports {:list-id list-id :report-type :patch})))
-(defn get-requests [list-id]
-  (get-reports-msgs :request (get-reports {:list-id list-id :report-type :request})))
-;; FIXME: Make names for get- functions more consistent (see get-releases below)
-;; (defn get-releases [list-id]
-;;   (get-reports-msgs :release (get-reports {:list-id list-id :report-type :release})))
-(defn get-changes [list-id]
-  (get-reports-msgs :change (get-reports {:list-id list-id :report-type :change})))
+  (get-reports {:list-id list-id :report-type :patch :as-mail true}))
 
-(defn get-logs []
-  (->> (d/q '[:find ?e :where [?e :log _]] db)
-       (map first)
-       (map #(d/entity db %))))
+(defn get-changes [list-id]
+  (get-reports {:list-id list-id :report-type :request :as-mail true}))
 
 (defn get-announcements [list-id]
-  (->> (get-reports {:list-id list-id :report-type :announcement})
-       (remove :canceled)
-       (get-reports-msgs :announcement)
-       (take (-> (d/entity db [:defaults "init"]) :display-max :announcements))))
+  (get-reports {:list-id list-id :report-type :announcement :as-mail true}))
+
+(defn get-logs []
+  (map first (d/q '[:find (d/pull ?e [*]) :where [?e :log _]] db)))
 
 ;; FIXME: Handle priority:
 ;; (remove #(if-let [p (:priority %)] (< p 2) true))
@@ -249,51 +228,60 @@
   (->> (get-reports {:list-id list-id :report-type :bug})
        (filter :confirmed)
        (remove :fixed)
-       (get-reports-msgs :bug)))
+       (map :bug)
+       (map #(d/touch (d/entity db (:db/id %))))))
 
 (defn get-unconfirmed-bugs [list-id]
   (->> (get-reports {:list-id list-id :report-type :bug})
        (remove :confirmed)
        (remove :fixed)
-       (get-reports-msgs :bug)))
+       (map :bug)
+       (map #(d/touch (d/entity db (:db/id %))))))
 
 (defn get-unfixed-bugs [list-id]
   (->> (get-reports {:list-id list-id :report-type :bug})
        (remove :fixed)
-       (get-reports-msgs :bug)))
+       (map :bug)
+       (map #(d/touch (d/entity db (:db/id %))))))
 
 (defn get-approved-patches [list-id]
   (->> (get-reports {:list-id list-id :report-type :patch})
        (filter :approved)
        (remove :applied)
-       (get-reports-msgs :patch)))
+       (map :patch)
+       (map #(d/touch (d/entity db (:db/id %))))))
 
 (defn get-unapproved-patches [list-id]
   (->> (get-reports {:list-id list-id :report-type :patch})
        (remove :approved)
        (remove :applied)
-       (get-reports-msgs :patch)))
+       (map :patch)
+       (map #(d/touch (d/entity db (:db/id %))))))
 
 (defn get-handled-requests [list-id]
   (->> (get-reports {:list-id list-id :report-type :request})
        (filter :handled)
        (remove :done)
-       (get-reports-msgs :request)))
+       (map :request)
+       (map #(d/touch (d/entity db (:db/id %))))))
 
 (defn get-unhandled-requests [list-id]
   (->> (get-reports {:list-id list-id :report-type :request})
        (remove :handled)
-       (get-reports-msgs :request)))
+       (map :request)
+       (map #(d/touch (d/entity db (:db/id %))))))
 
 (defn get-undone-requests [list-id]
   (->> (get-reports {:list-id list-id :report-type :request})
        (remove :done)
-       (get-reports-msgs :request)))
+       (map :request)
+       (map #(d/touch (d/entity db (:db/id %))))))
 
 (defn get-unreleased-changes [list-id]
   (->> (get-reports {:list-id list-id :report-type :change})
        (remove :released)
-       (get-reports-msgs :change)))
+       (map :change)
+       (map #(d/touch (d/entity db (:db/id %))))))
 
 (defn get-latest-release [list-id]
   (->> (d/q `[:find ?e :where
@@ -325,16 +313,19 @@
               [?e :release ?m]
               [?m :list-id ~list-id]] db)
        (map first)
+       ;; FIXME: remove next line?
        (map #(d/entity db %))
        (remove :canceled)
-       (get-reports-msgs :release)))
+       (map :release)
+       (map #(d/touch (d/entity db (:db/id %))))))
 
 (defn get-latest-released-changes [list-id]
   (let [latest-version (:version (get-latest-release list-id))]
-    (->> (filter #(and (= latest-version (:version %))
-                       (:released %))
-                 (get-reports {:list-id list-id :report-type :change}))
-         (get-reports-msgs :change))))
+    (->> (get-reports {:list-id list-id :report-type :change})
+         (filter #(and (= latest-version (:version %))
+                       (:released %)))
+         (map :change)
+         (map #(d/touch (d/entity db (:db/id %)))))))
 
 (defn get-updates [list-id]
   (let [features (:features (d/entity db [:defaults "init"]))]
@@ -966,19 +957,20 @@
 
 (defn- release-changes! [list-id version release-id]
   (let [changes-reports
-        (->> (filter #(= version (:version %))
-                     (get-reports {:list-id list-id :report-type :change}))
+        (->> (get-reports {:list-id list-id :report-type :change})
+             (filter #(= version (:version %)))
              (map #(get % :db/id)))]
     (doseq [r changes-reports]
       (d/transact! conn [{:db/id r :released release-id}]))))
 
-(defn- unrelease-changes! [list-id release-id]
-  (let [changes-to-unrelease
-        (->> (filter #(= release-id (:released %))
-                     (get-reports {:list-id list-id :report-type :change}))
-             (map #(get % :db/id)))]
-    (doseq [r changes-to-unrelease]
-      (d/transact! conn [[:db/retract r :released]]))))
+;; FIXME: where to use?
+;; (defn- unrelease-changes! [list-id release-id]
+;;   (let [changes-to-unrelease
+;;         (->> (filter #(= release-id (:released %))
+;;                      (get-reports {:list-id list-id :report-type :change}))
+;;              (map #(get % :db/id)))]
+;;     (doseq [r changes-to-unrelease]
+;;       (d/transact! conn [[:db/retract r :released]]))))
 
 (defn process-mail [{:keys [from] :as msg}]
   (let [{:keys [List-Post X-BeenThere References]}
