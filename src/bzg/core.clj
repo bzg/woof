@@ -84,14 +84,14 @@
 ;; Small utility functions
 
 (defn slug-to-list-id [slug]
-  (:address (first (filter #(= (:slug %) slug) (:mailing-lists config)))))
+  (when (not-empty slug)
+    (key (first (filter #(= (:slug (val %)) slug)
+                        (:mailing-lists config))))))
 
-(defn archived-message [{:keys [list-id list-slug message-id]}]
+(defn archived-message [{:keys [list-id message-id]}]
   (if-let [fmt (not-empty
                 (:archived-message-format
-                 (first (filter #(or (= (:address %) list-id)
-                                     (= (:slug %) list-slug))
-                                (:mailing-lists config)))))]
+                 (get (:mailing-lists config) list-id)))]
     (format fmt message-id)
     (if-let [fmt (:archived-list-message-format config)]
       (format fmt list-id message-id)

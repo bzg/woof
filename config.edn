@@ -50,15 +50,13 @@
  ;; ;; The mailing lists addresses that Woof! to which the monitored
  ;; ;; mailbox is subscribed.
  :mailing-lists
- [{;; The mailing list email address:
-   :address "my-list@lists.org"
-
-   ;; The formatting string for public email archive, where a unique
+ {"my-list@lists.org"
+  {;; The formatting string for public email archive, where a unique
    ;; %s stands for the message id of the email.
    :archived-message-format "https://mail-archive.org/first-list/<%s>"
 
    ;; The path as in http://localhost:3000/[SLUG]/:
-   :slug "list1"}]
+   :slug "list1"}}
 
  :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
 

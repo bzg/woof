@@ -24,9 +24,7 @@
 
 (defn- entries-format [{:keys [list-id entries search sorting-by]}]
   (let [message-format
-        (not-empty (:archived-message-format
-                    (first (filter #(= (:address %) list-id)
-                                   (:mailing-lists core/config)))))
+        (not-empty (core/archived-message {:list-id list-id}))
         linkify-maybe
         (cond
           message-format
@@ -60,7 +58,7 @@
 
 (defn- page-home [_ _ config-defaults]
   (with-html-defaults config-defaults
-    {:lists (map :slug (:mailing-lists core/config))}))
+    {:lists (map #(:slug (val %)) (:mailing-lists core/config))}))
 
 (defn- page-index [list-id format-params config-defaults]
   (with-html-defaults config-defaults

@@ -55,12 +55,14 @@
 (spec/def ::address string?)
 (spec/def ::slug string?)
 
-;; FIXME: Don't use a vector for mailing-lists
-(spec/def ::mailing-lists vector?
-  ;; (spec/keys
-  ;;  :req-un [::address]
-  ;;  :opt-un [::slug])
-  )
+(spec/def ::list-id string?)
+(spec/def ::list-config
+  (spec/keys
+   :req-un [::slug]
+   :opt-un [::archived-message-format]))
+
+(spec/def ::mailing-lists
+  (spec/map-of ::list-id ::list-config))
 
 (spec/def ::title (spec/nilable string?))
 (spec/def ::project-name (spec/nilable string?))
@@ -104,9 +106,8 @@
             ::db-dir
             ::log-file
             ::defaults
-            ::mailing-lists
-            ::archived-list-message-format]
-   :opt-un [::archived-message-format]))
+            ::mailing-lists]
+   :opt-un [::archived-list-message-format]))
 
 (deftest configuration
   (testing "Testing configuration"
