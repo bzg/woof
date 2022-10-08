@@ -931,7 +931,7 @@
   (let [;; action-type   type
         status            (some report-keywords-all (keys report))
         status-report-eid (when status (status report))
-        status-msg-eid    (d/entity db [report-type status-report-eid])
+        ;; status-msg-eid    (d/entity db [report-type status-report-eid])
 
         ;;;; Get the original report
         ;; from     (:from (d/entity db msg-eid))
