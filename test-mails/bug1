@@ -1,0 +1,11 @@
+From: User1 <user1@woof.io>
+Subject: [BUG] A bug
+To: test@woof.io
+Message-ID: <bug1@woof.io>
+List-Post: <mailto:test@list.io>
+Date: Sun, 24 Oct 2021 13:20:00 +0200
+
+A bug.
+
+-- 
+ Woof!

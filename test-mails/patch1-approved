@@ -1,0 +1,12 @@
+From: User1 <user1@woof.io>
+Subject: Re: [PATCH] A patch
+To: test@woof.io
+Message-ID: <patch2@woof.io>
+References: <patch1@woof.io>
+List-Post: <mailto:test@list.io>
+Date: Sun, 24 Oct 2021 13:20:44 +0200
+
+Approved.
+
+-- 
+ Woof!

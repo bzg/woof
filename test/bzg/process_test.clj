@@ -5,11 +5,12 @@
             [clojure-mail.core :as mail]
             [clojure.java.shell :as sh]))
 
-;; Alter db vars
-(alter-var-root #'config/env
+;; ;; Alter db vars
+(alter-var-root #'core/config
                 #(assoc %
                         :log-file "test-log.txt"
-                        :mailing-list-address "test@woof.io"))
+                        :mailing-lists
+                        [{:address "test@list.io"}]))
 
 (alter-var-root #'core/conn
                 (constantly (d/get-conn "db-test" core/schema)))
@@ -17,25 +18,39 @@
 (alter-var-root #'core/db
                 (constantly (d/db core/conn)))
 
+;; Initialize defaults
+(core/set-defaults)
+
 ;; Initialize root admin
-(d/transact! core/conn [(merge {:defaults "init"} (:defaults config))])
+(d/transact! core/conn [(merge {:defaults "init"} (:defaults core/config))])
 (core/update-person! {:email "admin@woof.io" :role :admin} {:root true})
 
 ;; Define test emails
-(defn- read-mail-resource [f] (mail/file->message (str "test-mails/" f)))
-(def mail-bug1 (read-mail-resource "mail-bug1"))
-(def mail-patch1 (read-mail-resource "mail-patch1"))
+(defn- read-mail [f] (mail/file->message (str "test-mails/" f)))
+(def bug1 (read-mail "bug1"))
+(def bug1-confirmed (read-mail "bug1-confirmed"))
+(def patch1 (read-mail "patch1"))
+(def patch1-approved (read-mail "patch1-approved"))
 
 ;; Run tests
 (deftest processes
   (testing "Adding the root admin"
     (is (not-empty (core/get-admins))))
-  (testing "Adding a bug"
-    (do (core/read-and-process-mail (list mail-bug1))
-        (is (not-empty (core/get-unconfirmed-bugs)))))
+  (testing "Adding bug1"
+    (do (core/read-and-process-mail (list bug1))
+        (is (= 1 (count (core/get-unconfirmed-bugs "test@list.io"))))))
+  (testing "Confirming bug1"
+    (do (core/read-and-process-mail (list bug1-confirmed))
+        (is (empty? (core/get-unconfirmed-bugs "test@list.io")))
+        (is (= 1 (count (core/get-confirmed-bugs "test@list.io"))))))
   (testing "Adding a patch"
-    (do (core/read-and-process-mail (list mail-patch1))
-        (is (= 1 (count (core/get-unapproved-patches)))))))
+    (do (core/read-and-process-mail (list patch1))
+        (is (= 1 (count (core/get-unapproved-patches "test@list.io"))))))
+  (testing "Approving a patch"
+    (do (core/read-and-process-mail (list patch1-approved))
+        (is (= 1 (count (core/get-approved-patches "test@list.io"))))
+        (is (= 0 (count (core/get-unapproved-patches "test@list.io")))))))
 
 ;; Clean up behind tests
 (sh/sh "rm" "-fr" "db-test")
+
