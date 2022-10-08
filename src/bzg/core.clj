@@ -303,7 +303,7 @@
        (sort-by :date)
        last))
 
-(defn get-all-releases [list-id]
+(defn get-released-versions [list-id]
   (->> (d/q `[:find ?e :where
               [?e :release ?m]
               [?m :list-id ~list-id]] db)
@@ -312,6 +312,15 @@
        (remove :canceled)
        (map :version)
        (into #{})))
+
+(defn get-releases [list-id]
+  (->> (d/q `[:find ?e :where
+              [?e :release ?m]
+              [?m :list-id ~list-id]] db)
+       (map first)
+       (map #(d/entity db %))
+       (remove :canceled)
+       (get-reports-msgs :release)))
 
 (defn get-latest-released-changes [list-id]
   (let [latest-version (:version (get-latest-release list-id))]
@@ -926,10 +935,9 @@
 ;;               :ack-op)
 ;;         (timbre/info "Skipping email ack for admin or maintainer")))))
 
-;; FIXME: Factor out report-update! from report! ?
-(defn- report! [{:keys [report-type msg-eid] :as report}]
+(defn- report! [{:keys [report-type msg-eid version] :as report}]
   (let [;; action-type   type
-        status            (some report-keywords-all (keys report))
+        status (some report-keywords-all (keys report))
         ;; status-report-eid (when status (status report))
         ;; status-msg-eid    (d/entity db [report-type status-report-eid])
 
@@ -959,7 +967,9 @@
         ;; Status is a positive statement, set it to true
         (d/transact! conn [{:db/id report-eid status msg-eid}]))
       ;; This is a new report, add it
-      (d/transact! conn [{report-type msg-eid}]))
+      (if version ;; This is a change or a release
+        (d/transact! conn [{report-type msg-eid :version version}])
+        (d/transact! conn [{report-type msg-eid}])))
 
     ;;;; TODO
     ;; (report-notify! report-type msg-eid status-report-eid)
@@ -1036,7 +1046,7 @@
          (when (some maintainers (list from))
            (when (-> defaults :features :changes)
              (when-let [version (new-change? msg)]
-               (if (some (get-all-releases list-id) (list version))
+               (if (some (get-released-versions list-id) (list version))
                  (timbre/error
                   (format "%s tried to announce a change against released version %s"
                           from version))

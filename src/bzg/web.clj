@@ -71,25 +71,22 @@
 (defn- page-changes [list-id format-params config-defaults]
   (with-html-defaults config-defaults
     (merge
-     (when (-> config-defaults :features :bug)
-       {:releases
-        (entries-format
-         (merge {:list-id list-id
-                 :entries
-                 (->> (core/get-releases list-id)
-                      (take (-> config-defaults :display-max :releases)))}
-                format-params))})
-     (when (-> config-defaults :features :change)
+     (when (-> config-defaults :features :changes)
        {:changes
         (entries-format
          (merge {:list-id list-id
                  :entries (core/get-unreleased-changes list-id)}
-                format-params))})
-     (when (-> config-defaults :features :release)
-       {:released-changes
+                format-params))
+        :released-changes
         (entries-format
          (merge {:list-id list-id
                  :entries (core/get-latest-released-changes list-id)}
+                format-params))})
+     (when (-> config-defaults :features :releases)
+       {:releases
+        (entries-format
+         (merge {:list-id list-id
+                 :entries (core/get-releases list-id)}
                 format-params))}))))
 
 (defn- page-mails [list-id format-params config-defaults]
