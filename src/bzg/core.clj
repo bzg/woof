@@ -131,40 +131,40 @@
 (defn- get-email-address [s]
   (re-find email-re (string/replace s #"mailto:" "")))
 
-(defn format-email-notification
-  [{:keys [notification-type from id list-id
-           action-string status-string]}]
-  (str
-   (condp = notification-type
-     :new
-     (str (format "Thanks for sharing this %s!\n\n" action-string)
-          (when (and (:support-url config)
-                     (some #{"bug" "request"} (list action-string)))
-            (str (or (:support-cta-email config)
-                     (:support-cta config)
-                     "Please support this project")
-                 ":\n"
-                 (:support-url config)
-                 "\n\n")))
-     :action-reporter
-     (format "Thanks for marking this %s as %s.\n\n"
-             action-string status-string)
-     :action-op
-     (format "%s marked your %s as %s.\n\n"
-             from action-string status-string))
+;; (defn format-email-notification
+;;   [{:keys [notification-type from id list-id
+;;            action-string status-string]}]
+;;   (str
+;;    (condp = notification-type
+;;      :new
+;;      (str (format "Thanks for sharing this %s!\n\n" action-string)
+;;           (when (and (:support-url config)
+;;                      (some #{"bug" "request"} (list action-string)))
+;;             (str (or (:support-cta-email config)
+;;                      (:support-cta config)
+;;                      "Please support this project")
+;;                  ":\n"
+;;                  (:support-url config)
+;;                  "\n\n")))
+;;      :action-reporter
+;;      (format "Thanks for marking this %s as %s.\n\n"
+;;              action-string status-string)
+;;      :action-op
+;;      (format "%s marked your %s as %s.\n\n"
+;;              from action-string status-string))
 
-   (when-let [archived-at
-              (not-empty (archived-message
-                          {:list-id list-id :message-id id}))]
-     (format "You can find your email here:\n%s\n\n" archived-at))
+;;    (when-let [archived-at
+;;               (not-empty (archived-message
+;;                           {:list-id list-id :message-id id}))]
+;;      (format "You can find your email here:\n%s\n\n" archived-at))
 
-   (when-let [contribute-url (not-empty (:contribute-url config))]
-     (str (or (:contribute-cta-email config)
-              (:contribute-cta config)
-              (format "Please contribute to %s"
-                      (:project-name config)))
-          ":\n"
-          contribute-url))))
+;;    (when-let [contribute-url (not-empty (:contribute-url config))]
+;;      (str (or (:contribute-cta-email config)
+;;               (:contribute-cta config)
+;;               (format "Please contribute to %s"
+;;                       (:project-name config)))
+;;           ":\n"
+;;           contribute-url))))
 
 ;; Main reports functions
 
@@ -927,45 +927,29 @@
 ;;               :ack-op)
 ;;         (timbre/info "Skipping email ack for admin or maintainer")))))
 
-(defn- report! [{:keys [report-type msg-eid version] :as report}]
-  (let [;; action-type   type
-        status (some report-keywords-all (keys report))
-        ;; status-report-eid (when status (status report))
-        ;; status-msg-eid    (d/entity db [report-type status-report-eid])
-
-        ;;;; Get the original report
-        ;; from     (:from (d/entity db msg-eid))
-        ;; username (:username (d/entity db msg-eid))
-
-        ;;;; Maybe add default priority
-        ;; action        (if-let [p (:priority action)]
-        ;;                 action
-        ;;                 (assoc action :priority config/priority))
-        ;; admin-or-maintainer?
-        ;; (let [from (:from (d/entity db msg-eid))]
-        ;;   (or (:admin (d/entity db [:email from]))
-        ;;       (:maintainer (d/entity db [:email from]))))
-        ]
-
+(defn- report! [{:keys [report-type report-eid version] :as report}]
+  (let [;; If there is a status, add or update a report
+        status               (some report-keywords-all (keys report))
+        status-report-eid    (and status (status report))
+        from                 (or (:from (d/entity db report-eid))
+                                 (:from (d/entity db status-report-eid)))
+        username             (or (:username (d/entity db report-eid))
+                                 (:username (d/entity db status-report-eid)))
+        admin-or-maintainer? (when-let [person (d/entity db [:email from])]
+                               (or (:admin person) (:maintainer person)))]
     ;; Possibly add a new person
-    ;; (update-person! {:email from :username username})
-
-    ;; If there is a status, add or update a report
-    (if-let [report-eid (and status (:db/id (d/entity db msg-eid)))]
+    (update-person! {:email from :username username})
+    (if status-report-eid
       ;; This is a status update about an existing report
       (if (re-matches #"^un(.+)" (name status))
         ;; Status is about undoing, retract attribute
-        (d/transact! conn [[:db/retract [report-type msg-eid] status]])
+        (d/transact! conn [[:db/retract [report-type report-eid] status]])
         ;; Status is a positive statement, set it to true
-        (d/transact! conn [{:db/id report-eid status msg-eid}]))
-      ;; This is a new report, add it
-      (if version ;; This is a change or a release
-        (d/transact! conn [{report-type msg-eid :version version}])
-        (d/transact! conn [{report-type msg-eid}])))
-
-    ;;;; TODO
-    ;; (report-notify! report-type msg-eid status-report-eid)
-    ))
+        (d/transact! conn [{:db/id report-eid status status-report-eid}]))
+      ;; This is a change or a or a release
+      (if (and admin-or-maintainer? version)
+        (d/transact! conn [{report-type report-eid :version version}])
+        (d/transact! conn [{report-type report-eid}])))))
 
 (defn- release-changes! [list-id version release-id]
   (let [changes-reports
@@ -1022,7 +1006,7 @@
                 :while  (false? @done)]
           (when (and (-> defaults :features feature)
                      (new? feature msg))
-            (report! {:report-type feature :msg-eid (add-mail! msg)})
+            (report! {:report-type feature :report-eid (add-mail! msg)})
             (swap! done false?))))
 
       ;; Or detect new release/change
@@ -1037,13 +1021,13 @@
                  (format "%s tried to announce a change against released version %s"
                          from version))
                 (report! {:report-type :change
-                          :msg-eid     (add-mail! msg)
+                          :report-eid  (add-mail! msg)
                           :version     version}))))
           (when (-> defaults :features :release)
             (when-let [version (new? :release msg)]
               (let [release-report-eid (add-mail! msg)]
                 (report! {:report-type :release
-                          :msg-eid     release-report-eid
+                          :report-eid  release-report-eid
                           :version     version})
                 (release-changes! list-id version release-report-eid))))))
 
@@ -1088,7 +1072,7 @@
                   (when-let [{:keys [upstream-report-eid status priority]}
                              (is-report-update? feature body-report references)]
                     (report! {:report-type feature
-                              :msg-eid     upstream-report-eid
+                              :report-eid  upstream-report-eid
                               status       (add-mail! msg)
                               :priority    priority}))))
 
@@ -1099,7 +1083,7 @@
                     (when-let [{:keys [upstream-report-eid status priority]}
                                (is-report-update? feature body-report references)]
                       (report! {:report-type feature
-                                :msg-eid     upstream-report-eid
+                                :report-eid  upstream-report-eid
                                 status       (add-mail! msg)
                                 :priority    priority}))))
                 (timbre/warn
