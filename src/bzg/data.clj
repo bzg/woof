@@ -55,30 +55,31 @@
     :description (str (:title core/config) " - " list-id)}
    (sort-by :pubDate (map #(feed-item % list-id) resources))))
 
-(defn get-data [what {:keys [path-params]}]
+(defn get-data [what {:keys [path-params query-params]}]
   (let [list-id   (core/slug-to-list-id (:list-slug path-params))
         format    (subs (:format path-params) 1)
+        search    (or (:search query-params) "")
         resources (condp = what
-                    :confirmed-bugs   (core/get-confirmed-bugs list-id)
-                    :unconfirmed-bugs (core/get-unconfirmed-bugs list-id)
-                    :bugs             (core/get-unfixed-bugs list-id)
+                    :confirmed-bugs   (core/get-confirmed-bugs list-id search)
+                    :unconfirmed-bugs (core/get-unconfirmed-bugs list-id search)
+                    :bugs             (core/get-unfixed-bugs list-id search)
 
-                    :handled-requests   (core/get-handled-requests list-id)
-                    :unhandled-requests (core/get-unhandled-requests list-id)
-                    :requests           (core/get-undone-requests list-id)
+                    :handled-requests   (core/get-handled-requests list-id search)
+                    :unhandled-requests (core/get-unhandled-requests list-id search)
+                    :requests           (core/get-undone-requests list-id search)
 
-                    :approved-patches   (core/get-approved-patches list-id)
-                    :unapproved-patches (core/get-unapproved-patches list-id)
-                    :patches            (core/get-patches list-id)
+                    :approved-patches   (core/get-approved-patches list-id search)
+                    :unapproved-patches (core/get-unapproved-patches list-id search)
+                    :patches            (core/get-patches list-id search)
 
-                    :unreleased-changes (core/get-unreleased-changes list-id)
-                    :released-changes   (core/get-latest-released-changes list-id)
-                    :changes            (core/get-changes list-id)
+                    :unreleased-changes (core/get-unreleased-changes list-id search)
+                    :released-changes   (core/get-latest-released-changes list-id search)
+                    :changes            (core/get-changes list-id search)
 
-                    :announcements (core/get-announcements list-id)
-                    :mails         (core/get-mails list-id)
-                    :releases      (core/get-releases list-id)
-                    :updates       (core/get-updates list-id))
+                    :announcements (core/get-announcements list-id search)
+                    :mails         (core/get-mails list-id search)
+                    :releases      (core/get-releases list-id search)
+                    :updates       (core/get-updates list-id search))
         headers (condp = format
                   "rss"  {"Content-Type" "application/xml"}
                   "md"   {"Content-Type" "text/plain; charset=utf-8"}

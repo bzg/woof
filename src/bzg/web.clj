@@ -22,7 +22,7 @@
 
 (selmer/add-filter! :e-pluralize #(when (> (count %) 1) "es"))
 
-(defn- entries-format [{:keys [list-id entries search sorting-by]}]
+(defn- entries-format [{:keys [list-id entries sorting-by]}]
   (let [message-format
         (not-empty (core/archived-message {:list-id list-id}))
         linkify-maybe
@@ -36,11 +36,11 @@
      entries
      (sort-by (condp = sorting-by "date" :date "user" :role :backrefs))
      reverse
-     (map (fn [e]
-            (if-let [s (not-empty search)]
-              (when (re-find (re-pattern (str "(?i)" s))
-                             (:subject e)) e)
-              e)))
+     ;; (map (fn [e]
+     ;;        (if-let [s (not-empty search)]
+     ;;          (when (re-find (re-pattern (str "(?i)" s))
+     ;;                         (:subject e)) e)
+     ;;          e)))
      (remove nil?)
      (map linkify-maybe))))
 
@@ -65,73 +65,78 @@
     {:announcements
      (entries-format
       (merge {:list-id list-id
-              :entries (core/get-announcements list-id)}
+              :entries (core/get-announcements list-id (or (:search format-params) ""))}
              format-params))}))
 
 (defn- page-changes [list-id format-params config-defaults]
-  (with-html-defaults config-defaults
-    (merge
-     (when (-> config-defaults :features :change)
-       {:changes
-        (entries-format
-         (merge {:list-id list-id
-                 :entries (core/get-unreleased-changes list-id)}
-                format-params))
-        :released-changes
-        (entries-format
-         (merge {:list-id list-id
-                 :entries (core/get-latest-released-changes list-id)}
-                format-params))})
-     (when (-> config-defaults :features :release)
-       {:releases
-        (entries-format
-         (merge {:list-id list-id
-                 :entries (core/get-releases list-id)}
-                format-params))}))))
+  (let [search (or (:search format-params) "")]
+    (with-html-defaults config-defaults
+      (merge
+       (when (-> config-defaults :features :change)
+         {:changes
+          (entries-format
+           (merge {:list-id list-id
+                   :entries (core/get-unreleased-changes list-id search)}
+                  format-params))
+          :released-changes
+          (entries-format
+           (merge {:list-id list-id
+                   :entries (core/get-latest-released-changes list-id search)}
+                  format-params))})
+       (when (-> config-defaults :features :release)
+         {:releases
+          (entries-format
+           (merge {:list-id list-id
+                   :entries (core/get-releases list-id search)}
+                  format-params))})))))
 
 (defn- page-mails [list-id format-params config-defaults]
   (with-html-defaults config-defaults
     {:mails
      (entries-format
       (merge {:list-id list-id
-              :entries (core/get-mails list-id)} format-params))}))
+              :entries (core/get-mails
+                        list-id (:search format-params))} format-params))}))
 
 (defn- page-bugs [list-id format-params config-defaults]
-  (with-html-defaults config-defaults
-    {:unconfirmed-bugs
-     (entries-format
-      (merge {:list-id list-id
-              :entries (core/get-unconfirmed-bugs list-id)} format-params))
-     :confirmed-bugs
-     (entries-format
-      (merge {:list-id list-id
-              :entries (core/get-confirmed-bugs list-id)} format-params))}))
+  (let [search (or (:search format-params) "")]
+    (with-html-defaults config-defaults
+      {:unconfirmed-bugs
+       (entries-format
+        (merge {:list-id list-id
+                :entries (core/get-unconfirmed-bugs list-id search)} format-params))
+       :confirmed-bugs
+       (entries-format
+        (merge {:list-id list-id
+                :entries (core/get-confirmed-bugs list-id search)} format-params))})))
 
 (defn- page-requests [list-id format-params config-defaults]
-  (with-html-defaults config-defaults
-    {:unhandled-requests
-     (entries-format
-      (merge {:list-id list-id
-              :entries (core/get-unhandled-requests list-id)}
-             format-params))
-     :handled-requests
-     (entries-format
-      (merge {:list-id list-id
-              :entries (core/get-handled-requests list-id)}
-             format-params))}))
+  (let [search (or (:search format-params) "")]
+    (with-html-defaults config-defaults
+      {:unhandled-requests
+       (entries-format
+        (merge {:list-id list-id
+                :entries (core/get-unhandled-requests list-id search)}
+               format-params))
+       :handled-requests
+       (entries-format
+        (merge {:list-id list-id
+                :entries (core/get-handled-requests list-id search)}
+               format-params))})))
 
 (defn- page-patches [list-id format-params config-defaults]
-  (with-html-defaults config-defaults
-    {:unapproved-patches
-     (entries-format
-      (merge {:list-id list-id
-              :entries (core/get-unapproved-patches list-id)}
-             format-params))
-     :approved-patches
-     (entries-format
-      (merge {:list-id list-id
-              :entries (core/get-approved-patches list-id)}
-             format-params))}))
+  (let [search (or (:search format-params) "")]
+    (with-html-defaults config-defaults
+      {:unapproved-patches
+       (entries-format
+        (merge {:list-id list-id
+                :entries (core/get-unapproved-patches list-id search)}
+               format-params))
+       :approved-patches
+       (entries-format
+        (merge {:list-id list-id
+                :entries (core/get-approved-patches list-id search)}
+               format-params))})))
 
 (defn- page-tops [list-id _ config-defaults]
   (with-html-defaults config-defaults
@@ -151,7 +156,7 @@
    :tops     {:html "/tops.html" :fn page-tops}})
 
 (defn- get-page [page {:keys [query-params path-params]}]
-  (let [format-params   {:search     (get query-params "search")
+  (let [format-params   {:search     (or (get query-params "search") "")
                          :sorting-by (get query-params "sorting-by")}
         config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
                                format-params)
