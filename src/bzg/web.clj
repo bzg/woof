@@ -3,11 +3,9 @@
             [reitit.ring :as ring]
             [bzg.core :as core]
             [bzg.data :as data]
-            [reitit.ring.middleware.muuntaja :as muuntaja]
             ;; FIXME: Remove in production
             [ring.middleware.reload :as reload]
             [ring.middleware.params :as params]
-            [muuntaja.core :as m]
             [reitit.ring.middleware.parameters :as parameters]
             [ring.middleware.cors :refer [wrap-cors]]
             [mount.core :as mount]
@@ -36,11 +34,6 @@
      entries
      (sort-by (condp = sorting-by "date" :date "user" :role :backrefs))
      reverse
-     ;; (map (fn [e]
-     ;;        (if-let [s (not-empty search)]
-     ;;          (when (re-find (re-pattern (str "(?i)" s))
-     ;;                         (:subject e)) e)
-     ;;          e)))
      (remove nil?)
      (map linkify-maybe))))
 
@@ -212,9 +205,7 @@
        ["tops"
         ["" {:get #(get-page :tops %)}]
         [":format" {:get #(data/get-mails-data %)}]]]]]
-    {:data {:muuntaja   m/instance
-      	    :middleware [params/wrap-params
-                         muuntaja/format-middleware]}})
+    {:data {:middleware [params/wrap-params]}})
    (ring/create-default-handler
     {:not-found
      (fn [{:keys [query-params path-params]}]

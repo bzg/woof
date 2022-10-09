@@ -1,6 +1,7 @@
 (ns bzg.data
   (:require [bzg.core :as core]
             [clojure.string :as string]
+            [clojure.data.json :as json]
             [clj-rss.core :as rss]
             [selmer.parser :as html]
             [clojure.java.io :as io]))
@@ -8,8 +9,10 @@
 (defn- format-org [resources list-id]
   (->> resources
        (map #(format " - [[%s][%s: %s]] (%s)"
-                     (core/archived-message {:list-id    list-id
-                                             :message-id (:message-id %)})
+                     (core/archived-message
+                      {:list-id     list-id
+                       :archived-at (:archived-at %)
+                       :message-id  (:message-id %)})
                      (:username %)
                      (string/replace (:subject %) #"^\[[^]]+\] " "")
                      (:date %)))
@@ -20,28 +23,31 @@
        (map #(format " - [%s: %s](%s \"%s\")"
                      (:username %)
                      (string/replace (:subject %) #"^\[[^]]+\] " "")
-                     (core/archived-message {:list-id    list-id
-                                             :message-id (:message-id %)})
+                     (core/archived-message
+                      {:list-id     list-id
+                       :archived-at (:archived-at %)
+                       :message-id  (:message-id %)})
                      (:date %)))
        (string/join "\n")))
 
-(defn feed-item-description [msg fmt]
-  (let [msgid (:message-id msg)]
-    (format
-     "<![CDATA[ %s ]]>"
-     (if fmt
-       (html/render-file
-        (io/resource (str "html/" (:theme core/config) "/link.html"))
-        (assoc msg :link (format fmt msgid)))
-       msgid))))
+(defn feed-item-description [msg archived-at]
+  (format
+   "<![CDATA[ %s ]]>"
+   (if (re-matches #"http.*" archived-at)
+     (html/render-file
+      (io/resource (str "html/" (:theme core/config) "/link.html"))
+      (assoc msg :link archived-at))
+     archived-at)))
 
-(defn feed-item [{:keys [message-id subject date from] :as msg} list-id]
-  (let [fmt  (core/archived-message
-              {:list-id list-id :message-id message-id})
-        link (if fmt (format fmt message-id) message-id)]
+(defn feed-item [{:keys [message-id archived-at subject date from] :as msg} list-id]
+  (let [archived-at (core/archived-message
+                     {:list-id     list-id
+                      :archived-at archived-at
+                      :message-id  message-id})
+        link        (if (not-empty archived-at) archived-at message-id)]
     {:title       subject
      :link        link
-     :description (feed-item-description msg fmt)
+     :description (feed-item-description msg archived-at)
      :author      from
      :guid        link
      :pubDate     (.toInstant date)}))
@@ -84,14 +90,13 @@
                   "rss"  {"Content-Type" "application/xml"}
                   "md"   {"Content-Type" "text/plain; charset=utf-8"}
                   "org"  {"Content-Type" "text/plain; charset=utf-8"}
-                  "json" nil ;; FIXME: Weird?
-                  )]
+                  "json" {"Content-Type" "application/json; charset=utf-8"})]
     {:status  200
      :headers headers
      :body
      (condp = format
        "rss"  (format-rss resources list-id)
-       "json" resources
+       "json" (json/write-str (map #(into {} %) resources))
        "md"   (format-md resources list-id)
        "org"  (format-org resources list-id))}))
 

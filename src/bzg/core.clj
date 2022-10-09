@@ -83,19 +83,44 @@
 
 ;; Small utility functions
 
+(defn- make-to [username address]
+  (str username " <" address ">"))
+
+(defn- get-id [^String id]
+  (peek (re-matches #"^<?(.+[^>])>?$" id)))
+
+(defn- trim-subject [^String s]
+  (-> s
+      (string/replace #"^(R[Ee] ?: ?)+" "")
+      (string/replace #" *\([^)]+\)" "")
+      (string/trim)))
+
+(defn- trim-url-brackets [^String s]
+  (-> s (string/replace #"^<?([^>]+)>?$" "$1")))
+
+;; Trim subject prefixes in mailing list
+(defn- trim-subject-prefix [^String s]
+  (let [p (re-pattern
+           (format "^\\[(?:%s)\\] .*$"
+                   (string/join "|" (vals (:action-words config)))))]
+    (if-let [s (re-matches p s)]
+      s
+      (string/replace s #"^\[[^]]+\] " ""))))
+
 (defn slug-to-list-id [slug]
   (when (not-empty slug)
     (key (first (filter #(= (:slug (val %)) slug)
                         (:mailing-lists config))))))
 
-(defn archived-message [{:keys [list-id message-id]}]
-  (if-let [fmt (not-empty
-                (:archived-message-format
-                 (get (:mailing-lists config) list-id)))]
-    (format fmt message-id)
-    (if-let [fmt (:archived-list-message-format config)]
-      (format fmt list-id message-id)
-      "")))
+(defn archived-message [{:keys [list-id message-id archived-at]}]
+  (if archived-at (trim-url-brackets archived-at)
+      (if-let [fmt (not-empty
+                    (:archived-message-format
+                     (get (:mailing-lists config) list-id)))]
+        (format fmt message-id)
+        (if-let [fmt (:archived-list-message-format config)]
+          (format fmt list-id message-id)
+          ""))))
 
 (def report-keywords-all
   (let [ks (keys (:report-words config))]
@@ -140,30 +165,6 @@
                       (:project-name config)))
           ":\n"
           contribute-url))))
-
-(defn- make-to [username address]
-  (str username " <" address ">"))
-
-(defn- get-id [^String id]
-  (peek (re-matches #"^<?(.+[^>])>?$" id)))
-
-(defn- trim-subject [^String s]
-  (-> s
-      (string/replace #"^(R[Ee] ?: ?)+" "")
-      (string/replace #" *\([^)]+\)" "")
-      (string/trim)))
-
-(defn- trim-url-brackets [^String s]
-  (-> s (string/replace #"^<?([^>]+)>?$" "$1")))
-
-;; Trim subject prefixes in mailing list
-(defn- trim-subject-prefix [^String s]
-  (let [p (re-pattern
-           (format "^\\[(?:%s)\\] .*$"
-                   (string/join "|" (vals (:action-words config)))))]
-    (if-let [s (re-matches p s)]
-      s
-      (string/replace s #"^\[[^]]+\] " ""))))
 
 ;; Main reports functions
 
@@ -453,10 +454,9 @@
     (d/transact! conn [{:message-id id
                         :list-id    list-id
                         :archived-at
-                        (or (and Archived-At (trim-url-brackets Archived-At))
-                            (archived-message {:list-id    list-id
-                                               :message-id id})
-                            "")
+                        (archived-message {:list-id     list-id
+                                           :archived-at Archived-At
+                                           :message-id  id})
                         :subject    (trim-subject-prefix subject)
                         :references refs
                         :private    (or private false)
