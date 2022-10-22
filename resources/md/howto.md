@@ -19,7 +19,7 @@ development of their projects: with a minimalistic set of conventions,
 Woof! will extract what's important for everyone.
 
 
-# Triggering a report
+# Adding a report
 
 Woof! watches for triggers at the beginning of the subject line:
 
@@ -45,33 +45,37 @@ Announcing a release `x` moves changes for `x` from the *Upcoming changes*
 section to the *Latest released changes* one.  Canceling a release moves
 the changes back to the *Upcoming changes* section.
 
-Note that the `[...]` is case-sensitive.
+Note that the `[...]` par ist case-sensitive.
 
 
 # Updating a report
 
-After a bug, patch, announcement, change, release or help request has
-been monitored, replies to the original mail can trigger actions.
+After a bug, patch, announcement, change, release or request has been
+monitored, replies to the original mail can trigger actions.
 
-Actions are declared at the beginning of a line in the reply.
+Actions against a report are declared at the beginning of a line in
+the reply.
 
 For **bugs**:
 
 -   `Confirmed.` : Confirm a bug.
+-   `Handled`. : Take ownership for fixing the bug.
 -   `Fixed.` : Mark a bug as fixed.
 
 For **patches**:
 
 -   `Approved.` : Approve a patch.
+-   `Handled`. : Take ownership for editing and applying the patch.
 -   `Applied.` : Mark a patch as applied.
 
-For **help requests**:
+For **requests** (feature requests or to-dos):
 
--   `Handled.` : Mark a request as currently handled.
--   `Done.` : Mark a task of helping as done.
+-   `Approved.` : Mark the request as approved.
+-   `Handled.` : Take ownership for editing and applying the request.
+-   `Done.` : Mark a request as done.
 
 For bugs, patches, requests, announcements, changes and releases, you
-can also cancel them:
+can also *cancel* them:
 
 -   `Canceled.` : Mark the bug, patch, request, announcement, change or
     release as canceled.

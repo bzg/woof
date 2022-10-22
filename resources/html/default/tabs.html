@@ -1,36 +1,36 @@
 <div class="tabs">
   <ul>
 
-    <li {% ifequal feature "index" %}class="is-active"{% endifequal %}>
+    <li {% ifequal feature "announcement" %}class="is-active"{% endifequal %}>
       <a title="General announcements" href=".">Announcements</a>
     </li>
 
     {% if config.features.bug %}
-    <li {% ifequal feature "bugs" %}class="is-active"{% endifequal %}>
+    <li {% ifequal feature "bug" %}class="is-active"{% endifequal %}>
       <a title="Bugs" href="bugs">Bugs</a>
     </li>
     {% endif %}
 
     {% if config.features.patch %}
-    <li {% ifequal feature "patches" %}class="is-active"{% endifequal %}>
+    <li {% ifequal feature "patch" %}class="is-active"{% endifequal %}>
       <a title="Patches" href="patches">Patches</a>
     </li>
     {% endif %}
 
     {% if config.features.request %}
-    <li {% ifequal feature "requests" %}class="is-active"{% endifequal %}>
+    <li {% ifequal feature "request" %}class="is-active"{% endifequal %}>
       <a title="Requests" href="requests">Requests</a>
     </li>
     {% endif %}
 
     {% if config.features.mail %}
-    <li {% ifequal feature "mails" %}class="is-active"{% endifequal %}>
+    <li {% ifequal feature "mail" %}class="is-active"{% endifequal %}>
       <a title="Mail activity" href="mails">Mails</a>
     </li>
     {% endif %}
 
     {% if config.features.top %}
-    <li {% ifequal feature "tops" %}class="is-active"{% endifequal %}>
+    <li {% ifequal feature "top" %}class="is-active"{% endifequal %}>
       <a title="Top contributors" href="tops">Tops</a>
     </li>
     {% endif %}
