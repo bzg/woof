@@ -66,31 +66,16 @@
         format    (subs (:format path-params) 1)
         search    (or (:search query-params) "")
         resources (condp = what
-                    :confirmed-bugs   (core/get-confirmed-bugs list-id search)
-                    :unconfirmed-bugs (core/get-unconfirmed-bugs list-id search)
-                    :bugs             (core/get-unfixed-bugs list-id search)
-
-                    :handled-requests   (core/get-handled-requests list-id search)
-                    :unhandled-requests (core/get-unhandled-requests list-id search)
-                    :requests           (core/get-undone-requests list-id search)
-
-                    :approved-patches   (core/get-approved-patches list-id search)
-                    :unapproved-patches (core/get-unapproved-patches list-id search)
-                    :patches            (core/get-patches list-id search)
-
-                    :unreleased-changes (core/get-unreleased-changes list-id search)
-                    :released-changes   (core/get-latest-released-changes list-id search)
-                    :changes            (core/get-changes list-id search)
-
+                    :bugs          (core/get-unfixed-bugs list-id search)
+                    :requests      (core/get-undone-requests list-id search)
+                    :patches       (core/get-patches list-id search)
                     :announcements (core/get-announcements list-id search)
-                    :mails         (core/get-mails list-id search)
-                    :releases      (core/get-releases list-id search)
-                    :updates       (core/get-updates list-id search))
-        headers (condp = format
-                  "rss"  {"Content-Type" "application/xml"}
-                  "md"   {"Content-Type" "text/plain; charset=utf-8"}
-                  "org"  {"Content-Type" "text/plain; charset=utf-8"}
-                  "json" {"Content-Type" "application/json; charset=utf-8"})]
+                    :mails         (core/get-mails list-id search))
+        headers   (condp = format
+                    "rss"  {"Content-Type" "application/xml"}
+                    "md"   {"Content-Type" "text/plain; charset=utf-8"}
+                    "org"  {"Content-Type" "text/plain; charset=utf-8"}
+                    "json" {"Content-Type" "application/json; charset=utf-8"})]
     {:status  200
      :headers headers
      :body
@@ -101,22 +86,8 @@
        "org"  (format-org resources list-id))}))
 
 (defn get-bugs-data [params] (get-data :bugs params))
-(defn get-unconfirmed-bugs-data [params] (get-data :unconfirmed-bugs params))
-(defn get-confirmed-bugs-data [params] (get-data :confirmed-bugs params))
-
 (defn get-requests-data [params] (get-data :requests params))
-(defn get-unhandled-requests-data [params] (get-data :unhandled-requests params))
-(defn get-handled-requests-data [params] (get-data :handled-requests params))
-
-(defn get-changes-data [params] (get-data :changes params))
-(defn get-released-changes-data [params] (get-data :released-changes params))
-(defn get-unreleased-changes-data [params] (get-data :unreleased-changes params))
-
 (defn get-patches-data [params] (get-data :patches params))
-(defn get-unapproved-patches-data [params] (get-data :unapproved-patches params))
-(defn get-approved-patches-data [params] (get-data :approved-patches params))
-
 (defn get-announcements-data [params] (get-data :announcements params))
 (defn get-mails-data [params] (get-data :mails params))
-(defn get-releases-data [params] (get-data :releases params))
-(defn get-updates-data [params] (get-data :updates params))
+
