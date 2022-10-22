@@ -176,20 +176,21 @@
 
 ;; FIXME: Use fulltext search for reports?
 (defn- get-reports [{:keys [list-id report-type search as-mail]}]
-  (let [reports (->> (d/q `[:find ?e
-                            :where
-                            [?e ~report-type ?m]
-                            [?m :list-id ~list-id]]
-                          db)
-                     (map #(d/entity db (first %)))
-                     ;; Always remove canceled and deleted reports
-                     ;; (remove :private)
-                     (remove :deleted)
-                     (remove :canceled)
-                     (filter #(re-find (re-pattern (or search ""))
-                                       (:subject (report-type %))))
-                     (take (or (-> (d/entity db [:defaults "init"]) :display-max report-type)
-                               100)))]
+  (let [reports
+        (->> (d/q
+              (if list-id
+                `[:find ?e :where [?e ~report-type ?m] [?m :list-id ~list-id]]
+                `[:find ?e :where [?e ~report-type ?m]])
+              db)
+             (map #(d/entity db (first %)))
+             ;; Always remove canceled and deleted reports
+             ;; (remove :private)
+             (remove :deleted)
+             (remove :canceled)
+             (filter #(re-find (re-pattern (or search ""))
+                               (:subject (report-type %))))
+             (take (or (-> (d/entity db [:defaults "init"]) :display-max report-type)
+                       100)))]
     (if as-mail
       (->> reports
            (map report-type)
@@ -198,7 +199,7 @@
            (map add-role))
       reports)))
 
-(defn get-mails [list-id & [search]]
+(defn get-mails [& [list-id search]]
   (->> (d/q `[:find (d/pull ?e [*])
               :where
               [?e :message-id _]
@@ -212,19 +213,19 @@
        (map add-role)
        (take (-> (d/entity db [:defaults "init"]) :display-max :mail))))
 
-(defn get-patches [list-id & [search]]
+(defn get-patches [& [list-id search]]
   (get-reports {:list-id     list-id
                 :search      (or search "")
                 :report-type :patch
                 :as-mail     true}))
 
-(defn get-changes [list-id & [search]]
+(defn get-changes [& [list-id search]]
   (get-reports {:list-id     list-id
                 :search      (or search "")
                 :report-type :request
                 :as-mail     true}))
 
-(defn get-announcements [list-id & [search]]
+(defn get-announcements [& [list-id search]]
   (get-reports {:list-id     list-id
                 :search      (or search "")
                 :report-type :announcement
@@ -235,60 +236,60 @@
 
 ;; FIXME: Handle priority:
 ;; (remove #(if-let [p (:priority %)] (< p 2) true))
-(defn get-confirmed-bugs [list-id & [search]]
+(defn get-confirmed-bugs [& [list-id search]]
   (->> (get-reports {:list-id list-id :search (or search "") :report-type :bug})
        (filter :confirmed)
        (remove :fixed)
        (map :bug)
        (map #(d/touch (d/entity db (:db/id %))))))
 
-(defn get-unconfirmed-bugs [list-id & [search]]
+(defn get-unconfirmed-bugs [& [list-id search]]
   (->> (get-reports {:list-id list-id :search (or search "") :report-type :bug})
        (remove :confirmed)
        (remove :fixed)
        (map :bug)
        (map #(d/touch (d/entity db (:db/id %))))))
 
-(defn get-unfixed-bugs [list-id & [search]]
+(defn get-unfixed-bugs [& [list-id search]]
   (->> (get-reports {:list-id list-id :search (or search "") :report-type :bug})
        (remove :fixed)
        (map :bug)
        (map #(d/touch (d/entity db (:db/id %))))))
 
-(defn get-approved-patches [list-id & [search]]
+(defn get-approved-patches [& [list-id search]]
   (->> (get-reports {:list-id list-id :search (or search "") :report-type :patch})
        (filter :approved)
        (remove :applied)
        (map :patch)
        (map #(d/touch (d/entity db (:db/id %))))))
 
-(defn get-unapproved-patches [list-id & [search]]
+(defn get-unapproved-patches [& [list-id search]]
   (->> (get-reports {:list-id list-id :search (or search "") :report-type :patch})
        (remove :approved)
        (remove :applied)
        (map :patch)
        (map #(d/touch (d/entity db (:db/id %))))))
 
-(defn get-handled-requests [list-id & [search]]
+(defn get-handled-requests [& [list-id search]]
   (->> (get-reports {:list-id list-id :search (or search "") :report-type :request})
        (filter :handled)
        (remove :done)
        (map :request)
        (map #(d/touch (d/entity db (:db/id %))))))
 
-(defn get-unhandled-requests [list-id & [search]]
+(defn get-unhandled-requests [& [list-id search]]
   (->> (get-reports {:list-id list-id :search (or search "") :report-type :request})
        (remove :handled)
        (map :request)
        (map #(d/touch (d/entity db (:db/id %))))))
 
-(defn get-undone-requests [list-id & [search]]
+(defn get-undone-requests [& [list-id search]]
   (->> (get-reports {:list-id list-id :search (or search "") :report-type :request})
        (remove :done)
        (map :request)
        (map #(d/touch (d/entity db (:db/id %))))))
 
-(defn get-unreleased-changes [list-id & [search]]
+(defn get-unreleased-changes [& [list-id search]]
   (->> (get-reports {:list-id list-id :search (or search "") :report-type :change})
        (remove :released)
        (map :change)
@@ -319,7 +320,7 @@
        (map :version)
        (into #{}))) ;; FIXME: use (map #(d/touch ...) here too?
 
-(defn get-releases [list-id & [search]]
+(defn get-releases [& [list-id search]]
   (->> (d/q `[:find ?e :where
               [?e :release ?m]
               [?m :list-id ~list-id]] db)
@@ -331,7 +332,7 @@
        (filter #(re-find (re-pattern (or search "")) (:subject (:release %))))
        (map #(d/touch (d/entity db (:db/id %))))))
 
-(defn get-latest-released-changes [list-id & [search]]
+(defn get-latest-released-changes [& [list-id search]]
   (let [latest-version (:version (get-latest-release list-id))]
     (->> (get-reports {:list-id list-id :search (or search "") :report-type :change})
          (filter #(and (= latest-version (:version %))
@@ -339,7 +340,7 @@
          (map :change)
          (map #(d/touch (d/entity db (:db/id %)))))))
 
-(defn get-updates [list-id & [search]]
+(defn get-updates [& [list-id search]]
   (let [search   (or search "")
         features (:features (d/entity db [:defaults "init"]))]
     (->> (list
