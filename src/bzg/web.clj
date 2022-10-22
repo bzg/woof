@@ -49,90 +49,44 @@
 (defn- with-html-defaults [config-defaults m]
   (merge html-defaults {:config config-defaults} m))
 
-(defn- page-home [_ _ config-defaults]
+(defn- page-sources [_ _ _ config-defaults]
   (with-html-defaults config-defaults
     {:lists (map #(:slug (val %)) (:mailing-lists core/config))}))
 
-(defn- page-sources [_ _ config-defaults]
-  (with-html-defaults config-defaults
-    {:lists (map #(:slug (val %)) (:mailing-lists core/config))}))
-
-(defn- page-index [list-id format-params config-defaults]
-  (with-html-defaults config-defaults
-    {:announcements
-     (entries-format
-      (merge {:list-id list-id
-              :entries (core/get-announcements list-id (or (:search format-params) ""))}
-             format-params))}))
-
-(defn- page-changes [list-id format-params config-defaults]
-  (let [search (or (:search format-params) "")]
+(defn- page-index [feature list-id format-params config-defaults]
+  (let [search (:search format-params)]
     (with-html-defaults config-defaults
-      (merge
-       (when (-> config-defaults :features :change)
-         {:changes
-          (entries-format
-           (merge {:list-id list-id
-                   :entries (core/get-unreleased-changes list-id search)}
-                  format-params))
-          :released-changes
-          (entries-format
-           (merge {:list-id list-id
-                   :entries (core/get-latest-released-changes list-id search)}
-                  format-params))})
-       (when (-> config-defaults :features :release)
-         {:releases
-          (entries-format
-           (merge {:list-id list-id
-                   :entries (core/get-releases list-id search)}
-                  format-params))})))))
-
-(defn- page-mails [list-id format-params config-defaults]
-  (with-html-defaults config-defaults
-    {:mails
-     (entries-format
-      (merge {:list-id list-id
-              :entries (core/get-mails
-                        list-id (:search format-params))} format-params))}))
-
-(defn- page-bugs [list-id format-params config-defaults]
-  (let [search (or (:search format-params) "")]
-    (with-html-defaults config-defaults
-      {:unconfirmed-bugs
+      {:list-id list-id
+       :feature (name feature)
+       :entries
        (entries-format
         (merge {:list-id list-id
-                :entries (core/get-unconfirmed-bugs list-id search)} format-params))
-       :confirmed-bugs
-       (entries-format
-        (merge {:list-id list-id
-                :entries (core/get-confirmed-bugs list-id search)} format-params))})))
-
-(defn- page-requests [list-id format-params config-defaults]
-  (let [search (or (:search format-params) "")]
-    (with-html-defaults config-defaults
-      {:unhandled-requests
-       (entries-format
-        (merge {:list-id list-id
-                :entries (core/get-unhandled-requests list-id search)}
-               format-params))
-       :handled-requests
-       (entries-format
-        (merge {:list-id list-id
-                :entries (core/get-handled-requests list-id search)}
-               format-params))})))
-
-(defn- page-patches [list-id format-params config-defaults]
-  (let [search (or (:search format-params) "")]
-    (with-html-defaults config-defaults
-      {:unapproved-patches
-       (entries-format
-        (merge {:list-id list-id
-                :entries (core/get-unapproved-patches list-id search)}
-               format-params))
-       :approved-patches
-       (entries-format
-        (merge {:list-id list-id
-                :entries (core/get-approved-patches list-id search)}
+                :entries
+                (condp = feature
+                  :index
+                  (core/get-announcements list-id search)
+                  ;; :announcements
+                  ;; (core/get-announcements list-id search)
+                  :changes
+                  (core/get-unreleased-changes list-id search)
+                  ;; :released-changes
+                  ;; (core/get-latest-released-changes list-id search)
+                  ;; :releases
+                  ;; (core/get-releases list-id search)
+                  :bugs
+                  (core/get-unconfirmed-bugs list-id search)
+                  ;; :confirmed-bugs
+                  ;; (core/get-confirmed-bugs list-id search)
+                  :patches
+                  (core/get-unapproved-patches list-id search)
+                  ;; :approved-patches
+                  ;; (core/get-approved-patches list-id search)
+                  :requests
+                  (core/get-unhandled-requests list-id search)
+                  ;; :handled-requests
+                  ;; (core/get-handled-requests list-id search)
+                  :mails
+                  (core/get-mails list-id search))}
                format-params))})))
 
 (defn- page-tops [list-id _ config-defaults]
@@ -143,35 +97,31 @@
      :top-announcement-contributors (core/get-top-announcement-contributors list-id)}))
 
 (def html-page-fn
-  {:home     {:html "/home.html" :fn page-home}
-   :sources  {:html "/sources.html" :fn page-sources}
-   :index    {:html "/index.html" :fn page-index}
-   :changes  {:html "/changes.html" :fn page-changes}
-   :patches  {:html "/patches.html" :fn page-patches}
-   :bugs     {:html "/bugs.html" :fn page-bugs}
-   :requests {:html "/requests.html" :fn page-requests}
-   :mails    {:html "/mails.html" :fn page-mails}
-   :tops     {:html "/tops.html" :fn page-tops}})
+  {:index   {:html "/index.html" :fn page-index}
+   :sources {:html "/sources.html" :fn page-sources}
+   :tops    {:html "/tops.html" :fn page-tops}})
 
 (defn- get-page [page {:keys [query-params path-params]}]
   (let [format-params   {:search     (or (get query-params "search") "")
                          :sorting-by (get query-params "sorting-by")}
         config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
                                format-params)
-        html-page       (get html-page-fn page)
+        html-page (if (= page :sources)
+                    {:html "/sources.html" :fn page-sources}
+                    {:html "/index.html" :fn page-index})
         list-id         (core/slug-to-list-id (:list-slug path-params))]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
       (io/resource (str "html/" (:theme core/config) (:html html-page)))
-      ((:fn html-page) list-id format-params config-defaults))}))
+      ((:fn html-page) page list-id format-params config-defaults))}))
 
 (def handler
   (ring/ring-handler
    (ring/router
     [["/"
-      ["" {:get #(get-page :home %)}]
+      ["" {:get #(get-page :index %)}]
       ["sources" {:get #(get-page :sources %)}]
       ["howto"
        {:get (fn [_]
@@ -182,7 +132,35 @@
                           (merge html-defaults
                                  {:howto (md/md-to-html-string
                                           (slurp (io/resource "md/howto.md")))}))})}]
-      [":list-slug/"
+      ["updates:format" {:get #(data/get-updates-data %)}]
+      ["announcements:format" {:get #(data/get-announcements-data %)}]
+      ["bugs"
+       ["" {:get #(get-page :bugs %)}]
+       [":format" {:get #(data/get-bugs-data %)}]
+       ["-unconfirmed:format" {:get #(data/get-unconfirmed-bugs-data %)}]
+       ["-confirmed:format" {:get #(data/get-confirmed-bugs-data %)}]]
+      ["requests"
+       ["" {:get #(get-page :requests %)}]
+       [":format" {:get #(data/get-requests-data %)}]
+       ["-unhandled:format" {:get #(data/get-unhandled-requests-data %)}]
+       ["-handled:format" {:get #(data/get-handled-requests-data %)}]]
+      ["changes"
+       ["" {:get #(get-page :changes %)}]
+       [":format" {:get #(data/get-changes-data %)}]
+       ["-released:format" {:get #(data/get-released-changes-data %)}]]
+      ["patches"
+       ["" {:get #(get-page :patches %)}]
+       [":format" {:get #(data/get-patches-data %)}]
+       ["-unapproved:format" {:get #(data/get-unapproved-patches-data %)}]
+       ["-approved:format" {:get #(data/get-approved-patches-data %)}]]
+      ["mails"
+       ["" {:get #(get-page :mails %)}]
+       [":format" {:get #(data/get-mails-data %)}]]
+      ;; ["tops"
+      ;;  ["" {:get #(get-page :tops %)}]
+      ;;  [":format" {:get #(data/get-mails-data %)}]]
+      ;; List per source
+      ["source/:list-slug/"
        ["" {:get #(get-page :index %)}]
        ["updates:format" {:get #(data/get-updates-data %)}]
        ["announcements:format" {:get #(data/get-announcements-data %)}]
