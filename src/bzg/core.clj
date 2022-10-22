@@ -194,9 +194,11 @@
     (if as-mail
       (->> reports
            (map report-type)
-           (map #(assoc (d/touch (d/entity db (:db/id %)))
-                        :priority (:priority %)))
-           (map add-role))
+           ;; (map #(assoc (d/touch (d/entity db (:db/id %)))
+           ;;              :priority (:priority %)))
+           ;; FIXME: why does not work for patches only?
+           ;; (map add-role)
+           )
       reports)))
 
 (defn get-mails [& [list-id search]]
@@ -213,21 +215,22 @@
        (map add-role)
        (take (-> (d/entity db [:defaults "init"]) :display-max :mail))))
 
+;; FIXME: refactor?
 (defn get-patches [& [list-id search]]
   (get-reports {:list-id     list-id
-                :search      (or search "")
+                :search      search
                 :report-type :patch
                 :as-mail     true}))
 
 (defn get-changes [& [list-id search]]
   (get-reports {:list-id     list-id
-                :search      (or search "")
+                :search      search
                 :report-type :request
                 :as-mail     true}))
 
 (defn get-announcements [& [list-id search]]
   (get-reports {:list-id     list-id
-                :search      (or search "")
+                :search      search
                 :report-type :announcement
                 :as-mail     true}))
 
