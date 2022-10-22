@@ -53,6 +53,10 @@
   (with-html-defaults config-defaults
     {:lists (map #(:slug (val %)) (:mailing-lists core/config))}))
 
+(defn- page-sources [_ _ config-defaults]
+  (with-html-defaults config-defaults
+    {:lists (map #(:slug (val %)) (:mailing-lists core/config))}))
+
 (defn- page-index [list-id format-params config-defaults]
   (with-html-defaults config-defaults
     {:announcements
@@ -140,6 +144,7 @@
 
 (def html-page-fn
   {:home     {:html "/home.html" :fn page-home}
+   :sources  {:html "/sources.html" :fn page-sources}
    :index    {:html "/index.html" :fn page-index}
    :changes  {:html "/changes.html" :fn page-changes}
    :patches  {:html "/patches.html" :fn page-patches}
@@ -167,6 +172,7 @@
    (ring/router
     [["/"
       ["" {:get #(get-page :home %)}]
+      ["sources" {:get #(get-page :sources %)}]
       ["howto"
        {:get (fn [_]
                {:status  200
