@@ -20,21 +20,20 @@
       </div>
       {% else %}
 
-      {% include "html/default/tabs.html" with active="home" action-path="/" %}
+      {% include "html/default/tabs.html" with feature %}
 
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 
-      {% ifequal announcements|count 0 %}
-      <h1 id="announcements" class="title is-size-4">No announcement to read</h1>
+      {% ifequal entries|count 0 %}
+      <h1 id="entries" class="title is-size-4">No entry to read</h1>
       {% else %}
-      <h1 id="announcements" class="title is-size-4">
+      <h1 id="entries" class="title is-size-4">
 	<span>
-	  {{announcements|count}} announcement{{announcements|pluralize}} to read
-	  {% if config.export-formats.rss %}<a class="tag is-info is-light" href="announcements.rss">RSS</a>{% endif %}
-	  {% if config.export-formats.json %}<a class="tag is-success is-light" href="announcements.json">JSON</a>{% endif %}
-	  {% if config.export-formats.org %}<a class="tag is-danger is-light" href="announcements.org">ORG</a>{% endif %}
-	  {% if config.export-formats.md %}<a class="tag is-warning is-light" href="announcements.md">MD</a>{% endif %}
+	  {% if config.export-formats.rss %}<a class="tag is-info is-light" href="{{feature}}.rss">RSS</a>{% endif %}
+	  {% if config.export-formats.json %}<a class="tag is-success is-light" href="{{feature}}.json">JSON</a>{% endif %}
+	  {% if config.export-formats.org %}<a class="tag is-danger is-light" href="{{feature}}.org">ORG</a>{% endif %}
+	  {% if config.export-formats.md %}<a class="tag is-warning is-light" href="{{feature}}.md">MD</a>{% endif %}
 	</span>
       </h1>
       <div class="table-container">
@@ -43,20 +42,23 @@
 	    <tr>
 	      <th class="has-text-centered" width="3%">I!I</th>
 	      <th>Subject</th>
-	      <th width="15%"><a href="?sorting-by=user#announcements" title="Sort announcements by author">From<a></th>
-	      <th width="15%"><a href="?sorting-by=date#announcements" title="Sort announcements by date">Date</a></th>
-	      <th class="has-text-centered" width="5%"><a href="?sorting-by=refs#announcements" title="Sort announcements by number of references">Refs</a>
+	      {% if not list-id %}
+	      <th>Source</th>
+	      {% endif %}
+	      <th width="15%"><a href="?sorting-by=user" title="Sort entries by author">From<a></th>
+	      <th width="15%"><a href="?sorting-by=date" title="Sort entries by date">Date</a></th>
+	      <th class="has-text-centered" width="5%"><a href="?sorting-by=refs" title="Sort entries by number of references">Refs</a>
 	      </th>
 	    </tr>
 	  </thead>
 	  <tbody>
-	    {% for announcement in announcements %}
+	    {% for entry in entries %}
 	    <tr>
 	      <td class="has-text-centered">
-		{% ifequal announcement.priority 2 %}
+		{% ifequal entry.priority 2 %}
 		🟥
 		{% else %}
-		{% ifequal announcement.priority 1 %}
+		{% ifequal entry.priority 1 %}
 		🟧
 		{% else %}
 		🟨
@@ -64,35 +66,38 @@
 		{% endifequal %}
 	      </td>
 	      <td>
-		{% if announcement.link %}
-		<a href="{{announcement.link}}" target="_blank" title="Sent by {{announcement.from}} on {{announcement.date}}">{{announcement.subject}}</a>
+		{% if entry.link %}
+		<a href="{{entry.link}}" target="_blank" title="Sent by {{entry.from}} on {{entry.date}}">{{entry.subject}}</a>
 		{% else %}
-		{{announcement.subject}}
+		{{entry.subject}}
 		{% endif %}
 	      </td>
+	      {% if not list-id %}
+	      <td>{{entry.list-id}}</td>
+	      {% endif %}
 	      <td>
-		{% ifequal announcement.role 2 %}
-		<strong>{{announcement.username}}</strong>
+		{% ifequal entry.role 2 %}
+		<strong>{{entry.username}}</strong>
 		{% else %}
-		{% ifequal announcement.role 1 %}
-		<em>{{announcement.username}}</em>
+		{% ifequal entry.role 1 %}
+		<em>{{entry.username}}</em>
 		{% else %}
-		{{announcement.username}}
+		{{entry.username}}
 		{% endifequal %}
 		{% endifequal %}
 	      </td>
-	      <td>{{announcement.date|date:shortDate}}</td>
-	      <td>{{announcement.backrefs}}</td>
+	      <td>{{entry.date|date:shortDate}}</td>
+	      <td>{{entry.backrefs}}</td>
 	    </tr>
 	    {% endfor %}
 	  </tbody>
 	</table>
       </div>
       {% endifequal %}
-
+      
 	</div>
       </section>
-
+      
       {% endif %}
       {% endif %}
     </div>
