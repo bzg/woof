@@ -43,7 +43,9 @@
 	      <th class="has-text-centered" width="3%">I!I</th>
 	      <th>Subject</th>
 	      {% if not list-id %}
+	      {% if 1 < lists|length %}
 	      <th>Source</th>
+	      {% endif %}
 	      {% endif %}
 	      <th width="15%"><a href="?sorting-by=user" title="Sort entries by author">From<a></th>
 	      <th width="15%"><a href="?sorting-by=date" title="Sort entries by date">Date</a></th>
@@ -73,7 +75,9 @@
 		{% endif %}
 	      </td>
 	      {% if not list-id %}
+	      {% if 1 < lists|length %}
 	      <td>{{entry.list-id}}</td>
+	      {% endif %}
 	      {% endif %}
 	      <td>
 		{% ifequal entry.role 2 %}

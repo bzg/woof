@@ -47,11 +47,13 @@
    :support-cta    (:support-cta (:ui core/config))})
 
 (defn- with-html-defaults [config-defaults m]
-  (merge html-defaults {:config config-defaults} m))
+  (merge html-defaults
+         {:config config-defaults}
+         {:lists (map #(:slug (val %)) (:mailing-lists core/config))}
+         m))
 
 (defn- page-sources [_ _ _ config-defaults]
-  (with-html-defaults config-defaults
-    {:lists (map #(:slug (val %)) (:mailing-lists core/config))}))
+  (with-html-defaults config-defaults _))
 
 (defn- page-index [feature list-id format-params config-defaults]
   (let [search (:search format-params)]
