@@ -5,12 +5,6 @@
       <a title="General announcements" href=".">Announcements</a>
     </li>
 
-    {% if config.features.change %}
-    <li {% ifequal feature "changes" %}class="is-active"{% endifequal %}>
-      <a title="Changes" href="changes">Changes</a>
-    </li>
-    {% endif %}
-
     {% if config.features.bug %}
     <li {% ifequal feature "bugs" %}class="is-active"{% endifequal %}>
       <a title="Bugs" href="bugs">Bugs</a>

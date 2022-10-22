@@ -65,52 +65,38 @@
         (merge {:list-id list-id
                 :entries
                 (condp = feature
-                  :index
+                  ;; FIXME: Replace get-* functions with available features
+                  :announcement
                   (core/get-announcements list-id search)
-                  ;; :announcements
-                  ;; (core/get-announcements list-id search)
-                  :changes
-                  (core/get-unreleased-changes list-id search)
-                  ;; :released-changes
-                  ;; (core/get-latest-released-changes list-id search)
-                  ;; :releases
-                  ;; (core/get-releases list-id search)
-                  :bugs
+                  :bug
                   (core/get-unconfirmed-bugs list-id search)
-                  ;; :confirmed-bugs
-                  ;; (core/get-confirmed-bugs list-id search)
-                  :patches
+                  :patch
                   (core/get-unapproved-patches list-id search)
-                  ;; :approved-patches
-                  ;; (core/get-approved-patches list-id search)
-                  :requests
+                  :request
                   (core/get-unhandled-requests list-id search)
-                  ;; :handled-requests
-                  ;; (core/get-handled-requests list-id search)
-                  :mails
-                  (core/get-mails list-id search))}
+                  :mail
+                  (core/get-mails list-id search)
+                  ;; TODO: implement get-tops?
+                  ;; :tops
+                  ;; (core/get-tops list-id search)
+                  )}
                format-params))})))
 
-(defn- page-tops [list-id _ config-defaults]
-  (with-html-defaults config-defaults
-    {:top-bug-contributors          (core/get-top-bug-contributors list-id)
-     :top-patch-contributors        (core/get-top-patch-contributors list-id)
-     :top-request-contributors      (core/get-top-request-contributors list-id)
-     :top-announcement-contributors (core/get-top-announcement-contributors list-id)}))
-
-(def html-page-fn
-  {:index   {:html "/index.html" :fn page-index}
-   :sources {:html "/sources.html" :fn page-sources}
-   :tops    {:html "/tops.html" :fn page-tops}})
+;; (defn- page-tops [list-id _ config-defaults]
+;;   (with-html-defaults config-defaults
+;;     {:top-bug-contributors          (core/get-top-bug-contributors list-id)
+;;      :top-patch-contributors        (core/get-top-patch-contributors list-id)
+;;      :top-request-contributors      (core/get-top-request-contributors list-id)
+;;      :top-announcement-contributors (core/get-top-announcement-contributors list-id)}))
 
 (defn- get-page [page {:keys [query-params path-params]}]
   (let [format-params   {:search     (or (get query-params "search") "")
                          :sorting-by (get query-params "sorting-by")}
         config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
                                format-params)
-        html-page (if (= page :sources)
-                    {:html "/sources.html" :fn page-sources}
-                    {:html "/index.html" :fn page-index})
+        html-page       (if (= page :sources)
+                          {:html "/sources.html" :fn page-sources}
+                          {:html "/index.html" :fn page-index})
         list-id         (core/slug-to-list-id (:list-slug path-params))]
     {:status  200
      :headers {"Content-Type" "text/html"}
@@ -123,7 +109,7 @@
   (ring/ring-handler
    (ring/router
     [["/"
-      ["" {:get #(get-page :index %)}]
+      ["" {:get #(get-page :announcement %)}]
       ["sources" {:get #(get-page :sources %)}]
       ["howto"
        {:get (fn [_]
@@ -137,60 +123,61 @@
       ["updates:format" {:get #(data/get-updates-data %)}]
       ["announcements:format" {:get #(data/get-announcements-data %)}]
       ["bugs"
-       ["" {:get #(get-page :bugs %)}]
+       ["" {:get #(get-page :bug %)}]
        [":format" {:get #(data/get-bugs-data %)}]
        ["-unconfirmed:format" {:get #(data/get-unconfirmed-bugs-data %)}]
        ["-confirmed:format" {:get #(data/get-confirmed-bugs-data %)}]]
       ["requests"
-       ["" {:get #(get-page :requests %)}]
+       ["" {:get #(get-page :request %)}]
        [":format" {:get #(data/get-requests-data %)}]
        ["-unhandled:format" {:get #(data/get-unhandled-requests-data %)}]
        ["-handled:format" {:get #(data/get-handled-requests-data %)}]]
       ["changes"
-       ["" {:get #(get-page :changes %)}]
+       ["" {:get #(get-page :change %)}]
        [":format" {:get #(data/get-changes-data %)}]
        ["-released:format" {:get #(data/get-released-changes-data %)}]]
       ["patches"
-       ["" {:get #(get-page :patches %)}]
+       ["" {:get #(get-page :patch %)}]
        [":format" {:get #(data/get-patches-data %)}]
        ["-unapproved:format" {:get #(data/get-unapproved-patches-data %)}]
        ["-approved:format" {:get #(data/get-approved-patches-data %)}]]
       ["mails"
-       ["" {:get #(get-page :mails %)}]
+       ["" {:get #(get-page :mail %)}]
        [":format" {:get #(data/get-mails-data %)}]]
       ;; ["tops"
       ;;  ["" {:get #(get-page :tops %)}]
       ;;  [":format" {:get #(data/get-mails-data %)}]]
       ;; List per source
       ["source/:list-slug/"
-       ["" {:get #(get-page :index %)}]
+       ["" {:get #(get-page :announcement %)}]
        ["updates:format" {:get #(data/get-updates-data %)}]
        ["announcements:format" {:get #(data/get-announcements-data %)}]
        ["bugs"
-        ["" {:get #(get-page :bugs %)}]
+        ["" {:get #(get-page :bug %)}]
         [":format" {:get #(data/get-bugs-data %)}]
         ["-unconfirmed:format" {:get #(data/get-unconfirmed-bugs-data %)}]
         ["-confirmed:format" {:get #(data/get-confirmed-bugs-data %)}]]
        ["requests"
-        ["" {:get #(get-page :requests %)}]
+        ["" {:get #(get-page :request %)}]
         [":format" {:get #(data/get-requests-data %)}]
         ["-unhandled:format" {:get #(data/get-unhandled-requests-data %)}]
         ["-handled:format" {:get #(data/get-handled-requests-data %)}]]
        ["changes"
-        ["" {:get #(get-page :changes %)}]
+        ["" {:get #(get-page :change %)}]
         [":format" {:get #(data/get-changes-data %)}]
         ["-released:format" {:get #(data/get-released-changes-data %)}]]
        ["patches"
-        ["" {:get #(get-page :patches %)}]
+        ["" {:get #(get-page :patch %)}]
         [":format" {:get #(data/get-patches-data %)}]
         ["-unapproved:format" {:get #(data/get-unapproved-patches-data %)}]
         ["-approved:format" {:get #(data/get-approved-patches-data %)}]]
        ["mails"
-        ["" {:get #(get-page :mails %)}]
+        ["" {:get #(get-page :mail %)}]
         [":format" {:get #(data/get-mails-data %)}]]
-       ["tops"
-        ["" {:get #(get-page :tops %)}]
-        [":format" {:get #(data/get-mails-data %)}]]]]]
+       ;; ["tops"
+       ;;  ["" {:get #(get-page :top %)}]
+       ;;  [":format" {:get #(data/get-mails-data %)}]]
+       ]]]
     {:data {:middleware [params/wrap-params]}})
    (ring/create-default-handler
     {:not-found

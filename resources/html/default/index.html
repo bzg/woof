@@ -22,11 +22,11 @@
 
       {% include "html/default/tabs.html" with feature %}
 
-      <section class="section" style="padding: 1.5rem 1.0rem">
+      <section class="section" style="padding: 0rem .5rem 1.5rem .5rem">
 	<div class="container">
 
       {% ifequal entries|count 0 %}
-      <h1 id="entries" class="title is-size-4">No entry to read</h1>
+      <h1 id="entries" class="title is-size-4">No {{feature}}.</h1>
       {% else %}
       <h1 id="entries" class="title is-size-4">
 	<span>
