@@ -57,7 +57,8 @@
 (spec/def ::list-config
   (spec/keys
    :req-un [::slug]
-   :opt-un [::archived-message-format]))
+   :opt-un [::archived-message-format
+            ::ui]))
 
 (spec/def ::sources
   (spec/map-of ::list-id ::list-config))
@@ -77,9 +78,9 @@
 (spec/def ::ui
   (spec/keys
    :req-un [::title
-            ::project-name
-            ::project-url]
-   :opt-un [::contribute-url
+            ::project-name]
+   :opt-un [::project-url
+            ::contribute-url
             ::contribute-cta
             ::contribute-cta-email
             ::support-url
