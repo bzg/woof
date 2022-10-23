@@ -86,7 +86,7 @@
 (defn- make-to [username address]
   (str username " <" address ">"))
 
-(defn- get-id [^String id]
+(defn- true-id [^String id]
   (peek (re-matches #"^<?(.+[^>])>?$" id)))
 
 (defn- trim-subject [^String s]
@@ -128,7 +128,7 @@
 
 (def email-re #"[^<@\s;,]+@[^>@\s;,]+")
 
-(defn- get-email-address [s]
+(defn- true-email-address [s]
   (re-find email-re (string/replace s #"mailto:" "")))
 
 ;; (defn format-email-notification
@@ -448,9 +448,9 @@
 (defn- add-mail! [{:keys [id from subject] :as msg} & private]
   (let [{:keys [List-Post X-BeenThere References Archived-At]}
         (walk/keywordize-keys (apply conj (:headers msg)))
-        id          (get-id id)
+        id          (true-id id)
         list-id     (when-let [lid (or List-Post X-BeenThere)]
-                      (get-email-address lid))
+                      (true-email-address lid))
         refs-string References
         refs        (if refs-string
                       (into #{} (string/split refs-string #"\s")) #{})]
@@ -978,9 +978,9 @@
         references  (when (not-empty References)
                       (->> (string/split References #"\s")
                            (keep not-empty)
-                           (map get-id)))
+                           (map true-id)))
         list-id     (when-let [lid (or List-Post X-BeenThere)]
-                      (get-email-address lid))
+                      (true-email-address lid))
         from        (:address (first from))
         admins      (get-admins)
         maintainers (get-maintainers)
@@ -1006,10 +1006,9 @@
 
       ;; Detect a new bug/patch/request/announcement
       (let [done (atom false)]
-        (doseq [w      [:patch :bug :request :announcement]
+        (doseq [w      [:patch :bug :request]
                 :while (false? @done)]
-          (when (and (-> defaults :watch w)
-                     (new? w msg))
+          (when (and (-> defaults :watch w) (new? w msg))
             (report! {:report-type w :report-eid (add-mail! msg)})
             (swap! done false?))))
 
@@ -1018,7 +1017,10 @@
        ;; Only maintainers can push changes and releases
        (when (some maintainers (list from))
          (or
-          (when (-> defaults :watch :change)
+          (when (:announcement (:announcement (:watch defaults)))
+            (report! {:report-type :announcement
+                      :report-eid  (add-mail! msg)}))
+          (when (:change (:announcement (:watch defaults)))
             (when-let [version (new? :change msg)]
               (if (some (get-released-versions list-id) (list version))
                 (timbre/error
@@ -1027,7 +1029,7 @@
                 (report! {:report-type :change
                           :report-eid  (add-mail! msg)
                           :version     version}))))
-          (when (-> defaults :watch :release)
+          (when (:release (:announcement (:watch defaults)))
             (when-let [version (new? :release msg)]
               (let [release-report-eid (add-mail! msg)]
                 (report! {:report-type :release
@@ -1070,8 +1072,8 @@
                      first)]
 
              (or
-              ;; New action against a known patch/bug/request/announcement
-              (doseq [w [:patch :bug :request :announcement]]
+              ;; New action against a known patch/bug/request
+              (doseq [w [:patch :bug :request]]
                 (when (-> defaults :watch w)
                   (when-let [{:keys [upstream-report-eid status priority]}
                              (is-report-update? w body-report references)]
@@ -1082,8 +1084,8 @@
 
               ;; Or an action against existing changes/releases by a maintainer
               (if (some maintainers (list from))
-                (doseq [w [:change :release]]
-                  (when (-> defaults :watch w)
+                (doseq [w [:change :release :announcement]]
+                  (when (w (:announcement (:watch defaults)))
                     (when-let [{:keys [upstream-report-eid status priority]}
                                (is-report-update? w body-report references)]
                       (report! {:report-type w

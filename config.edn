@@ -24,14 +24,15 @@
 
  ;; Default application state
  :defaults
- {;; :watch {:announcement [:upcoming-changes :releases :latest-changes :announcements]
-  ;;         :bug          [:unconfirmed-bugs :confirmed-bugs :owned-bugs]
-  ;;         :patch        [:unapproved-patches :approved-patches :owned-patches]
-  ;;         :request      [:unapproved-requests :approved-requests :owned-requests]}
-  :watch {:announcement true
+ {:watch {:announcement #{:change :release :announcement}
+          ;; #{:upcoming-changes :releases :latest-changes :announcements}
           :bug          true
+          ;; #{:unconfirmed-bugs :confirmed-bugs :owned-bugs}
           :patch        true
-          :request      true}
+          ;; #{:unapproved-patches :approved-patches :owned-patches}
+          :request      true
+          ;; #{:unapproved-requests :approved-requests :owned-requests}
+          }
 
   :maintenance   false
   ;; FIXME: Explicit what kind of notations?
