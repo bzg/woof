@@ -39,19 +39,17 @@
      (remove nil?)
      (map linkify-maybe))))
 
-(def html-defaults
-  {:title          (:title (:ui db/config))
-   :project-name   (:project-name (:ui db/config))
-   :project-url    (:project-url (:ui db/config))
-   :contribute-url (:contribute-url (:ui db/config))
-   :contribute-cta (:contribute-cta (:ui db/config))
-   :support-url    (:support-url (:ui db/config))
-   :support-cta    (:support-cta (:ui db/config))
-   :display        (or (:show (:ui db/config))
-                       (:watch db/config))})
+(defn- html-defaults [& [list-id]]
+  (let [source (get (:sources db/config) list-id)]
+    (-> (merge (:ui db/config)
+               (:ui source)
+               {:display (or (:show (:ui source))
+                             (:show (:ui db/config))
+                             (:watch db/config))})
+        (dissoc :show))))
 
-(defn- with-html-defaults [config-defaults m]
-  (merge html-defaults
+(defn- with-html-defaults [config-defaults {:keys [list-id] :as m}]
+  (merge (html-defaults list-id)
          {:config config-defaults}
          {:lists (map #(:slug (val %)) (:sources db/config))}
          m))
@@ -80,7 +78,9 @@
 
 (defn- page-overview [_ list-id _ _ config-defaults]
   (with-html-defaults config-defaults
-    {:overview-bug-contributors          (fetch/overview-bug-contributors list-id)
+    {:list-id                            list-id
+     :watch                              "overview"
+     :overview-bug-contributors          (fetch/overview-bug-contributors list-id)
      :overview-patch-contributors        (fetch/overview-patch-contributors list-id)
      :overview-request-contributors      (fetch/overview-request-contributors list-id)
      :overview-announcement-contributors (fetch/overview-announcement-contributors list-id)}))
@@ -88,8 +88,7 @@
 (defn- get-page [page {:keys [query-params path-params uri]}]
   (let [format-params   {:search     (or (get query-params "search") "")
                          :sorting-by (get query-params "sorting-by")}
-        config-defaults (merge (into {} (d/entity db/db [:defaults "init"]))
-                               format-params)
+        config-defaults (into {} (d/entity db/db [:defaults "init"]))
         html-page       (condp = page
                           :sources  {:html "/sources.html" :fn page-sources}
                           :overview {:html "/overview.html" :fn page-overview}
@@ -116,7 +115,7 @@
                 :headers {"Content-Type" "text/html"}
                 :body    (html/render-file
                           (str "html/" (:theme db/config) "/index.html")
-                          (merge html-defaults
+                          (merge (html-defaults)
                                  {:howto (md/md-to-html-string
                                           (slurp (io/resource "md/howto.md")))}))})}]
       ["bugs"
@@ -160,7 +159,7 @@
         :body    (html/render-file
                   (io/resource (str "html/" (:theme db/config) "/404.html"))
                   (merge (into {} (d/entity db/db [:defaults "init"]))
-                         html-defaults query-params path-params))})})
+                         (html-defaults) query-params path-params))})})
    {:middleware
     [parameters/parameters-middleware
      #(wrap-cors

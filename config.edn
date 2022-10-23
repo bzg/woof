@@ -23,8 +23,11 @@
  :log [:db :file :mail]
 
  :sources
- {"~bzg/wooff@lists.sr.ht" {:slug "wooff"}
-  ;; "~bzg/wooff2@lists.sr.ht" {:slug "wooff2"}
+ {"~bzg/wooff@lists.sr.ht"
+  {:slug "wooff"
+   :ui   {:title        "Liste ~bzg/wooff"
+          :project-name "Wooff"}}
+  "~bzg/wooff2@lists.sr.ht" {:slug "wooff2"}
   }
 
  :watch {:news     #{:change :release :announcement}
