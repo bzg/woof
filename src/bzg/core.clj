@@ -219,7 +219,6 @@
   {:admin       #{:add-admin :remove-admin
                   :add-feature :remove-feature
                   :remove-maintainer :undelete :unignore
-                  :add-export :remove-export :set-theme
                   :global-notifications}
    :maintainer  #{:maintenance :add-maintainer :delete :ignore}
    :contributor #{:notifications :home :support}})
@@ -501,13 +500,6 @@
           (when-let [output (d/transact! db/conn [as-ignored])]
             (timbre/info (format "Mails from %s will now be ignored" email))
             output))))))
-
-(defn- set-theme! [theme]
-  (let [defaults     (d/entity db/db [:defaults "init"])
-        new-defaults (assoc defaults :theme theme)]
-    (when (d/transact! db/conn [new-defaults])
-      (timbre/info
-       (format "Now using theme \"%s\"" theme)))))
 
 (defn- config-maintenance! [status]
   (d/transact! db/conn [{:defaults "init" :maintenance status}])
