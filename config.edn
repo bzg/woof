@@ -119,12 +119,12 @@
                              :request
                              #{:unapproved-requests :approved-requests :owned-requests}}}
 
- :action-words {:patch        "PATCH"
-                :bug          "BUG"
-                :request      "HELP"
-                :announcement "ANN"
-                :change       "CHANGE"
-                :release      "RELEASE"}
+ :action-words {:patch        ["PATCH"]
+                :bug          ["BUG"]
+                :request      ["FP" "FR" "TODO"]
+                :announcement ["ANN"]
+                :change       ["CHANGE"]
+                :release      ["RELEASE"]}
  :report-words {:applied   "Applied"
                 :approved  "Approved"
                 :canceled  "Canceled"

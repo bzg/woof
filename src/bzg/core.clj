@@ -22,12 +22,23 @@
 (def action-re
   (let [action-words (:action-words db/config)]
     {:patch        (re-pattern
-                    (format "^\\[%s(?: [^\\s]+)?(?: [0-9]+/[0-9]+)?\\].*$" (:patch action-words)))
-     :bug          (re-pattern (format "^\\[%s\\].*$" (:bug action-words)))
-     :request      (re-pattern (format "^\\[%s\\].*$" (:request action-words)))
-     :announcement (re-pattern (format "^\\[%s\\].*$" (:announcement action-words)))
-     :change       (re-pattern (format "^\\[%s\\s*([^]]+)\\].*$" (:change action-words)))
-     :release      (re-pattern (format "^\\[%s\\s*([^]]+)\\].*$" (:release action-words)))}))
+                    (format "^\\[(?:%s)(?: [^\\s]+)?(?: [0-9]+/[0-9]+)?\\].*$"
+                            (string/join "|" (:patch action-words))))
+     :bug          (re-pattern
+                    (format "^\\[(?:%s)\\].*$"
+                            (string/join "|" (:bug action-words))))
+     :request      (re-pattern
+                    (format "^\\[(?:%s)\\].*$"
+                            (string/join "|" (:request action-words))))
+     :announcement (re-pattern
+                    (format "^\\[(?:%s)\\].*$"
+                            (string/join "|" (:announcement action-words))))
+     :change       (re-pattern
+                    (format "^\\[(?:%s)\\s+([^]]+)\\].*$"
+                            (string/join "|" (:change action-words))))
+     :release      (re-pattern
+                    (format "^\\[(?:%s)\\s+([^]]+)\\].*$"
+                            (string/join "|" (:release action-words))))}))
 
 ;; FIXME: How to initialize the app?
 (defn set-defaults []
