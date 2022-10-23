@@ -50,23 +50,35 @@
        (take (-> (d/entity db/db [:defaults "init"]) :display-max :mail))))
 
 ;; FIXME: refactor?
+(defn bugs [& [list-id search]]
+  (reports {:list-id     list-id
+            :search      search
+            :report-type :bug
+            :as-mail     true}))
+
 (defn patches [& [list-id search]]
   (reports {:list-id     list-id
-                :search      search
-                :report-type :patch
-                :as-mail     true}))
+            :search      search
+            :report-type :patch
+            :as-mail     true}))
 
 (defn changes [& [list-id search]]
   (reports {:list-id     list-id
-                :search      search
-                :report-type :request
-                :as-mail     true}))
+            :search      search
+            :report-type :change
+            :as-mail     true}))
+
+(defn requests [& [list-id search]]
+  (reports {:list-id     list-id
+            :search      search
+            :report-type :request
+            :as-mail     true}))
 
 (defn announcements [& [list-id search]]
   (reports {:list-id     list-id
-                :search      search
-                :report-type :announcement
-                :as-mail     true}))
+            :search      search
+            :report-type :announcement
+            :as-mail     true}))
 
 (defn logs []
   (map first (d/q '[:find (d/pull ?e [*]) :where [?e :log _]] db/db)))
@@ -155,19 +167,27 @@
        (map #(d/entity db/db %))
        (remove :canceled)
        (map :version)
-       (into #{}))) ;; FIXME: use (map #(d/touch ...) here too?
+       (into #{})))
+
+;; (defn releases [& [list-id search]]
+;;   (->> (d/q (if list-id
+;;               `[:find ?e :where
+;;                 [?e :release ?m]
+;;                 [?m :list-id ~list-id]]
+;;               `[:find ?e :where
+;;                 [?e :release ?m]]) db/db)
+;;        (map first)
+;;        (map #(d/entity db/db %))
+;;        (remove :canceled)
+;;        (map :release)
+;;        (filter #(re-find (re-pattern (or search "")) (:subject %)))
+;;        (map #(d/touch (d/entity db/db (:db/id %))))))
 
 (defn releases [& [list-id search]]
-  (->> (d/q `[:find ?e :where
-              [?e :release ?m]
-              [?m :list-id ~list-id]] db/db)
-       (map first)
-       ;; FIXME: remove next line?
-       (map #(d/entity db/db %))
-       (remove :canceled)
-       (map :release)
-       (filter #(re-find (re-pattern (or search "")) (:subject (:release %))))
-       (map #(d/touch (d/entity db/db (:db/id %))))))
+  (reports {:list-id     list-id
+            :search      search
+            :report-type :release
+            :as-mail     true}))
 
 (defn latest-released-changes [& [list-id search]]
   (let [latest-version (:version (latest-release list-id))]
@@ -177,18 +197,20 @@
          (map :change)
          (map #(d/touch (d/entity db/db (:db/id %)))))))
 
-;; (defn updates [& [list-id search]]
-;;   (let [search (or search "")
-;;         watch  (:watch (d/entity db/db [:defaults "init"]))]
-;;     (->> (list
-;;           (when (:bug watch) (confirmed-bugs list-id search))
-;;           (when (:patch watch) (approved-patches list-id search))
-;;           (when (:request watch) (unhandled-requests list-id search))
-;;           (when (:change watch) (unreleased-changes list-id search))
-;;           (when (:release watch) (releases list-id search))
-;;           (announcements list-id search))
-;;          (remove nil?)
-;;          flatten)))
+(defn news [& [list-id search]]
+  (let [search    (or search "")
+        news-show (:news (:show (:ui db/config)))]
+    (->> (list
+          (when (:announcements news-show)
+            (announcements list-id search))
+          (when (:releases news-show)
+            (releases list-id search))
+          (when (:unreleased-changes news-show)
+            (unreleased-changes list-id search))
+          (when (:latest-released-changes news-show)
+            (latest-released-changes list-id search)))
+         (remove nil?)
+         flatten)))
 
 ;; Main admin functions
 

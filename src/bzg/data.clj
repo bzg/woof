@@ -68,11 +68,12 @@
         format    (subs (:format path-params) 1)
         search    (or (:search query-params) "")
         resources (condp = what
-                    :bugs          (fetch/unfixed-bugs list-id search)
-                    :requests      (fetch/undone-requests list-id search)
-                    :patches       (fetch/patches list-id search)
-                    :announcements (fetch/announcements list-id search)
-                    :mails         (fetch/mails list-id search))
+                    :bugs     (fetch/bugs list-id search)
+                    :requests (fetch/requests list-id search)
+                    :patches  (fetch/patches list-id search)
+                    :news     (fetch/news list-id search)
+                    ;; :mails         (fetch/mails list-id search)
+                    )
         headers   (condp = format
                     "rss"  {"Content-Type" "application/xml"}
                     "md"   {"Content-Type" "text/plain; charset=utf-8"}
@@ -90,6 +91,6 @@
 (defn get-bugs-data [params] (get-data :bugs params))
 (defn get-requests-data [params] (get-data :requests params))
 (defn get-patches-data [params] (get-data :patches params))
-(defn get-announcements-data [params] (get-data :announcements params))
+(defn get-news-data [params] (get-data :news params))
 (defn get-mails-data [params] (get-data :mails params))
 

@@ -64,27 +64,20 @@
     (with-html-defaults config-defaults
       {:list-id  list-id
        :watch    (name watch)
-       :slug-end slug-end
+       :slug-end (or (not-empty slug-end) "news")
        :entries
        ;; FIXME: Confusing use of entries twice?
        (entries-format
         (merge {:list-id list-id
                 :entries
                 (condp = watch
-                  ;; FIXME: Replace get-* functions with available features
-                  :announcement
-                  (fetch/announcements list-id search)
-                  :bug
-                  (fetch/unconfirmed-bugs list-id search)
-                  :patch
-                  (fetch/unapproved-patches list-id search)
-                  :request
-                  (fetch/unhandled-requests list-id search)
-                  :mail
-                  (fetch/mails list-id search)
-                  ;; TODO: implement get-tops?
-                  ;; :tops
-                  ;; (fetch/tops list-id search)
+                  :news    (fetch/news list-id search)
+                  :bug     (fetch/bugs list-id search)
+                  :patch   (fetch/patches list-id search)
+                  :request (fetch/requests list-id search)
+                  :mail    (fetch/mails list-id search)
+                  ;; TODO: implement tops?
+                  ;; :tops (fetch/tops list-id search)
                   )}
                format-params))})))
 
@@ -116,8 +109,8 @@
   (ring/ring-handler
    (ring/router
     [["/"
-      ["" {:get #(get-page :announcement %)}]
-      ["announcements:format" {:get #(data/get-announcements-data %)}]
+      ["" {:get #(get-page :news %)}]
+      ["news:format" {:get #(data/get-news-data %)}]
       ["sources" {:get #(get-page :sources %)}]
       ["howto"
        {:get (fn [_]
@@ -144,8 +137,8 @@
       ;;  ["" {:get #(get-page :tops %)}]]
       ;; List per source
       ["source/:list-slug/"
-       ["" {:get #(get-page :announcement %)}]
-       ["announcements:format" {:get #(data/get-announcements-data %)}]
+       ["" {:get #(get-page :news %)}]
+       ["news:format" {:get #(data/get-news-data %)}]
        ["bugs"
         ["" {:get #(get-page :bug %)}]
         [":format" {:get #(data/get-bugs-data %)}]]

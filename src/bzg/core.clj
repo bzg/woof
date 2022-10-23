@@ -57,7 +57,7 @@
 ;; Trim subject prefixes in mailing list
 (defn- trim-subject-prefix [^String s]
   (let [p (re-pattern
-           (format "^\\[(?:%s)\\] .*$"
+           (format "^\\[(?:%s).*\\] .*$"
                    (string/join "|" (vals (:action-words db/config)))))]
     (if-let [s (re-matches p s)]
       s
@@ -140,18 +140,18 @@
                       (into #{} (string/split refs-string #"\s")) #{})]
     ;; Add the email
     (d/transact! db/conn [{:message-id id
-                        :list-id    list-id
-                        :archived-at
-                        (archived-message {:list-id     list-id
-                                           :archived-at Archived-At
-                                           :message-id  id})
-                        :subject    (trim-subject-prefix subject)
-                        :references refs
-                        :private    (or private false)
-                        :from       (:address (first from))
-                        :username   (:name (first from))
-                        :date       (java.util.Date.)
-                        :backrefs   1}])
+                           :list-id    list-id
+                           :archived-at
+                           (archived-message {:list-id     list-id
+                                              :archived-at Archived-At
+                                              :message-id  id})
+                           :subject    (trim-subject-prefix subject)
+                           :references refs
+                           :private    (or private false)
+                           :from       (:address (first from))
+                           :username   (:name (first from))
+                           :date       (java.util.Date.)
+                           :backrefs   1}])
     ;; Return the added mail eid
     (:db/id (d/entity db/db [:message-id id]))))
 
@@ -699,11 +699,11 @@
        ;; Or detect new release/change/announcement by a maintainer
        (when (some maintainers (list from))
          (or
-          (when (:announcement (:announcement (:watch defaults)))
+          (when (:announcement (:news (:watch defaults)))
             (when (new? :announcement msg)
               (report! {:report-type :announcement
                         :report-eid  (add-mail! msg)})))
-          (when (:change (:announcement (:watch defaults)))
+          (when (:change (:news (:watch defaults)))
             (when-let [version (new? :change msg)]
               (if (some (fetch/released-versions list-id) (list version))
                 (timbre/error
@@ -712,7 +712,7 @@
                 (report! {:report-type :change
                           :report-eid  (add-mail! msg)
                           :version     version}))))
-          (when (:release (:announcement (:watch defaults)))
+          (when (:release (:news (:watch defaults)))
             (when-let [version (new? :release msg)]
               (let [release-report-eid (add-mail! msg)]
                 (report! {:report-type :release
@@ -768,7 +768,7 @@
               ;; Or an action against existing changes/releases by a maintainer
               (if (some maintainers (list from))
                 (doseq [w [:change :release :announcement]]
-                  (when (w (:announcement (:watch defaults)))
+                  (when (w (:announcement (:news (:watch defaults))))
                     (when-let [{:keys [upstream-report-eid status priority]}
                                (is-report-update? w body-report references)]
                       (report! {:report-type w
