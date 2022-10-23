@@ -1,5 +1,7 @@
 (ns bzg.data
   (:require [bzg.core :as core]
+            [bzg.fetch :as fetch]
+            [bzg.db :as db]
             [clojure.string :as string]
             [clojure.data.json :as json]
             [clj-rss.core :as rss]
@@ -35,7 +37,7 @@
    "<![CDATA[ %s ]]>"
    (if (re-matches #"http.*" archived-at)
      (html/render-file
-      (io/resource (str "html/" (:theme core/config) "/link.html"))
+      (io/resource (str "html/" (:theme db/config) "/link.html"))
       (assoc msg :link archived-at))
      archived-at)))
 
@@ -54,11 +56,11 @@
 
 (defn- format-rss [resources list-id]
   (rss/channel-xml
-   {:title       (str (:project-name (:ui core/config)) " - " list-id)
+   {:title       (str (:project-name (:ui db/config)) " - " list-id)
     :link        (string/replace
-                  (:hostname core/config)
+                  (:hostname db/config)
                   #"([^/])/*$" (str "$1/" list-id))
-    :description (str (:title core/config) " - " list-id)}
+    :description (str (:title db/config) " - " list-id)}
    (sort-by :pubDate (map #(feed-item % list-id) resources))))
 
 (defn get-data [what {:keys [path-params query-params]}]
@@ -66,11 +68,11 @@
         format    (subs (:format path-params) 1)
         search    (or (:search query-params) "")
         resources (condp = what
-                    :bugs          (core/get-unfixed-bugs list-id search)
-                    :requests      (core/get-undone-requests list-id search)
-                    :patches       (core/get-patches list-id search)
-                    :announcements (core/get-announcements list-id search)
-                    :mails         (core/get-mails list-id search))
+                    :bugs          (fetch/unfixed-bugs list-id search)
+                    :requests      (fetch/undone-requests list-id search)
+                    :patches       (fetch/patches list-id search)
+                    :announcements (fetch/announcements list-id search)
+                    :mails         (fetch/mails list-id search))
         headers   (condp = format
                     "rss"  {"Content-Type" "application/xml"}
                     "md"   {"Content-Type" "text/plain; charset=utf-8"}

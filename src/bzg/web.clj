@@ -3,6 +3,8 @@
             [reitit.ring :as ring]
             [bzg.core :as core]
             [bzg.data :as data]
+            [bzg.fetch :as fetch]
+            [bzg.db :as db]
             ;; FIXME: Remove in production
             [ring.middleware.reload :as reload]
             [ring.middleware.params :as params]
@@ -38,20 +40,20 @@
      (map linkify-maybe))))
 
 (def html-defaults
-  {:title          (:title (:ui core/config))
-   :project-name   (:project-name (:ui core/config))
-   :project-url    (:project-url (:ui core/config))
-   :contribute-url (:contribute-url (:ui core/config))
-   :contribute-cta (:contribute-cta (:ui core/config))
-   :support-url    (:support-url (:ui core/config))
-   :support-cta    (:support-cta (:ui core/config))
-   :display        (or (:show (:ui core/config))
-                       (:watch (:defaults core/config)))})
+  {:title          (:title (:ui db/config))
+   :project-name   (:project-name (:ui db/config))
+   :project-url    (:project-url (:ui db/config))
+   :contribute-url (:contribute-url (:ui db/config))
+   :contribute-cta (:contribute-cta (:ui db/config))
+   :support-url    (:support-url (:ui db/config))
+   :support-cta    (:support-cta (:ui db/config))
+   :display        (or (:show (:ui db/config))
+                       (:watch (:defaults db/config)))})
 
 (defn- with-html-defaults [config-defaults m]
   (merge html-defaults
          {:config config-defaults}
-         {:lists (map #(:slug (val %)) (:sources core/config))}
+         {:lists (map #(:slug (val %)) (:sources db/config))}
          m))
 
 (defn- page-sources [_ _ _ _ config-defaults]
@@ -71,32 +73,32 @@
                 (condp = watch
                   ;; FIXME: Replace get-* functions with available features
                   :announcement
-                  (core/get-announcements list-id search)
+                  (fetch/announcements list-id search)
                   :bug
-                  (core/get-unconfirmed-bugs list-id search)
+                  (fetch/unconfirmed-bugs list-id search)
                   :patch
-                  (core/get-unapproved-patches list-id search)
+                  (fetch/unapproved-patches list-id search)
                   :request
-                  (core/get-unhandled-requests list-id search)
+                  (fetch/unhandled-requests list-id search)
                   :mail
-                  (core/get-mails list-id search)
+                  (fetch/mails list-id search)
                   ;; TODO: implement get-tops?
                   ;; :tops
-                  ;; (core/get-tops list-id search)
+                  ;; (fetch/tops list-id search)
                   )}
                format-params))})))
 
 ;; (defn- page-tops [list-id _ config-defaults]
 ;;   (with-html-defaults config-defaults
-;;     {:top-bug-contributors          (core/get-top-bug-contributors list-id)
-;;      :top-patch-contributors        (core/get-top-patch-contributors list-id)
-;;      :top-request-contributors      (core/get-top-request-contributors list-id)
-;;      :top-announcement-contributors (core/get-top-announcement-contributors list-id)}))
+;;     {:top-bug-contributors          (fetch/top-bug-contributors list-id)
+;;      :top-patch-contributors        (fetch/top-patch-contributors list-id)
+;;      :top-request-contributors      (fetch/top-request-contributors list-id)
+;;      :top-announcement-contributors (fetch/top-announcement-contributors list-id)}))
 
 (defn- get-page [page {:keys [query-params path-params uri]}]
   (let [format-params   {:search     (or (get query-params "search") "")
                          :sorting-by (get query-params "sorting-by")}
-        config-defaults (merge (into {} (d/entity core/db [:defaults "init"]))
+        config-defaults (merge (into {} (d/entity db/db [:defaults "init"]))
                                format-params)
         html-page       (if (= page :sources)
                           {:html "/sources.html" :fn page-sources}
@@ -107,7 +109,7 @@
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme core/config) (:html html-page)))
+      (io/resource (str "html/" (:theme db/config) (:html html-page)))
       ((:fn html-page) page list-id slug-end format-params config-defaults))}))
 
 (def handler
@@ -122,7 +124,7 @@
                {:status  200
                 :headers {"Content-Type" "text/html"}
                 :body    (html/render-file
-                          (str "html/" (:theme core/config) "/index.html")
+                          (str "html/" (:theme db/config) "/index.html")
                           (merge html-defaults
                                  {:howto (md/md-to-html-string
                                           (slurp (io/resource "md/howto.md")))}))})}]
@@ -163,8 +165,8 @@
        {:status  200
         :headers {"Content-Type" "text/html"}
         :body    (html/render-file
-                  (io/resource (str "html/" (:theme core/config) "/404.html"))
-                  (merge (into {} (d/entity core/db [:defaults "init"]))
+                  (io/resource (str "html/" (:theme db/config) "/404.html"))
+                  (merge (into {} (d/entity db/db [:defaults "init"]))
                          html-defaults query-params path-params))})})
    {:middleware
     [parameters/parameters-middleware
@@ -177,10 +179,10 @@
 (mount/defstate ^{:on-reload :noop} woof-server
   :start (do (server/run-server
               (reload/wrap-reload handler {:dirs ["src" "resources"]})
-              {:port (:port core/config)})
+              {:port (:port db/config)})
              (timbre/info (format "Woof web server started on %s (port %s)"
-                                  (:hostname core/config)
-                                  (:port core/config))))
+                                  (:hostname db/config)
+                                  (:port db/config))))
   ;; FIXME: Use in production
   ;; :start (server/run-server
   ;;         handler {:port (edn/read-string (:port config/env))})
@@ -189,11 +191,11 @@
           (timbre/info "Woof web server stopped")))
 
 (defn -main []
-  (let [admin-address (:admin-address core/config)]
+  (let [admin-address (:admin-address db/config)]
     (tt/start!)
     (core/set-defaults)
     (core/update-person! {:email    admin-address
-                          :username (or (:admin-username core/config)
+                          :username (or (:admin-username db/config)
                                         admin-address)
                           :role     :admin}
                          ;; The root admin cannot be removed
