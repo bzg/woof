@@ -61,6 +61,7 @@
   (let [search (:search format-params)]
     (with-html-defaults config-defaults
       {:list-id  list-id
+       :search   search
        :watch    (name watch)
        :slug-end (or (not-empty slug-end) "news")
        :entries
