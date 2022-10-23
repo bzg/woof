@@ -56,9 +56,6 @@
            :change       #{:canceled}
            :release      #{:canceled}}
 
- ;; FIXME: should this be hardcoded?
- :report-types [:bug :patch :request :change :announcement :release]
-
  :admin-report-words
  ;; FIXME: add i18n
  {;; Contributors actions

@@ -28,8 +28,6 @@
 (spec/def ::admin-username string?)
 
 (spec/def ::reports string?)
-(spec/def ::report-types string?)
-
 (spec/def ::admin-report-words string?)
 (spec/def ::permissions string?)
 (spec/def ::action-words string?)
