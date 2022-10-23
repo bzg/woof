@@ -22,33 +22,25 @@
 
  :log [:db :file :mail]
 
- ;; Default application state
- :defaults
- {:watch {:news     #{:change :release :announcement}
-          :bug      true
-          :patch    true
-          :request  true
-          :overview true}
-
-  :maintenance   false
-  ;; FIXME: Explicit what kind of notations?
-  :notifications true
-  ;; Each feature corresponds to a dedicated tab
-  ;; FIXME: prevent from removing announcements?
-
-  ;; Show only x latest releases/mails/announcements
-  ;; FIXME: move display-max
-  ;; :display-max    {:release 4 :mail 100 :announcement 10}
-  :export-formats {:rss  true
-                   :json true
-                   :org  true
-                   :md   true}
-  }
-
  :sources
  {"~bzg/wooff@lists.sr.ht" {:slug "wooff"}
   ;; "~bzg/wooff2@lists.sr.ht" {:slug "wooff2"}
   }
+
+ :watch {:news     #{:change :release :announcement}
+         :bug      true
+         :patch    true
+         :request  true
+         :overview true}
+
+ ;; Default application state
+ :defaults
+ {:maintenance    false
+  :notifications  true
+  :export-formats {:rss  true
+                   :json true
+                   :org  true
+                   :md   true}}
 
  ;; :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
 
@@ -127,6 +119,7 @@
                 :announcement ["ANN"]
                 :change       ["CHANGE"]
                 :release      ["RELEASE"]}
+
  :report-words {:applied   "Applied"
                 :approved  "Approved"
                 :canceled  "Canceled"

@@ -493,22 +493,6 @@
             (timbre/info (format "Mails from %s will now be ignored" email))
             output))))))
 
-(defn- add-feature! [cmd-val & disable?]
-  (let [watch (->> (string/split cmd-val #"\s") (remove empty?))]
-    (doseq [w watch]
-      (let [defaults     (d/entity db/db [:defaults "init"])
-            new-defaults (update-in
-                          defaults
-                          [:watch (keyword w)] (fn [_] (empty? disable?)))]
-        (when (d/transact! db/conn [new-defaults])
-          (timbre/info
-           (format "Watch \"%s\" is %s"
-                   w
-                   (if disable? "disabled" "enabled"))))))))
-
-(defn- remove-feature! [cmd-val]
-  (add-feature! cmd-val :disable))
-
 (defn- add-export-format! [cmd-val & remove?]
   (let  [formats (->> (string/split cmd-val #"\s") (remove empty?))]
     (doseq [export-format formats]
@@ -567,7 +551,6 @@
         (condp = cmd
           "Add admin"            (add-admin! cmd-val from)
           "Add export"           (add-export-format! cmd-val)
-          "Add feature"          (add-feature! cmd-val)
           "Add maintainer"       (add-maintainer! cmd-val from)
           "Delete"               (delete! cmd-val)
           "Global notifications" (config-notifications! (edn/read-string cmd-val))
@@ -577,7 +560,6 @@
           "Notifications"        (update-person! {:email from} [:notifications cmd-val])
           "Remove admin"         (remove-admin! cmd-val)
           "Remove export"        (remove-export-format! cmd-val)
-          "Remove feature"       (remove-feature! cmd-val)
           "Remove maintainer"    (remove-maintainer! cmd-val)
           "Set theme"            (set-theme! cmd-val)
           "Support"              (update-person! {:email from} [:support cmd-val])
@@ -679,7 +661,8 @@
         from        (:address (first from))
         admins      (fetch/admins)
         maintainers (fetch/maintainers)
-        defaults    (d/entity db/db [:defaults "init"])]
+        defaults    (d/entity db/db [:defaults "init"])
+        watched     (:watch db/config)]
 
     (when (and
            ;; First check whether this user should be ignored
@@ -704,17 +687,17 @@
        (let [done (atom false)]
          (doseq [w      [:patch :bug :request]
                  :while (false? @done)]
-           (when (and (-> defaults :watch w) (new? w msg))
+           (when (and (w watched) (new? w msg))
              (report! {:report-type w :report-eid (add-mail! msg)})
              (swap! done false?))))
        ;; Or detect new release/change/announcement by a maintainer
        (when (some maintainers (list from))
          (or
-          (when (:announcement (:news (:watch defaults)))
+          (when (:announcement (:news watched))
             (when (new? :announcement msg)
               (report! {:report-type :announcement
                         :report-eid  (add-mail! msg)})))
-          (when (:change (:news (:watch defaults)))
+          (when (:change (:news watched))
             (when-let [version (new? :change msg)]
               (if (some (fetch/released-versions list-id) (list version))
                 (timbre/error
@@ -723,7 +706,7 @@
                 (report! {:report-type :change
                           :report-eid  (add-mail! msg)
                           :version     version}))))
-          (when (:release (:news (:watch defaults)))
+          (when (:release (:news watched))
             (when-let [version (new? :release msg)]
               (let [release-report-eid (add-mail! msg)]
                 (report! {:report-type :release
@@ -768,7 +751,7 @@
              (or
               ;; New action against a known patch/bug/request
               (doseq [w [:patch :bug :request]]
-                (when (-> defaults :watch w)
+                (when (w watched)
                   (when-let [{:keys [upstream-report-eid status priority]}
                              (is-report-update? w body-report references)]
                     (report! {:report-type w
@@ -779,7 +762,7 @@
               ;; Or an action against existing changes/releases by a maintainer
               (if (some maintainers (list from))
                 (doseq [w [:change :release :announcement]]
-                  (when (w (:announcement (:news (:watch defaults))))
+                  (when (w (:announcement (:news watched)))
                     (when-let [{:keys [upstream-report-eid status priority]}
                                (is-report-update? w body-report references)]
                       (report! {:report-type w

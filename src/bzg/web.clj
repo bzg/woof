@@ -48,7 +48,7 @@
    :support-url    (:support-url (:ui db/config))
    :support-cta    (:support-cta (:ui db/config))
    :display        (or (:show (:ui db/config))
-                       (:watch (:defaults db/config)))})
+                       (:watch db/config))})
 
 (defn- with-html-defaults [config-defaults m]
   (merge html-defaults

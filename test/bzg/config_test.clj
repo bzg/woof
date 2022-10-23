@@ -52,7 +52,6 @@
   (spec/keys
    :opt-un [::maintenance
             ::notifications
-            ::watch
             ::display-max
             ::export-formats]))
 
@@ -110,8 +109,9 @@
             ::ui
             ::db-dir
             ::log-file
-            ::defaults
-            ::sources]
+            ::watch
+            ::sources
+            ::defaults]
    :opt-un [::archived-list-message-format]))
 
 (deftest configuration
@@ -131,6 +131,6 @@
     (is (spec/valid? ::project-name (:ui (:project-name config))))
     (is (spec/valid? ::project-url (:ui (:project-url config))))
     (is (spec/valid? ::sources (:sources config)))
-    (is (spec/valid? ::watch (:watch (:defaults config))))
+    (is (spec/valid? ::watch (:watch config)))
     (is (spec/valid? ::show (:show (:ui config))))
     (is (spec/valid? ::config config))))
