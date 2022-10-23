@@ -30,10 +30,10 @@
       {% else %}
       <h1 id="entries" class="title is-size-4">
 	<span>
-	  {% if config.export-formats.rss %}<a class="tag is-info is-light" href="{{slug-end}}.rss">RSS</a>{% endif %}
-	  {% if config.export-formats.json %}<a class="tag is-success is-light" href="{{slug-end}}.json">JSON</a>{% endif %}
-	  {% if config.export-formats.org %}<a class="tag is-danger is-light" href="{{slug-end}}.org">ORG</a>{% endif %}
-	  {% if config.export-formats.md %}<a class="tag is-warning is-light" href="{{slug-end}}.md">MD</a>{% endif %}
+	  {% if export-formats.rss %}<a class="tag is-info is-light" href="{{slug-end}}.rss">RSS</a>{% endif %}
+	  {% if export-formats.json %}<a class="tag is-success is-light" href="{{slug-end}}.json">JSON</a>{% endif %}
+	  {% if export-formats.org %}<a class="tag is-danger is-light" href="{{slug-end}}.org">ORG</a>{% endif %}
+	  {% if export-formats.md %}<a class="tag is-warning is-light" href="{{slug-end}}.md">MD</a>{% endif %}
 	</span>
       </h1>
       <div class="table-container">

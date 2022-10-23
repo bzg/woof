@@ -493,23 +493,6 @@
             (timbre/info (format "Mails from %s will now be ignored" email))
             output))))))
 
-(defn- add-export-format! [cmd-val & remove?]
-  (let  [formats (->> (string/split cmd-val #"\s") (remove empty?))]
-    (doseq [export-format formats]
-      (let [defaults     (d/entity db/db [:defaults "init"])
-            new-defaults (update-in
-                          defaults
-                          [:export-formats
-                           (keyword export-format)] (fn [_] (empty? remove?)))]
-        (when (d/transact! db/conn [new-defaults])
-          (timbre/info
-           (format "Export format \"%s\" is %s"
-                   export-format
-                   (if remove? "removed" "added"))))))))
-
-(defn- remove-export-format! [cmd-val]
-  (add-export-format! cmd-val :remove))
-
 (defn- set-theme! [theme]
   (let [defaults     (d/entity db/db [:defaults "init"])
         new-defaults (assoc defaults :theme theme)]
@@ -550,7 +533,6 @@
         :admin
         (condp = cmd
           "Add admin"            (add-admin! cmd-val from)
-          "Add export"           (add-export-format! cmd-val)
           "Add maintainer"       (add-maintainer! cmd-val from)
           "Delete"               (delete! cmd-val)
           "Global notifications" (config-notifications! (edn/read-string cmd-val))
@@ -559,7 +541,6 @@
           "Maintenance"          (config-maintenance! (edn/read-string cmd-val))
           "Notifications"        (update-person! {:email from} [:notifications cmd-val])
           "Remove admin"         (remove-admin! cmd-val)
-          "Remove export"        (remove-export-format! cmd-val)
           "Remove maintainer"    (remove-maintainer! cmd-val)
           "Set theme"            (set-theme! cmd-val)
           "Support"              (update-person! {:email from} [:support cmd-val])

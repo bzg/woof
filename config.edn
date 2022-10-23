@@ -25,8 +25,9 @@
  :sources
  {"~bzg/wooff@lists.sr.ht"
   {:slug "wooff"
-   :ui   {:title        "Liste ~bzg/wooff"
-          :project-name "Wooff"}}
+   :ui   {:title          "Liste ~bzg/wooff"
+          :project-name   "Wooff"
+          :export-formats {:rss true}}}
   "~bzg/wooff2@lists.sr.ht" {:slug "wooff2"}
   }
 
@@ -38,12 +39,8 @@
 
  ;; Default application state
  :defaults
- {:maintenance    false
-  :notifications  true
-  :export-formats {:rss  true
-                   :json true
-                   :org  true
-                   :md   true}}
+ {:maintenance   false
+  :notifications true}
 
  ;; :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
 
@@ -74,11 +71,7 @@
   :ignore               "Ignore"
   ;; Admin actions
   :add-admin            "Add admin"
-  :add-export           "Add export"
-  :add-feature          "Add feature"
   :remove-admin         "Remove admin"
-  :remove-export        "Remove export"
-  :remove-feature       "Remove feature"
   :remove-maintainer    "Remove maintainer"
   :maintenance          "Maintenance"
   :set-theme            "Set theme"
@@ -106,6 +99,10 @@
       :support-url          "https://localhost:3000"
       :support-cta          "Donate"
       :support-cta-email    "Please support us with a donation"
+      :export-formats       {:rss  true
+                             :json true
+                             :org  true
+                             :md   true}
       :show                 {:overview true
                              :news
                              #{:unreleased-changes :releases :latest-released-changes :announcements}

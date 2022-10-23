@@ -4,19 +4,19 @@
 
       <div class="content">
 
-	{% if config.export-formats.rss %}
+	{% if export-formats.rss %}
 	<a title="Subscribe to important updates via RSS" class="tag is-info is-light" href="updates.rss">RSS</a>
 	{% endif %}
 
-	{% if config.export-formats.json %}
+	{% if export-formats.json %}
 	<a title="Get important updates as a json file" class="tag is-success is-light" href="updates.json">JSON</a>
 	{% endif %}
 
-	{% if config.export-formats.org %}
+	{% if export-formats.org %}
 	<a title="Get important updates as an org file" class="tag is-danger is-light" href="updates.org">ORG</a>
 	{% endif %}
 
-	{% if config.export-formats.md %}
+	{% if export-formats.md %}
 	<a title="Get important updates as a markdown file" class="tag is-warning is-light" href="updates.md">MD</a>
 	{% endif %}
 

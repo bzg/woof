@@ -51,9 +51,7 @@
 (spec/def ::defaults
   (spec/keys
    :opt-un [::maintenance
-            ::notifications
-            ::display-max
-            ::export-formats]))
+            ::notifications]))
 
 (spec/def ::address string?)
 (spec/def ::slug string?)
@@ -110,9 +108,10 @@
             ::db-dir
             ::log-file
             ::watch
-            ::sources
-            ::defaults]
-   :opt-un [::archived-list-message-format]))
+            ::sources]
+   :opt-un [::archived-list-message-format
+            ::defaults
+            ::export-formats]))
 
 (deftest configuration
   (testing "Testing configuration"
