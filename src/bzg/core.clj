@@ -1004,22 +1004,21 @@
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
 
-      ;; Detect a new bug/patch/request/announcement
-      (let [done (atom false)]
-        (doseq [w      [:patch :bug :request]
-                :while (false? @done)]
-          (when (and (-> defaults :watch w) (new? w msg))
-            (report! {:report-type w :report-eid (add-mail! msg)})
-            (swap! done false?))))
-
-      ;; Or detect new release/change
       (or
-       ;; Only maintainers can push changes and releases
+       ;; Detect a new bug/patch/request
+       (let [done (atom false)]
+         (doseq [w      [:patch :bug :request]
+                 :while (false? @done)]
+           (when (and (-> defaults :watch w) (new? w msg))
+             (report! {:report-type w :report-eid (add-mail! msg)})
+             (swap! done false?))))
+       ;; Or detect new release/change/announcement by a maintainer
        (when (some maintainers (list from))
          (or
           (when (:announcement (:announcement (:watch defaults)))
-            (report! {:report-type :announcement
-                      :report-eid  (add-mail! msg)}))
+            (when (new? :announcement msg)
+              (report! {:report-type :announcement
+                        :report-eid  (add-mail! msg)})))
           (when (:change (:announcement (:watch defaults)))
             (when-let [version (new? :change msg)]
               (if (some (get-released-versions list-id) (list version))
