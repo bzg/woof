@@ -229,7 +229,7 @@
        (map :email)
        (into #{})))
 
-;; Top functions
+;; Overview functions
 
 (defn grouped-from-reports [reports]
   (->> reports
@@ -248,7 +248,7 @@
        (sort-by :cnt)
        reverse))
 
-(defn top-bug-contributors [list-id] ;; FIXME: Add search here too?
+(defn overview-bug-contributors [list-id] ;; FIXME: Add search here too?
   (let [bugs-confirmed
         (d/q `[:find ?br ?r :where
                [?b :bug ?br]
@@ -262,7 +262,7 @@
     ;; FIXME: Factor out
     (grouped-from-reports (concat bugs-confirmed bugs-fixed))))
 
-(defn top-patch-contributors [list-id]
+(defn overview-patch-contributors [list-id]
   (let [patches-approved
         (d/q `[:find ?br ?r :where
                [?b :patch ?br]
@@ -275,7 +275,7 @@
                [?r :list-id ~list-id]] db/db)]
     (grouped-from-reports (concat patches-approved patches-applied))))
 
-(defn top-request-contributors [list-id]
+(defn overview-request-contributors [list-id]
   (let [requests-handled
         (d/q `[:find ?r :where
                [?b :request _]
@@ -288,10 +288,11 @@
                [?r :list-id ~list-id]] db/db)]
     (grouped-from-reports (concat requests-handled requests-done))))
 
-(defn top-announcement-contributors [list-id]
+(defn overview-announcement-contributors [list-id]
   (grouped-from-reports
    (concat
     (d/q `[:find ?r :where
            [?b :announcement ?r]
            [?r :list-id ~list-id]
-           (not [?b :canceled _])] db/db))))
+           ;; (not [?b :canceled _])
+           ] db/db))))

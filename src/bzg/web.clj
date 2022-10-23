@@ -75,26 +75,24 @@
                   :bug     (fetch/bugs list-id search)
                   :patch   (fetch/patches list-id search)
                   :request (fetch/requests list-id search)
-                  :mail    (fetch/mails list-id search)
-                  ;; TODO: implement tops?
-                  ;; :tops (fetch/tops list-id search)
-                  )}
+                  :mail    (fetch/mails list-id search))}
                format-params))})))
 
-;; (defn- page-tops [list-id _ config-defaults]
-;;   (with-html-defaults config-defaults
-;;     {:top-bug-contributors          (fetch/top-bug-contributors list-id)
-;;      :top-patch-contributors        (fetch/top-patch-contributors list-id)
-;;      :top-request-contributors      (fetch/top-request-contributors list-id)
-;;      :top-announcement-contributors (fetch/top-announcement-contributors list-id)}))
+(defn- page-overview [_ list-id _ _ config-defaults]
+  (with-html-defaults config-defaults
+    {:overview-bug-contributors          (fetch/overview-bug-contributors list-id)
+     :overview-patch-contributors        (fetch/overview-patch-contributors list-id)
+     :overview-request-contributors      (fetch/overview-request-contributors list-id)
+     :overview-announcement-contributors (fetch/overview-announcement-contributors list-id)}))
 
 (defn- get-page [page {:keys [query-params path-params uri]}]
   (let [format-params   {:search     (or (get query-params "search") "")
                          :sorting-by (get query-params "sorting-by")}
         config-defaults (merge (into {} (d/entity db/db [:defaults "init"]))
                                format-params)
-        html-page       (if (= page :sources)
-                          {:html "/sources.html" :fn page-sources}
+        html-page       (condp = page
+                          :sources  {:html "/sources.html" :fn page-sources}
+                          :overview {:html "/overview.html" :fn page-overview}
                           {:html "/index.html" :fn page-index})
         slug-end        (peek (re-find #"/([^/]+)$" (or uri "")))
         list-id         (core/slug-to-list-id (:list-slug path-params))]
@@ -133,8 +131,8 @@
       ["mails"
        ["" {:get #(get-page :mail %)}]
        [":format" {:get #(data/get-mails-data %)}]]
-      ;; ["tops"
-      ;;  ["" {:get #(get-page :tops %)}]]
+      ["overview"
+       ["" {:get #(get-page :overview %)}]]
       ;; List per source
       ["source/:list-slug/"
        ["" {:get #(get-page :news %)}]
@@ -150,7 +148,9 @@
         [":format" {:get #(data/get-requests-data %)}]]
        ["mails"
         ["" {:get #(get-page :mail %)}]
-        [":format" {:get #(data/get-mails-data %)}]]]]]
+        [":format" {:get #(data/get-mails-data %)}]]
+       ["overview"
+        ["" {:get #(get-page :overview %)}]]]]]
     {:data {:middleware [params/wrap-params]}})
    (ring/create-default-handler
     {:not-found

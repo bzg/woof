@@ -24,10 +24,11 @@
 
  ;; Default application state
  :defaults
- {:watch {:news    #{:change :release :announcement}
-          :bug     true
-          :patch   true
-          :request true}
+ {:watch {:news     #{:change :release :announcement}
+          :bug      true
+          :patch    true
+          :request  true
+          :overview true}
 
   :maintenance   false
   ;; FIXME: Explicit what kind of notations?
@@ -110,7 +111,8 @@
       :support-url          "https://localhost:3000"
       :support-cta          "Donate"
       :support-cta-email    "Please support us with a donation"
-      :show                 {:news
+      :show                 {:overview true
+                             :news
                              #{:unreleased-changes :releases :latest-released-changes :announcements}
                              :bug
                              #{:unconfirmed-bugs :confirmed-bugs :owned-bugs}
