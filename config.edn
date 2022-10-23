@@ -24,24 +24,20 @@
 
  ;; Default application state
  :defaults
- { :sources
-  {"~bzg/wooff@lists.sr.ht"
-   {:slug "wooff"}}
+ {;; :watch {:announcement [:upcoming-changes :releases :latest-changes :announcements]
+  ;;         :bug          [:unconfirmed-bugs :confirmed-bugs :owned-bugs]
+  ;;         :patch        [:unapproved-patches :approved-patches :owned-patches]
+  ;;         :request      [:unapproved-requests :approved-requests :owned-requests]}
+  :watch {:announcement true
+          :bug          true
+          :patch        true
+          :request      true}
 
   :maintenance   false
   ;; FIXME: Explicit what kind of notations?
   :notifications true
   ;; Each feature corresponds to a dedicated tab
   ;; FIXME: prevent from removing announcements?
-  :features      {:announcement true
-                  :bug          true
-                  :patch        true
-                  :change       true
-                  :release      true
-                  :request      true
-                  ;; :top true
-                  ;; :mail true
-                  }
 
   ;; Show only x latest releases/mails/announcements
   :display-max    {:release 4 :mail 100 :announcement 10}
@@ -49,6 +45,11 @@
                    :json true
                    :org  true
                    :md   true}
+  }
+
+ :sources
+ {"~bzg/wooff@lists.sr.ht" {:slug "wooff"}
+  ;; "~bzg/wooff2@lists.sr.ht" {:slug "wooff2"}
   }
 
  ;; :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
@@ -111,7 +112,11 @@
       :contribute-cta-email "Please contribute"
       :support-url          "https://localhost:3000"
       :support-cta          "Donate"
-      :support-cta-email    "Please support us with a donation"}
+      :support-cta-email    "Please support us with a donation"
+      :show                 {:announcement true
+                             :bug          true
+                             :patch        true
+                             :request      true}}
 
  :action-words {:patch        "PATCH"
                 :bug          "BUG"

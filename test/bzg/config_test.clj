@@ -44,6 +44,7 @@
 (spec/def ::maintenance boolean?)
 (spec/def ::notifications boolean?)
 (spec/def ::watch map?) ;; TODO
+(spec/def ::show map?) ;; TODO
 (spec/def ::display-max map?) ;; TODO
 (spec/def ::export-formats map?) ;; TODO
 
@@ -90,7 +91,7 @@
             ::support-url
             ::support-cta
             ::support-cta-email
-            ::watch]))
+            ::show]))
 
 (spec/def ::config
   (spec/keys
@@ -131,5 +132,5 @@
     (is (spec/valid? ::project-url (:ui (:project-url config))))
     (is (spec/valid? ::sources (:sources config)))
     (is (spec/valid? ::watch (:watch (:defaults config))))
-    (is (spec/valid? ::watch (:watch (:ui config))))
+    (is (spec/valid? ::show (:show (:ui config))))
     (is (spec/valid? ::config config))))

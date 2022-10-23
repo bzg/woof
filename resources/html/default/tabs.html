@@ -5,35 +5,29 @@
       <a title="General announcements" href=".">Announcements</a>
     </li>
 
-    {% if config.watch.bug %}
+    {% if display.bug %}
     <li {% ifequal watch "bug" %}class="is-active"{% endifequal %}>
       <a title="Bugs" href="bugs">Bugs</a>
     </li>
     {% endif %}
 
-    {% if config.watch.patch %}
+    {% if display.patch %}
     <li {% ifequal watch "patch" %}class="is-active"{% endifequal %}>
       <a title="Patches" href="patches">Patches</a>
     </li>
     {% endif %}
 
-    {% if config.watch.request %}
+    {% if display.request %}
     <li {% ifequal watch "request" %}class="is-active"{% endifequal %}>
       <a title="Requests" href="requests">Requests</a>
     </li>
     {% endif %}
 
-    {% if config.watch.mail %}
-    <li {% ifequal watch "mail" %}class="is-active"{% endifequal %}>
-      <a title="Mail activity" href="mails">Mails</a>
-    </li>
-    {% endif %}
-
-    {% if config.watch.top %}
-    <li {% ifequal watch "top" %}class="is-active"{% endifequal %}>
-      <a title="Top contributors" href="tops">Tops</a>
-    </li>
-    {% endif %}
+    <!-- {% if config.watch.top %} -->
+    <!-- <li {% ifequal watch "top" %}class="is-active"{% endifequal %}> -->
+    <!--   <a title="Top contributors" href="tops">Tops</a> -->
+    <!-- </li> -->
+    <!-- {% endif %} -->
 
   </ul>
 </div>

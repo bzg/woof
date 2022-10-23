@@ -45,8 +45,8 @@
    :contribute-cta (:contribute-cta (:ui core/config))
    :support-url    (:support-url (:ui core/config))
    :support-cta    (:support-cta (:ui core/config))
-   :watch          (or (:watch (:ui core/config))
-                       (:watch core/config))})
+   :display        (or (:show (:ui core/config))
+                       (:watch (:defaults core/config)))})
 
 (defn- with-html-defaults [config-defaults m]
   (merge html-defaults
