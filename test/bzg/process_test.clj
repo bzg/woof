@@ -32,6 +32,7 @@
 (def bug1-confirmed (read-mail "bug1-confirmed"))
 (def patch1 (read-mail "patch1"))
 (def patch1-approved (read-mail "patch1-approved"))
+(def request1 (read-mail "request1"))
 (def change1 (read-mail "change1"))
 (def release1 (read-mail "release1"))
 
@@ -53,6 +54,9 @@
     (do (core/read-and-process-mail (list patch1-approved))
         (is (= 1 (count (fetch/approved-patches "test@list.io"))))
         (is (= 0 (count (fetch/unapproved-patches "test@list.io"))))))
+  (testing "Adding a request"
+    (do (core/read-and-process-mail (list request1))
+        (is (= 1 (count (fetch/requests "test@list.io"))))))
   (testing "Adding a change"
     (do (core/read-and-process-mail (list change1))
         (is (= 1 (count (fetch/unreleased-changes "test@list.io"))))))
