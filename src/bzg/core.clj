@@ -215,8 +215,17 @@
 
 ;; Check whether a report is an action against a known entity
 
+(def permissions
+  {:admin       #{:add-admin :remove-admin
+                  :add-feature :remove-feature
+                  :remove-maintainer :undelete :unignore
+                  :add-export :remove-export :set-theme
+                  :global-notifications}
+   :maintainer  #{:maintenance :add-maintainer :delete :ignore}
+   :contributor #{:notifications :home :support}})
+
 (def config-strings-re
-  (let [{:keys [admin maintainer contributor]} (:permissions db/config)]
+  (let [{:keys [admin maintainer contributor]} permissions]
     (->> (concat admin maintainer contributor)
          (map #(% (:admin-report-words db/config)))
          (string/join "|")

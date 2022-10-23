@@ -77,16 +77,6 @@
   :global-notifications "Global notifications"
   }
 
- :permissions
- ;; FIXME: Should this be hardcoded?
- {:admin       #{:add-admin :remove-admin
-                 :add-feature :remove-feature
-                 :remove-maintainer :undelete :unignore
-                 :add-export :remove-export :set-theme
-                 :global-notifications}
-  :maintainer  #{:maintenance :add-maintainer :delete :ignore}
-  :contributor #{:notifications :home :support}}
-
  :ui {:title                "Example woof instance"
       :project-name         "Example project name"
       :project-url          "http://localhost:3000"
