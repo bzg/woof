@@ -24,7 +24,11 @@
 
  ;; Default application state
  :defaults
- {:maintenance   false
+ { :sources
+  {"~bzg/wooff@lists.sr.ht"
+   {:slug "wooff"}}
+
+  :maintenance   false
   ;; FIXME: Explicit what kind of notations?
   :notifications true
   ;; Each feature corresponds to a dedicated tab
@@ -46,10 +50,6 @@
                    :org  true
                    :md   true}
   }
-
- :mailing-lists
- {"~bzg/wooff@lists.sr.ht"
-  {:slug "wooff"}}
 
  ;; :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
 

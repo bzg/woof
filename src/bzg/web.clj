@@ -49,7 +49,7 @@
 (defn- with-html-defaults [config-defaults m]
   (merge html-defaults
          {:config config-defaults}
-         {:lists (map #(:slug (val %)) (:mailing-lists core/config))}
+         {:lists (map #(:slug (val %)) (:sources core/config))}
          m))
 
 (defn- page-sources [_ _ _ _ config-defaults]

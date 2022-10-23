@@ -9,7 +9,7 @@
 (alter-var-root #'core/config
                 #(assoc %
                         :log-file "test-log.txt"
-                        :mailing-lists {"test@list.io" {:slug "list"}}))
+                        :sources {"test@list.io" {:slug "list"}}))
 
 (alter-var-root #'core/conn
                 (constantly (d/get-conn "db-test" core/schema)))

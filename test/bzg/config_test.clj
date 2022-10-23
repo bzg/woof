@@ -64,7 +64,7 @@
    :req-un [::slug]
    :opt-un [::archived-message-format]))
 
-(spec/def ::mailing-lists
+(spec/def ::sources
   (spec/map-of ::list-id ::list-config))
 
 (spec/def ::title (spec/nilable string?))
@@ -109,7 +109,7 @@
             ::db-dir
             ::log-file
             ::defaults
-            ::mailing-lists]
+            ::sources]
    :opt-un [::archived-list-message-format]))
 
 (deftest configuration

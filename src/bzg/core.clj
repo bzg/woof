@@ -110,13 +110,13 @@
 (defn slug-to-list-id [slug]
   (when (not-empty slug)
     (key (first (filter #(= (:slug (val %)) slug)
-                        (:mailing-lists config))))))
+                        (:sources config))))))
 
 (defn archived-message [{:keys [list-id message-id archived-at]}]
   (if archived-at (trim-url-brackets archived-at)
       (if-let [fmt (not-empty
                     (:archived-message-format
-                     (get (:mailing-lists config) list-id)))]
+                     (get (:sources config) list-id)))]
         (format fmt message-id)
         (if-let [fmt (:archived-list-message-format config)]
           (format fmt list-id message-id)
@@ -999,7 +999,7 @@
                 (or (some maintainers (list from))
                     ;; A mailing list, only process mails sent there
                     (some #{list-id}
-                          (keys (:mailing-lists config)))))))
+                          (keys (:sources config)))))))
 
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
