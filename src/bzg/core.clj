@@ -343,18 +343,18 @@
          (map :change)
          (map #(d/touch (d/entity db (:db/id %)))))))
 
-(defn get-updates [& [list-id search]]
-  (let [search   (or search "")
-        features (:features (d/entity db [:defaults "init"]))]
-    (->> (list
-          (when (:bug features) (get-confirmed-bugs list-id search))
-          (when (:patch features) (get-approved-patches list-id search))
-          (when (:request features) (get-unhandled-requests list-id search))
-          (when (:change features) (get-unreleased-changes list-id search))
-          (when (:release features) (get-releases list-id search))
-          (get-announcements list-id search))
-         (remove nil?)
-         flatten)))
+;; (defn get-updates [& [list-id search]]
+;;   (let [search (or search "")
+;;         watch  (:watch (d/entity db [:defaults "init"]))]
+;;     (->> (list
+;;           (when (:bug watch) (get-confirmed-bugs list-id search))
+;;           (when (:patch watch) (get-approved-patches list-id search))
+;;           (when (:request watch) (get-unhandled-requests list-id search))
+;;           (when (:change watch) (get-unreleased-changes list-id search))
+;;           (when (:release watch) (get-releases list-id search))
+;;           (get-announcements list-id search))
+;;          (remove nil?)
+;;          flatten)))
 
 ;; Main admin functions
 
@@ -667,8 +667,8 @@
 
 ;;; Core functions to return db entries
 
-(defn- new? [feature msg]
-  (condp = feature
+(defn- new? [what msg]
+  (condp = what
     :patch        (or
                    ;; New patches with a subject starting with "[PATCH"
                    (re-matches (:patch action-re) (:subject msg))
@@ -799,16 +799,16 @@
             output))))))
 
 (defn- add-feature! [cmd-val & disable?]
-  (let [features (->> (string/split cmd-val #"\s") (remove empty?))]
-    (doseq [feature features]
+  (let [watch (->> (string/split cmd-val #"\s") (remove empty?))]
+    (doseq [w watch]
       (let [defaults     (d/entity db [:defaults "init"])
             new-defaults (update-in
                           defaults
-                          [:features (keyword feature)] (fn [_] (empty? disable?)))]
+                          [:watch (keyword w)] (fn [_] (empty? disable?)))]
         (when (d/transact! conn [new-defaults])
           (timbre/info
-           (format "Feature \"%s\" is %s"
-                   feature
+           (format "Watch \"%s\" is %s"
+                   w
                    (if disable? "disabled" "enabled"))))))))
 
 (defn- remove-feature! [cmd-val]
@@ -1006,11 +1006,11 @@
 
       ;; Detect a new bug/patch/request/announcement
       (let [done (atom false)]
-        (doseq [feature [:patch :bug :request :announcement]
-                :while  (false? @done)]
-          (when (and (-> defaults :features feature)
-                     (new? feature msg))
-            (report! {:report-type feature :report-eid (add-mail! msg)})
+        (doseq [w      [:patch :bug :request :announcement]
+                :while (false? @done)]
+          (when (and (-> defaults :watch w)
+                     (new? w msg))
+            (report! {:report-type w :report-eid (add-mail! msg)})
             (swap! done false?))))
 
       ;; Or detect new release/change
@@ -1018,7 +1018,7 @@
        ;; Only maintainers can push changes and releases
        (when (some maintainers (list from))
          (or
-          (when (-> defaults :features :change)
+          (when (-> defaults :watch :change)
             (when-let [version (new? :change msg)]
               (if (some (get-released-versions list-id) (list version))
                 (timbre/error
@@ -1027,7 +1027,7 @@
                 (report! {:report-type :change
                           :report-eid  (add-mail! msg)
                           :version     version}))))
-          (when (-> defaults :features :release)
+          (when (-> defaults :watch :release)
             (when-let [version (new? :release msg)]
               (let [release-report-eid (add-mail! msg)]
                 (report! {:report-type :release
@@ -1071,22 +1071,22 @@
 
              (or
               ;; New action against a known patch/bug/request/announcement
-              (doseq [feature [:patch :bug :request :announcement]]
-                (when (-> defaults :features feature)
+              (doseq [w [:patch :bug :request :announcement]]
+                (when (-> defaults :watch w)
                   (when-let [{:keys [upstream-report-eid status priority]}
-                             (is-report-update? feature body-report references)]
-                    (report! {:report-type feature
+                             (is-report-update? w body-report references)]
+                    (report! {:report-type w
                               :report-eid  upstream-report-eid
                               status       (add-mail! msg)
                               :priority    priority}))))
 
               ;; Or an action against existing changes/releases by a maintainer
               (if (some maintainers (list from))
-                (doseq [feature [:change :release]]
-                  (when (-> defaults :features feature)
+                (doseq [w [:change :release]]
+                  (when (-> defaults :watch w)
                     (when-let [{:keys [upstream-report-eid status priority]}
-                               (is-report-update? feature body-report references)]
-                      (report! {:report-type feature
+                               (is-report-update? w body-report references)]
+                      (report! {:report-type w
                                 :report-eid  upstream-report-eid
                                 status       (add-mail! msg)
                                 :priority    priority}))))

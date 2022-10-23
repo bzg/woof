@@ -44,7 +44,9 @@
    :contribute-url (:contribute-url (:ui core/config))
    :contribute-cta (:contribute-cta (:ui core/config))
    :support-url    (:support-url (:ui core/config))
-   :support-cta    (:support-cta (:ui core/config))})
+   :support-cta    (:support-cta (:ui core/config))
+   :watch          (or (:watch (:ui core/config))
+                       (:watch core/config))})
 
 (defn- with-html-defaults [config-defaults m]
   (merge html-defaults
@@ -55,18 +57,18 @@
 (defn- page-sources [_ _ _ _ config-defaults]
   (with-html-defaults config-defaults _))
 
-(defn- page-index [feature list-id slug-end format-params config-defaults]
+(defn- page-index [watch list-id slug-end format-params config-defaults]
   (let [search (:search format-params)]
     (with-html-defaults config-defaults
       {:list-id  list-id
-       :feature  (name feature)
+       :watch    (name watch)
        :slug-end slug-end
        :entries
        ;; FIXME: Confusing use of entries twice?
        (entries-format
         (merge {:list-id list-id
                 :entries
-                (condp = feature
+                (condp = watch
                   ;; FIXME: Replace get-* functions with available features
                   :announcement
                   (core/get-announcements list-id search)

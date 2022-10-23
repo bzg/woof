@@ -43,7 +43,7 @@
 
 (spec/def ::maintenance boolean?)
 (spec/def ::notifications boolean?)
-(spec/def ::features map?) ;; TODO
+(spec/def ::watch map?) ;; TODO
 (spec/def ::display-max map?) ;; TODO
 (spec/def ::export-formats map?) ;; TODO
 
@@ -51,7 +51,7 @@
   (spec/keys
    :opt-un [::maintenance
             ::notifications
-            ::features
+            ::watch
             ::display-max
             ::export-formats]))
 
@@ -89,7 +89,8 @@
             ::contribute-cta-email
             ::support-url
             ::support-cta
-            ::support-cta-email]))
+            ::support-cta-email
+            ::watch]))
 
 (spec/def ::config
   (spec/keys
@@ -128,4 +129,7 @@
     (is (spec/valid? ::title (:ui (:title config))))
     (is (spec/valid? ::project-name (:ui (:project-name config))))
     (is (spec/valid? ::project-url (:ui (:project-url config))))
+    (is (spec/valid? ::sources (:sources config)))
+    (is (spec/valid? ::watch (:watch (:defaults config))))
+    (is (spec/valid? ::watch (:watch (:ui config))))
     (is (spec/valid? ::config config))))
