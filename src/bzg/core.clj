@@ -18,7 +18,13 @@
             [datalevin.core :as d]
             [clojure.edn :as edn]))
 
-;; Set config defaults
+(defn set-defaults []
+  (d/transact! db/conn [(merge {:defaults "init"} (:defaults db/config))]))
+
+(def priority 0)
+
+;; Utility functions
+
 (def action-re
   (let [subject-prefix #(:subject (% (:watch db/config)))]
     {:patch        (re-pattern
@@ -67,16 +73,6 @@
         (flatten (vals (:triggers (report-type (:watch db/config)))))]
     (into #{} (un-ify original-report-words))))
 
-;; FIXME: How to initialize the app?
-(defn set-defaults []
-  (d/transact! db/conn [(merge {:defaults "init"} (:defaults db/config))]))
-
-;; Set default priority for all reports
-;; FIXME: Use priority?
-(def priority 0)
-
-;; Small utility functions
-
 (defn- make-to [username address]
   (str username " <" address ">"))
 
@@ -92,7 +88,6 @@
 (defn- trim-url-brackets [^String s]
   (-> s (string/replace #"^<?([^>]+)>?$" "$1")))
 
-;; Trim subject prefixes in mailing list
 (defn- trim-subject-prefix [^String s]
   (let [p (re-pattern
            (format "^\\[(?:%s).*\\] .*$"
@@ -236,8 +231,6 @@
                           username email new-role-str))]
         (timbre/info msg)))))
 
-;; Check whether a report is an action against a known entity
-
 (def permissions
   {:admin       #{:add-admin :remove-admin
                   :add-feature :remove-feature
@@ -254,13 +247,12 @@
          (format "(%s): (.+)\\s*$")
          re-pattern)))
 
+;; Check whether a report is an action against a known entity
 (defn- is-in-a-known-thread? [references]
   (doseq [i (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db/db))
                     references)]
     (let [backrefs (:backrefs (d/entity db/db [:message-id i]))]
       (d/transact! db/conn [{:message-id i :backrefs (inc backrefs)}]))))
-
-
 
 (defn- is-report-update? [report-type body-report references]
   ;; Is there a known trigger (e.g. "Canceled") for this report type
