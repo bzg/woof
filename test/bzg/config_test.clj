@@ -26,11 +26,7 @@
 
 (spec/def ::admin-address string?)
 (spec/def ::admin-username string?)
-
-(spec/def ::reports string?)
 (spec/def ::admin-report-words string?)
-(spec/def ::action-words string?)
-(spec/def ::report-words string?)
 
 (spec/def ::archived-message-format
   (spec/and string? #(re-matches #".*%s.*" %)))

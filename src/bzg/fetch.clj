@@ -87,60 +87,60 @@
 ;; (remove #(if-let [p (:priority %)] (< p 2) true))
 (defn confirmed-bugs [& [list-id search]]
   (->> (reports {:list-id list-id :search (or search "") :report-type :bug})
-       (filter :confirmed)
-       (remove :fixed)
+       (filter :acked)
+       (remove :closed)
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
 (defn unconfirmed-bugs [& [list-id search]]
   (->> (reports {:list-id list-id :search (or search "") :report-type :bug})
-       (remove :confirmed)
-       (remove :fixed)
+       (remove :acked)
+       (remove :closed)
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
 (defn unfixed-bugs [& [list-id search]]
   (->> (reports {:list-id list-id :search (or search "") :report-type :bug})
-       (remove :fixed)
+       (remove :closed)
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
 (defn approved-patches [& [list-id search]]
   (->> (reports {:list-id list-id :search (or search "") :report-type :patch})
-       (filter :approved)
-       (remove :applied)
+       (filter :acked)
+       (remove :closed)
        (map :patch)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
 (defn unapproved-patches [& [list-id search]]
   (->> (reports {:list-id list-id :search (or search "") :report-type :patch})
-       (remove :approved)
-       (remove :applied)
+       (remove :acked)
+       (remove :closed)
        (map :patch)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
 (defn handled-requests [& [list-id search]]
   (->> (reports {:list-id list-id :search (or search "") :report-type :request})
-       (filter :handled)
-       (remove :done)
+       (filter :owned)
+       (remove :closed)
        (map :request)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
 (defn unhandled-requests [& [list-id search]]
   (->> (reports {:list-id list-id :search (or search "") :report-type :request})
-       (remove :handled)
+       (remove :owned)
        (map :request)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
 (defn undone-requests [& [list-id search]]
   (->> (reports {:list-id list-id :search (or search "") :report-type :request})
-       (remove :done)
+       (remove :closed)
        (map :request)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
 (defn unreleased-changes [& [list-id search]]
   (->> (reports {:list-id list-id :search (or search "") :report-type :change})
-       (remove :released)
+       (remove :closed)
        (map :change)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
@@ -150,7 +150,7 @@
               [?m :list-id ~list-id]] db/db)
        (map first)
        (map #(d/entity db/db %))
-       (remove :canceled)
+       (remove :closed)
        (map (juxt :release #(hash-map :version (:version %))))
        (map (juxt #(select-keys (d/entity db/db (:db/id (first %)))
                                 [:date])
@@ -165,7 +165,7 @@
               [?m :list-id ~list-id]] db/db)
        (map first)
        (map #(d/entity db/db %))
-       (remove :canceled)
+       (remove :closed)
        (map :version)
        (into #{})))
 
@@ -252,12 +252,12 @@
   (let [bugs-confirmed
         (d/q `[:find ?br ?r :where
                [?b :bug ?br]
-               [?b :confirmed ?r]
+               [?b :acked ?r]
                [?r :list-id ~list-id]] db/db)
         bugs-fixed
         (d/q `[:find ?br ?r :where
                [?b :bug ?br]
-               [?b :fixed ?r]
+               [?b :closed ?r]
                [?r :list-id ~list-id]] db/db)]
     ;; FIXME: Factor out
     (grouped-from-reports (concat bugs-confirmed bugs-fixed))))
@@ -266,12 +266,12 @@
   (let [patches-approved
         (d/q `[:find ?br ?r :where
                [?b :patch ?br]
-               [?b :approved ?r]
+               [?b :acked ?r]
                [?r :list-id ~list-id]] db/db)
         patches-applied
         (d/q `[:find ?br ?r :where
                [?b :patch ?br]
-               [?b :applied ?r]
+               [?b :acked ?r]
                [?r :list-id ~list-id]] db/db)]
     (grouped-from-reports (concat patches-approved patches-applied))))
 
@@ -279,12 +279,12 @@
   (let [requests-handled
         (d/q `[:find ?r :where
                [?b :request _]
-               [?b :handled ?r]
+               [?b :owned ?r]
                [?r :list-id ~list-id]] db/db)
         requests-done
         (d/q `[:find ?r :where
                [?b :request _]
-               [?b :done ?r]
+               [?b :closed ?r]
                [?r :list-id ~list-id]] db/db)]
     (grouped-from-reports (concat requests-handled requests-done))))
 
@@ -294,5 +294,5 @@
     (d/q `[:find ?r :where
            [?b :announcement ?r]
            [?r :list-id ~list-id]
-           ;; (not [?b :canceled _])
+           ;; (not [?b :closed _])
            ] db/db))))

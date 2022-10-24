@@ -20,25 +20,52 @@
 
 ;; Set config defaults
 (def action-re
-  (let [action-words (:action-words db/config)]
+  (let [subject-prefix #(:subject (% (:watch db/config)))]
     {:patch        (re-pattern
                     (format "^\\[(?:%s)(?: [^\\s]+)?(?: [0-9]+/[0-9]+)?\\].*$"
-                            (string/join "|" (:patch action-words))))
+                            (string/join "|" (subject-prefix :patch))))
      :bug          (re-pattern
                     (format "^\\[(?:%s)\\].*$"
-                            (string/join "|" (:bug action-words))))
+                            (string/join "|" (subject-prefix :bug))))
      :request      (re-pattern
                     (format "^\\[(?:%s)\\].*$"
-                            (string/join "|" (:request action-words))))
+                            (string/join "|" (subject-prefix :request))))
      :announcement (re-pattern
                     (format "^\\[(?:%s)\\].*$"
-                            (string/join "|" (:announcement action-words))))
+                            (string/join "|" (subject-prefix :announcement))))
      :change       (re-pattern
                     (format "^\\[(?:%s)\\s+([^]]+)\\].*$"
-                            (string/join "|" (:change action-words))))
+                            (string/join "|" (subject-prefix :change))))
      :release      (re-pattern
                     (format "^\\[(?:%s)\\s+([^]]+)\\].*$"
-                            (string/join "|" (:release action-words))))}))
+                            (string/join "|" (subject-prefix :release))))}))
+
+(def action-prefixes
+  (flatten (map :subject (vals (:watch db/config)))))
+
+(defn un-ify [l]
+  (concat l (map #(str "Un" (string/lower-case %)) l)))
+
+(def report-words-all
+  (->> db/config
+       :watch
+       vals
+       (map :triggers)
+       (into #{})
+       (map vals)
+       flatten
+       distinct
+       un-ify))
+
+(def report-words-re
+  (->> report-words-all
+       (string/join "|")
+       re-pattern))
+
+(defn- report-words [report-type]
+  (let [original-report-words
+        (flatten (vals (:triggers (report-type (:watch db/config)))))]
+    (into #{} (un-ify original-report-words))))
 
 ;; FIXME: How to initialize the app?
 (defn set-defaults []
@@ -69,7 +96,7 @@
 (defn- trim-subject-prefix [^String s]
   (let [p (re-pattern
            (format "^\\[(?:%s).*\\] .*$"
-                   (string/join "|" (vals (:action-words db/config)))))]
+                   (string/join "|" action-prefixes)))]
     (if-let [s (re-matches p s)]
       s
       (string/replace s #"^\[[^]]+\] " ""))))
@@ -88,10 +115,6 @@
         (if-let [fmt (:archived-list-message-format db/config)]
           (format fmt list-id message-id)
           ""))))
-
-(def report-keywords-all
-  (let [ks (keys (:report-words db/config))]
-    (into #{} (concat ks (map #(keyword (str "un" (name %))) ks)))))
 
 (def email-re #"[^<@\s;,]+@[^>@\s;,]+")
 
@@ -231,36 +254,19 @@
          (format "(%s): (.+)\\s*$")
          re-pattern)))
 
-(defn- report-words-all [report-type]
-  (let [report-do   (map #(% (:report-words db/config))
-                        (report-type (:reports db/config)))
-        report-undo (map #(string/capitalize (str "Un" %)) report-do)]
-    (into #{} (concat report-do report-undo))))
-
-(def report-words-re
-  (let [all-do   (->> (:reports db/config)
-                      (map val)
-                      (map concat)
-                      flatten
-                      (map #(% (:report-words db/config))))
-        all-undo (map #(string/capitalize (str "Un" %)) all-do)
-        all      (into #{} (concat all-do all-undo))]
-    (->> all
-         (string/join "|")
-         re-pattern)))
-
 (defn- is-in-a-known-thread? [references]
   (doseq [i (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db/db))
                     references)]
     (let [backrefs (:backrefs (d/entity db/db [:message-id i]))]
       (d/transact! db/conn [{:message-id i :backrefs (inc backrefs)}]))))
 
+
+
 (defn- is-report-update? [report-type body-report references]
-  ;; Is there a known action (e.g. "Canceled") for this report type
+  ;; Is there a known trigger (e.g. "Canceled") for this report type
   ;; in the body of the email?
-  (when-let [action (some (report-words-all report-type)
-                          (list body-report))]
-    ;; Is this action against a known report, and if so, which one?
+  (when (some (report-words report-type) (list body-report))
+    ;; Is this trigger against a known report, and if so, which one?
     (when-let [e (-> #(ffirst (d/q `[:find ?e
                                      :where
                                      [?e ~report-type ?ref]
@@ -270,10 +276,18 @@
                      ;; FIXME: Is this below really needed?
                      (as-> refs (remove nil? refs))
                      first)]
-      {:status              (keyword (string/lower-case action))
-       :priority            (if-let [p (last body-report)]
-                              (condp = p "high" 2 "medium" 1 0) 0)
-       :upstream-report-eid e})))
+      (let [triggers (:triggers (report-type (:watch db/config)))
+            ;; Is this about :acked, :owned, :closed?
+            status   (key (first (filter
+                                  #(some (into #{} (un-ify (val %)))
+                                         (list body-report))
+                                  triggers)))]
+        {:status
+         (if (re-find #"(?i)Un" body-report)
+           ;; Maybe return :unacked, :unowned or :unclosed
+           (keyword (str "un" (name status)))
+           status)
+         :upstream-report-eid e}))))
 
 ;; Setup logging
 
@@ -543,7 +557,6 @@
           "Notifications"        (update-person! {:email from} [:notifications cmd-val])
           "Remove admin"         (remove-admin! cmd-val)
           "Remove maintainer"    (remove-maintainer! cmd-val)
-          "Set theme"            (set-theme! cmd-val)
           "Support"              (update-person! {:email from} [:support cmd-val])
           "Undelete"             (undelete! cmd-val)
           "Unignore"             (unignore! cmd-val)
@@ -592,7 +605,9 @@
 
 (defn- report! [{:keys [report-type report-eid version] :as report}]
   (let [;; If there is a status, add or update a report
-        status               (some report-keywords-all (keys report))
+        status               (some #{:acked :owned :closed
+                                     :unacked :unowned :unclosed} (keys report))
+        status-name          (and status (name status))
         status-report-eid    (and status (status report))
         from                 (or (:from (d/entity db/db report-eid))
                                  (:from (d/entity db/db status-report-eid)))
@@ -604,9 +619,10 @@
     (update-person! {:email from :username username})
     (if status-report-eid
       ;; This is a status update about an existing report
-      (if (re-matches #"^un(.+)" (name status))
+      (if (re-matches #"^un(.+)" status-name)
         ;; Status is about undoing, retract attribute
-        (d/transact! db/conn [[:db/retract [report-type report-eid] status]])
+        (d/transact! db/conn [[:db/retract [report-type report-eid]
+                               (keyword (string/replace status-name #"^un" ""))]])
         ;; Status is a positive statement, set it to true
         (d/transact! db/conn [{:db/id report-eid status status-report-eid}]))
       ;; This is a change or a or a release
@@ -675,11 +691,11 @@
        ;; Or detect new release/change/announcement by a maintainer
        (when (some maintainers (list from))
          (or
-          (when (:announcement (:news watched))
+          (when (:announcement watched)
             (when (new? :announcement msg)
               (report! {:report-type :announcement
                         :report-eid  (add-mail! msg)})))
-          (when (:change (:news watched))
+          (when (:change watched)
             (when-let [version (new? :change msg)]
               (if (some (fetch/released-versions list-id) (list version))
                 (timbre/error
@@ -688,7 +704,7 @@
                 (report! {:report-type :change
                           :report-eid  (add-mail! msg)
                           :version     version}))))
-          (when (:release (:news watched))
+          (when (:release watched)
             (when-let [version (new? :release msg)]
               (let [release-report-eid (add-mail! msg)]
                 (report! {:report-type :release
@@ -744,7 +760,7 @@
               ;; Or an action against existing changes/releases by a maintainer
               (if (some maintainers (list from))
                 (doseq [w [:change :release :announcement]]
-                  (when (w (:announcement (:news watched)))
+                  (when (w (:announcement watched))
                     (when-let [{:keys [upstream-report-eid status priority]}
                                (is-report-update? w body-report references)]
                       (report! {:report-type w

@@ -57,30 +57,31 @@
 (defn- page-sources [_ _ _ _ config-defaults]
   (with-html-defaults config-defaults _))
 
-(defn- page-index [watch list-id slug-end format-params config-defaults]
+(defn- page-index [page list-id slug-end format-params config-defaults]
   (let [search (:search format-params)]
     (with-html-defaults config-defaults
       {:list-id  list-id
        :search   search
-       :watch    (name watch)
+       :page     (name page)
        :slug-end (or (not-empty slug-end) "news")
        :entries
        ;; FIXME: Confusing use of entries twice?
        (entries-format
         (merge {:list-id list-id
                 :entries
-                (condp = watch
+                (condp = page
                   :news    (fetch/news list-id search)
                   :bug     (fetch/bugs list-id search)
                   :patch   (fetch/patches list-id search)
                   :request (fetch/requests list-id search)
-                  :mail    (fetch/mails list-id search))}
+                  ;; :mail    (fetch/mails list-id search)
+                  )}
                format-params))})))
 
 (defn- page-overview [_ list-id _ _ config-defaults]
   (with-html-defaults config-defaults
     {:list-id                            list-id
-     :watch                              "overview"
+     :page                               "overview"
      :overview-bug-contributors          (fetch/overview-bug-contributors list-id)
      :overview-patch-contributors        (fetch/overview-patch-contributors list-id)
      :overview-request-contributors      (fetch/overview-request-contributors list-id)

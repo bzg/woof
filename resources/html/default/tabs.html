@@ -1,30 +1,30 @@
 <div class="tabs">
   <ul>
 
-    <li {% ifequal watch "news" %}class="is-active"{% endifequal %}>
+    <li {% ifequal page "news" %}class="is-active"{% endifequal %}>
       <a title="News" href=".">News</a>
     </li>
 
     {% if display.bug %}
-    <li {% ifequal watch "bug" %}class="is-active"{% endifequal %}>
+    <li {% ifequal page "bug" %}class="is-active"{% endifequal %}>
       <a title="Bugs" href="bugs">Bugs</a>
     </li>
     {% endif %}
 
     {% if display.patch %}
-    <li {% ifequal watch "patch" %}class="is-active"{% endifequal %}>
+    <li {% ifequal page "patch" %}class="is-active"{% endifequal %}>
       <a title="Patches" href="patches">Patches</a>
     </li>
     {% endif %}
 
     {% if display.request %}
-    <li {% ifequal watch "request" %}class="is-active"{% endifequal %}>
+    <li {% ifequal page "request" %}class="is-active"{% endifequal %}>
       <a title="Requests" href="requests">Requests</a>
     </li>
     {% endif %}
 
     {% if display.overview %}
-    <li {% ifequal watch "overview" %}class="is-active"{% endifequal %}>
+    <li {% ifequal page "overview" %}class="is-active"{% endifequal %}>
       <a title="Overview" href="overview">Overview</a>
     </li>
     {% endif %}

@@ -31,11 +31,30 @@
   "~bzg/wooff2@lists.sr.ht" {:slug "wooff2"}
   }
 
- :watch {:news     #{:change :release :announcement}
-         :bug      true
-         :patch    true
-         :request  true
-         :overview true}
+ :watch {:change       {:subject  ["CHANGE"]
+                        :doc      ""
+                        :triggers {:closed ["Canceled"]}}
+         :release      {:subject  ["RELEASE"]
+                        :doc      ""
+                        :triggers {:closed ["Canceled"]}}
+         :announcement {:subject  ["ANN"]
+                        :doc      ""
+                        :triggers {:closed ["Canceled"]}}
+         :bug          {:subject  ["BUG"]
+                        :doc      ""
+                        :triggers {:acked  ["Confirmed"]
+                                   :owned  ["Handled"]
+                                   :closed ["Fixed" "Canceled"]}}
+         :patch        {:subject  ["PATCH"]
+                        :doc      ""
+                        :triggers {:acked  ["Approved" "Reviewed"]
+                                   :owned  ["Handled"]
+                                   :closed ["Applied" "Canceled"]}}
+         :request      {:subject  ["FP" "FR" "TODO"]
+                        :doc      ""
+                        :triggers {:acked  ["Approved"]
+                                   :owned  ["Handled"]
+                                   :closed ["Done" "Canceled"]}}}
 
  ;; Default application state
  :defaults
@@ -48,16 +67,7 @@
  :admin-address  "bzg@bzg.fr"
  :admin-username "Big Bad Woof"
 
- :reports {:bug          #{:confirmed :canceled :fixed}
-           :patch        #{:approved :canceled :applied}
-           ;; FIXME: Allow to approve requests and announcements
-           :request      #{:handled :canceled :done}
-           :announcement #{:canceled}
-           :change       #{:canceled}
-           :release      #{:canceled}}
-
  :admin-report-words
- ;; FIXME: add i18n
  {;; Contributors actions
   :notifications        "Notifications"
   :home                 "Home"
@@ -71,7 +81,6 @@
   :remove-admin         "Remove admin"
   :remove-maintainer    "Remove maintainer"
   :maintenance          "Maintenance"
-  :set-theme            "Set theme"
   :undelete             "Undelete"
   :unignore             "Unignore"
   :global-notifications "Global notifications"
@@ -90,28 +99,13 @@
                              :json true
                              :org  true
                              :md   true}
-      :show                 {:overview true
-                             :news
+      :show                 {:news
                              #{:unreleased-changes :releases :latest-released-changes :announcements}
                              :bug
                              #{:unconfirmed-bugs :confirmed-bugs :owned-bugs}
                              :patch
                              #{:unapproved-patches :approved-patches :owned-patches}
                              :request
-                             #{:unapproved-requests :approved-requests :owned-requests}}}
-
- :action-words {:patch        ["PATCH"]
-                :bug          ["BUG"]
-                :request      ["FP" "FR" "TODO"]
-                :announcement ["ANN"]
-                :change       ["CHANGE"]
-                :release      ["RELEASE"]}
-
- :report-words {:applied   "Applied"
-                :approved  "Approved"
-                :canceled  "Canceled"
-                :confirmed "Confirmed"
-                :done      "Done"
-                :fixed     "Fixed"
-                :handled   "Handled"}
+                             #{:unapproved-requests :approved-requests :owned-requests}
+                             :overview true}}
  }

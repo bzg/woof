@@ -20,13 +20,13 @@
       </div>
       {% else %}
 
-      {% include "html/default/tabs.html" with watch %}
+      {% include "html/default/tabs.html" with page %}
 
       <section class="section" style="padding: 0rem .5rem 1.5rem .5rem">
 	<div class="container">
 
       {% ifequal entries|count 0 %}
-      <h1 id="entries" class="title is-size-4">No {{watch}}.</h1>
+      <h1 id="entries" class="title is-size-4">No {{page}}.</h1>
       {% else %}
       <h1 id="entries" class="title is-size-4">
 	<span>
