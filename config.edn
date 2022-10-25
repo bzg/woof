@@ -33,25 +33,31 @@
 
  ;; FIXME: Update test config
  :watch {:change       {:subject-prefix ["CHANGE"]
+                        :subject-match  []
                         :doc            ""
                         :triggers       {:closed ["Canceled"]}}
          :release      {:subject-prefix ["RELEASE"]
+                        :subject-match  []
                         :doc            ""
                         :triggers       {:closed ["Canceled"]}}
          :announcement {:subject-prefix ["ANN"]
+                        :subject-match  []
                         :doc            ""
                         :triggers       {:closed ["Canceled"]}}
          :bug          {:subject-prefix ["BUG"]
+                        :subject-match  []
                         :doc            ""
                         :triggers       {:acked  ["Confirmed"]
                                          :owned  ["Handled"]
                                          :closed ["Fixed" "Canceled"]}}
          :patch        {:subject-prefix ["PATCH"]
+                        :subject-match  []
                         :doc            ""
                         :triggers       {:acked  ["Approved" "Reviewed"]
                                          :owned  ["Handled"]
                                          :closed ["Applied" "Canceled"]}}
          :request      {:subject-prefix ["FP" "FR" "TODO"]
+                        :subject-match  []
                         :doc            ""
                         :triggers       {:acked  ["Approved"]
                                          :owned  ["Handled"]

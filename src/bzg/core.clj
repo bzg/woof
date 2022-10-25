@@ -26,25 +26,25 @@
 ;; Utility functions
 
 (def action-re
-  (let [subject-prefix #(:subject-prefix (% (:watch db/config)))]
-    {:patch        (re-pattern
-                    (format "^\\[(?:%s)(?: [^\\s]+)?(?: [0-9]+/[0-9]+)?\\].*$"
-                            (string/join "|" (subject-prefix :patch))))
-     :bug          (re-pattern
-                    (format "^\\[(?:%s)\\].*$"
-                            (string/join "|" (subject-prefix :bug))))
-     :request      (re-pattern
-                    (format "^\\[(?:%s)\\].*$"
-                            (string/join "|" (subject-prefix :request))))
-     :announcement (re-pattern
-                    (format "^\\[(?:%s)\\].*$"
-                            (string/join "|" (subject-prefix :announcement))))
-     :change       (re-pattern
-                    (format "^\\[(?:%s)\\s+([^]]+)\\].*$"
-                            (string/join "|" (subject-prefix :change))))
-     :release      (re-pattern
-                    (format "^\\[(?:%s)\\s+([^]]+)\\].*$"
-                            (string/join "|" (subject-prefix :release))))}))
+  (let [watch            (:watch db/config)
+        subject-prefix   #(:subject-prefix (% watch))
+        subject-match    #(:subject-match (% watch))
+        build-pattern    #(re-pattern
+                           (str (format %1 (string/join "|" (subject-prefix %3)))
+                                (when-let [match (seq (subject-match %3))]
+                                  (str "|" (string/join "|" match)))))
+        prefix-re        "(?:^\\[(?:%s)\\])"
+        change-prefix-re "(?:^\\[(?:%s)\\s+([^]]+)\\])"
+        any-re           ".*%s.*"]
+    {:patch        (build-pattern
+                    "(?:^\\[(?:%s)(?: [^\\s]+)?(?: [0-9]+/[0-9]+)?\\])"
+                    any-re
+                    :patch)
+     :bug          (build-pattern prefix-re any-re :bug)
+     :request      (build-pattern prefix-re any-re :request)
+     :announcement (build-pattern prefix-re any-re :announcement)
+     :change       (build-pattern change-prefix-re any-re :change)
+     :release      (build-pattern change-prefix-re any-re :release)}))
 
 (def action-prefixes
   (flatten (map :subject-prefix (vals (:watch db/config)))))
@@ -380,18 +380,18 @@
   (condp = what
     :patch        (or
                    ;; New patches with a subject starting with "[PATCH"
-                   (re-matches (:patch action-re) (:subject msg))
+                   (re-find (:patch action-re) (:subject msg))
                    ;; New patches with a text/x-diff or text/x-patch MIME part
                    (and (:multipart? msg)
                         (not-empty
                          (filter #(re-matches #"^text/x-(diff|patch).*" %)
                                  (map :content-type (:body msg))))))
-    :bug          (re-matches (:bug action-re) (:subject msg))
-    :request      (re-matches (:request action-re) (:subject msg))
-    :announcement (re-matches (:announcement action-re) (:subject msg))
-    :change       (when-let [m (re-matches (:change action-re) (:subject msg))]
+    :bug          (re-find (:bug action-re) (:subject msg))
+    :request      (re-find (:request action-re) (:subject msg))
+    :announcement (re-find (:announcement action-re) (:subject msg))
+    :change       (when-let [m (re-find (:change action-re) (:subject msg))]
                     (peek m))
-    :release      (when-let [m (re-matches (:release action-re) (:subject msg))]
+    :release      (when-let [m (re-find (:release action-re) (:subject msg))]
                     (peek m))))
 
 (defn- add-admin! [cmd-val from]
