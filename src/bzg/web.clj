@@ -80,12 +80,10 @@
 
 (defn- page-overview [_ list-id _ _ config-defaults]
   (with-html-defaults config-defaults
-    {:list-id                            list-id
-     :page                               "overview"
-     :overview-bug-contributors          (fetch/overview-bug-contributors list-id)
-     :overview-patch-contributors        (fetch/overview-patch-contributors list-id)
-     :overview-request-contributors      (fetch/overview-request-contributors list-id)
-     :overview-announcement-contributors (fetch/overview-announcement-contributors list-id)}))
+    {:list-id list-id
+     :page    "overview"
+     ;; TODO: Implement overview features here
+     }))
 
 (defn- get-page [page {:keys [query-params path-params uri]}]
   (let [format-params   {:search     (or (get query-params "search") "")

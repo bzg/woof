@@ -130,8 +130,8 @@ future emails.  When plugging Woof! to a mailing list, first consider
 moderating users instead of ignoring them.
 
 =Add/Remove= commands and =(Un)Delete/(Un)Ignore= commands accept several
-arguments: you can use =Add feature: bug overview= to add both the "bug"
-and "overview" features, or =Ignore: user1@woof.io user2@woof.io= to
+arguments: you can use =Add feature: bug change= to add both the "bug"
+and "change" features, or =Ignore: user1@woof.io user2@woof.io= to
 ignore future messages from these users.
 
 * Maintainers
