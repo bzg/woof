@@ -25,9 +25,9 @@
  :sources
  {"~bzg/wooff@lists.sr.ht"
   {:slug "wooff"
-   :ui   {:title          "Liste ~bzg/wooff"
-          :project-name   "Wooff"
-          :export-formats {:rss true}}}
+   :ui   {:title        "Liste ~bzg/wooff"
+          :project-name "Wooff"
+          :data-formats {:rss true}}}
   "~bzg/wooff2@lists.sr.ht" {:slug "wooff2"}
   }
 
@@ -96,7 +96,7 @@
       :support-url          "https://localhost:3000"
       :support-cta          "Donate"
       :support-cta-email    "Please support us with a donation"
-      :export-formats       {:rss  true
+      :data-formats         {:rss  true
                              :json true
                              :org  true
                              :md   true}

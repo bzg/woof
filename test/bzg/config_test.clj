@@ -39,7 +39,7 @@
 (spec/def ::watch map?) ;; TODO
 (spec/def ::show map?) ;; TODO
 (spec/def ::display-max map?) ;; TODO
-(spec/def ::export-formats map?) ;; TODO
+(spec/def ::data-formats map?) ;; TODO
 
 (spec/def ::defaults
   (spec/keys
@@ -105,7 +105,7 @@
             ::sources]
    :opt-un [::archived-list-message-format
             ::defaults
-            ::export-formats]))
+            ::data-formats]))
 
 (deftest configuration
   (testing "Testing configuration"
