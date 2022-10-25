@@ -98,9 +98,15 @@
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn unfixed-bugs [& [list-id search]]
+(defn unclosed-bugs [& [list-id search]]
   (->> (reports {:list-id list-id :search (or search "") :report-type :bug})
        (remove :closed)
+       (map :bug)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn effective-bugs [& [list-id search]]
+  (->> (reports {:list-id list-id :search (or search "") :report-type :bug})
+       (filter :effective)
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 

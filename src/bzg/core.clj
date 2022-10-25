@@ -601,16 +601,24 @@
 ;;               :ack-op)
 ;;         (timbre/info "Skipping email ack for admin or maintainer")))))
 
-(defn- report! [{:keys [report-type report-eid version] :as report}]
+(defn- report! [{:keys [report-type status-trigger report-eid version] :as report}]
   (let [;; If there is a status, add or update a report
         status               (some #{:acked :owned :closed
-                                     :unacked :unowned :unclosed} (keys report))
+                                  :unacked :unowned :unclosed} (keys report))
         status-name          (and status (name status))
         status-report-eid    (and status (status report))
         from                 (or (:from (d/entity db/db report-eid))
-                                 (:from (d/entity db/db status-report-eid)))
+                              (:from (d/entity db/db status-report-eid)))
         username             (or (:username (d/entity db/db report-eid))
-                                 (:username (d/entity db/db status-report-eid)))
+                              (:username (d/entity db/db status-report-eid)))
+        effective?           (let [closed-statuses
+                                   ;; First closed status indicates an
+                                   ;; "effective" report (e.g. Fixed,
+                                   ;; Applied, Done.)
+                                   (-> db/config :watch report-type :triggers :closed)]
+                            (when (and status status-trigger (< 1 (count closed-statuses)))
+                              (true? (= status-trigger
+                                        (first closed-statuses)))))
         admin-or-maintainer? (when-let [person (d/entity db/db [:email from])]
                                (or (:admin person) (:maintainer person)))]
     ;; Possibly add a new person
@@ -622,7 +630,10 @@
         (d/transact! db/conn [[:db/retract [report-type report-eid]
                                (keyword (string/replace status-name #"^un" ""))]])
         ;; Status is a positive statement, set it to true
-        (d/transact! db/conn [{:db/id report-eid status status-report-eid}]))
+        (d/transact! db/conn [{:db/id     report-eid
+                               status     status-report-eid
+                               :effective effective?
+                               }]))
       ;; This is a change or a or a release
       (if (and admin-or-maintainer? version)
         (d/transact! db/conn [{report-type report-eid :version version}])
@@ -680,12 +691,12 @@
 
       (or
        ;; Detect a new bug/patch/request
-       (let [done (atom false)]
+       (let [done (atom nil)]
          (doseq [w      [:patch :bug :request]
-                 :while (false? @done)]
+                 :while (nil? @done)]
            (when (and (w watched) (new? w list-id msg))
-             (report! {:report-type w :report-eid (add-mail! msg)})
-             (swap! done false?))))
+             (reset! done (report! {:report-type w :report-eid (add-mail! msg)}))))
+         @done)
        ;; Or detect new release/change/announcement by a maintainer
        (when (some maintainers (list from))
          (or
@@ -710,7 +721,7 @@
                           :version     version})
                 (release-changes! list-id version release-report-eid))))))
 
-       ;; Or an admin command or new actions against known reports
+       ;; Or a command or new actions against known reports
        (let [body-parts
              (if (:multipart? msg) (:body msg) (list (:body msg)))
              body-seq
@@ -746,25 +757,34 @@
 
              (or
               ;; New action against a known patch/bug/request
-              (doseq [w [:patch :bug :request]]
-                (when (w watched)
-                  (when-let [{:keys [upstream-report-eid status priority]}
-                             (is-report-update? w body-report references)]
-                    (report! {:report-type w
-                              :report-eid  upstream-report-eid
-                              status       (add-mail! msg)
-                              :priority    priority}))))
+              (let [done (atom nil)]
+                (doseq [w      [:patch :bug :request]
+                        :while (nil? @done)]
+                  (when (w watched)
+                    (when-let [{:keys [upstream-report-eid status priority]}
+                               (is-report-update? w body-report references)]
+                      (reset! done
+                              (report! {:report-type    w
+                                        :report-eid     upstream-report-eid
+                                        :status-trigger body-report
+                                        status          (add-mail! msg)
+                                        :priority       priority})))))
+                @done)
 
               ;; Or an action against existing changes/releases by a maintainer
               (if (some maintainers (list from))
-                (doseq [w [:change :release :announcement]]
-                  (when (w (:announcement watched))
-                    (when-let [{:keys [upstream-report-eid status priority]}
-                               (is-report-update? w body-report references)]
-                      (report! {:report-type w
-                                :report-eid  upstream-report-eid
-                                status       (add-mail! msg)
-                                :priority    priority}))))
+                (let [done (atom nil)]
+                  (doseq [w      [:change :release :announcement]
+                          :while (nil? @done)]
+                    (when (w (:announcement watched))
+                      (when-let [{:keys [upstream-report-eid status priority]}
+                                 (is-report-update? w body-report references)]
+                        (reset! done
+                                (report! {:report-type    w
+                                          :report-eid     upstream-report-eid
+                                          :status-trigger body-report
+                                          status          (add-mail! msg)
+                                          :priority       priority}))))))
                 (timbre/warn
                  (format
                   "%s tried to update a change or a release while not a maintainer"

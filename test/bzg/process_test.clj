@@ -30,6 +30,9 @@
 (defn- read-mail [f] (mail/file->message (str "test-mails/" f)))
 (def bug1 (read-mail "bug1"))
 (def bug1-confirmed (read-mail "bug1-confirmed"))
+(def bug1-fixed (read-mail "bug1-fixed"))
+(def bug2 (read-mail "bug2"))
+(def bug2-canceled (read-mail "bug2-canceled"))
 (def patch1 (read-mail "patch1"))
 (def patch1-approved (read-mail "patch1-approved"))
 (def request1 (read-mail "request1"))
@@ -42,11 +45,26 @@
     (is (not-empty (fetch/admins))))
   (testing "Adding bug1"
     (do (core/read-and-process-mail (list bug1))
-        (is (= 1 (count (fetch/unconfirmed-bugs "test@list.io"))))))
+        (is (= 1 (count (fetch/unconfirmed-bugs "test@list.io"))))
+        (is (= 1 (count (fetch/unclosed-bugs "test@list.io"))))))
+  (testing "Adding bug2"
+    (do (core/read-and-process-mail (list bug2))
+        (is (= 2 (count (fetch/unconfirmed-bugs "test@list.io"))))
+        (is (= 2 (count (fetch/unclosed-bugs "test@list.io"))))))
   (testing "Confirming bug1"
     (do (core/read-and-process-mail (list bug1-confirmed))
-        (is (empty? (fetch/unconfirmed-bugs "test@list.io")))
-        (is (= 1 (count (fetch/confirmed-bugs "test@list.io"))))))
+        (is (= 1 (count (fetch/unconfirmed-bugs "test@list.io"))))
+        (is (= 2 (count (fetch/unclosed-bugs "test@list.io"))))))
+  (testing "Canceling bug2"
+    (do (core/read-and-process-mail (list bug2-canceled))
+        (is (= 0 (count (fetch/unconfirmed-bugs "test@list.io"))))
+        (is (= 1 (count (fetch/unclosed-bugs "test@list.io"))))))
+  (testing "Effective bug reports"
+    (is (= 0 (count (fetch/effective-bugs "test@list.io")))))
+  (testing "Fixing bug1"
+    (do (core/read-and-process-mail (list bug1-fixed))
+        (is (= 0 (count (fetch/unclosed-bugs "test@list.io"))))
+        (is (= 1 (count (fetch/effective-bugs "test@list.io"))))))
   (testing "Adding a patch"
     (do (core/read-and-process-mail (list patch1))
         (is (= 1 (count (fetch/unapproved-patches "test@list.io"))))))
