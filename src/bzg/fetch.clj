@@ -23,8 +23,7 @@
              (remove :canceled)
              (filter #(re-find (re-pattern (or search ""))
                                (:subject (report-type %))))
-             (take (or (-> (d/entity db/db [:defaults "init"]) :display-max report-type)
-                       100)))]
+             (take (or (-> db/config :watch report-type :display-max) 100)))]
     (if as-mail
       (->> reports
            (map report-type)

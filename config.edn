@@ -44,7 +44,8 @@
          :announcement {:subject-prefix ["ANN"]
                         :subject-match  []
                         :doc            ""
-                        :triggers       {:closed ["Canceled"]}}
+                        :triggers       {:closed ["Canceled"]}
+                        :display-max    20}
          :bug          {:subject-prefix ["BUG"]
                         :subject-match  []
                         :doc            ""
