@@ -17,3 +17,4 @@ log.txt
 .clj-kondo/
 .db/
 .dir-locals.el
+test-log.txt
