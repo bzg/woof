@@ -114,5 +114,5 @@
                              #{:unapproved-patches :approved-patches :owned-patches}
                              :request
                              #{:unapproved-requests :approved-requests :owned-requests}
-                             :overview true}}
+                             :overview false}}
  }
