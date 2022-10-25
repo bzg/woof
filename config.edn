@@ -14,13 +14,13 @@
  :inbox-folder   #env WOOF_INBOX_FOLDER
 
  ;; General information on the application
- :hostname "localhost" ;; Default to locahost
+ :hostname #or [#env WOOF_HOSTNAME "localhost"]
  :port     #long #or [#env WOOF_PORT 3000]
+
  :db-dir   ".db"
  :log-file "log.txt"
  :theme    "default"
-
- :log [:db :file :mail]
+ :log      [:db :file :mail]
 
  :sources
  {"~bzg/wooff@lists.sr.ht"
@@ -31,30 +31,31 @@
   "~bzg/wooff2@lists.sr.ht" {:slug "wooff2"}
   }
 
- :watch {:change       {:subject  ["CHANGE"]
-                        :doc      ""
-                        :triggers {:closed ["Canceled"]}}
-         :release      {:subject  ["RELEASE"]
-                        :doc      ""
-                        :triggers {:closed ["Canceled"]}}
-         :announcement {:subject  ["ANN"]
-                        :doc      ""
-                        :triggers {:closed ["Canceled"]}}
-         :bug          {:subject  ["BUG"]
-                        :doc      ""
-                        :triggers {:acked  ["Confirmed"]
-                                   :owned  ["Handled"]
-                                   :closed ["Fixed" "Canceled"]}}
-         :patch        {:subject  ["PATCH"]
-                        :doc      ""
-                        :triggers {:acked  ["Approved" "Reviewed"]
-                                   :owned  ["Handled"]
-                                   :closed ["Applied" "Canceled"]}}
-         :request      {:subject  ["FP" "FR" "TODO"]
-                        :doc      ""
-                        :triggers {:acked  ["Approved"]
-                                   :owned  ["Handled"]
-                                   :closed ["Done" "Canceled"]}}}
+ ;; FIXME: Update test config
+ :watch {:change       {:subject-prefix ["CHANGE"]
+                        :doc            ""
+                        :triggers       {:closed ["Canceled"]}}
+         :release      {:subject-prefix ["RELEASE"]
+                        :doc            ""
+                        :triggers       {:closed ["Canceled"]}}
+         :announcement {:subject-prefix ["ANN"]
+                        :doc            ""
+                        :triggers       {:closed ["Canceled"]}}
+         :bug          {:subject-prefix ["BUG"]
+                        :doc            ""
+                        :triggers       {:acked  ["Confirmed"]
+                                         :owned  ["Handled"]
+                                         :closed ["Fixed" "Canceled"]}}
+         :patch        {:subject-prefix ["PATCH"]
+                        :doc            ""
+                        :triggers       {:acked  ["Approved" "Reviewed"]
+                                         :owned  ["Handled"]
+                                         :closed ["Applied" "Canceled"]}}
+         :request      {:subject-prefix ["FP" "FR" "TODO"]
+                        :doc            ""
+                        :triggers       {:acked  ["Approved"]
+                                         :owned  ["Handled"]
+                                         :closed ["Done" "Canceled"]}}}
 
  ;; Default application state
  :defaults
@@ -64,8 +65,8 @@
  ;; :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
 
  ;; Default application admin
- :admin-address  "bzg@bzg.fr"
- :admin-username "Big Bad Woof"
+ :admin-address  "bzg@bzg.fr"   ;; Move to defaults?
+ :admin-username "Big Bad Woof" ;; Move to defaults?
 
  :admin-report-words
  {;; Contributors actions

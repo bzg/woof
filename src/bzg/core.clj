@@ -26,7 +26,7 @@
 ;; Utility functions
 
 (def action-re
-  (let [subject-prefix #(:subject (% (:watch db/config)))]
+  (let [subject-prefix #(:subject-prefix (% (:watch db/config)))]
     {:patch        (re-pattern
                     (format "^\\[(?:%s)(?: [^\\s]+)?(?: [0-9]+/[0-9]+)?\\].*$"
                             (string/join "|" (subject-prefix :patch))))
@@ -47,7 +47,7 @@
                             (string/join "|" (subject-prefix :release))))}))
 
 (def action-prefixes
-  (flatten (map :subject (vals (:watch db/config)))))
+  (flatten (map :subject-prefix (vals (:watch db/config)))))
 
 (defn un-ify [l]
   (concat l (map #(str "Un" (string/lower-case %)) l)))
