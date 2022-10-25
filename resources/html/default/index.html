@@ -42,8 +42,8 @@
 	    <tr>
 	      <th class="has-text-centered" width="3%">I!I</th>
 	      <th>Subject</th>
-	      {% if not list-id %}
-	      {% if 1 < lists|length %}
+	      {% if not source %}
+	      {% if 1 < sources|length %}
 	      <th>Source</th>
 	      {% endif %}
 	      {% endif %}
@@ -74,9 +74,14 @@
 		{{entry.subject}}
 		{% endif %}
 	      </td>
-	      {% if not list-id %}
-	      {% if 1 < lists|length %}
-	      <td>{{entry.list-id}}</td>
+	      {% if not source %}
+	      {% if 1 < sources|length %}
+	      <td>
+		<a href="/source/{{entry.list-slug}}/"
+		   title="Display Woof! page for {entry.list-id}}">
+		  {{entry.list-slug}}
+		</a>
+	      </td>
 	      {% endif %}
 	      {% endif %}
 	      <td>

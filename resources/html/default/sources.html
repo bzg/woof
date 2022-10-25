@@ -15,11 +15,24 @@
       {% else %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
-	  <ul>
-	    {% for list in lists %}
-	    <li><a href="/source/{{list}}/">{{list}}</a></li>
-	    {% endfor %}
-	  </ul>	      
+	  <div class="table-container">
+	  <table class="table is-hoverable is-bordered is-fullwidth">
+	    <thead>
+	      <th>Link</th>
+	      <th>List</th>
+	      <th>Doc</th>
+	    </thead>
+	    <tbody>
+	      {% for source in sources %}
+	      <tr>
+		<td><a href="/source/{{source.slug}}/">{{source.slug}}</a></td>
+		<td><code>{{source.list-id}}</code></td>
+		<td>{{source.doc}}</td>
+	      </tr>
+	      {% endfor %}
+	    </tbody>
+	  </table>	      
+	  </div>
 	</div>
       </section>
       {% endif %}

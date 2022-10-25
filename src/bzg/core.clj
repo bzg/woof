@@ -97,10 +97,14 @@
       s
       (string/replace s #"^\[[^]]+\] " ""))))
 
-(defn slug-to-list-id [slug]
+(defn slug-to-list-id [^String slug]
   (when (not-empty slug)
     (key (first (filter #(= (:slug (val %)) slug)
                         (:sources db/config))))))
+
+(defn list-id-to-slug [^String list-id]
+  (when (not-empty list-id)
+    (-> db/config :sources (get list-id) :slug)))
 
 (defn archived-message [{:keys [list-id message-id archived-at]}]
   (if archived-at (trim-url-brackets archived-at)

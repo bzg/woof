@@ -4,7 +4,7 @@
     <h2 class="subtitle column is-8 is-offset-2 has-text-centered" style="margin-bottom:0;">
       <a title="Go the the main page" href="/">Home</a>
       — <a title="Go the project's homepage" href="{{project-url}}">{{project-name}}</a>
-      {% ifunequal lists|count 1 %}
+      {% ifunequal sources|count 1 %}
       — <a title="List the sources monitored by this Woof! instance" href="/sources">Sources</a>
       {% endifunequal %}
       {% if contribute-cta %}
@@ -16,6 +16,9 @@
       — <a href="howto" title="How to use Woof! to update this page?">Howto</a>
     </h2>
 
+    {% ifunequal page "sources" %}
+    {% ifunequal page "overview" %}
+    {% ifunequal page "howto" %}
     <div class="columns">
       <div class="column is-offset-4 is-4">
 	<div class="level">
@@ -31,5 +34,9 @@
 	</div>
       </div>
     </div>
+    {% endifunequal %}
+    {% endifunequal %}
+    {% endifunequal %}
+
   </div>
 </section>

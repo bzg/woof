@@ -25,6 +25,7 @@
  :sources
  {"~bzg/wooff@lists.sr.ht"
   {:slug "wooff"
+   :doc  "Allow to document source"
    :ui   {:title        "Liste ~bzg/wooff"
           :project-name "Wooff"
           :data-formats {:rss true}}}

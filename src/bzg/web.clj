@@ -52,31 +52,39 @@
 (defn- with-html-defaults [config-defaults {:keys [list-id] :as m}]
   (merge (html-defaults list-id)
          {:config config-defaults}
-         {:lists (map #(:slug (val %)) (:sources db/config))}
+         {:sources (map (fn [[k v]] {:list-id k :slug (:slug v)
+                                     :doc     (:doc v)})
+                        (:sources db/config))}
          m))
 
-(defn- page-sources [_ _ _ _ config-defaults]
-  (with-html-defaults config-defaults _))
+(defn- page-sources [_ list-id _ _ config-defaults]
+  (with-html-defaults config-defaults
+    {:page   "sources"
+     :source {:list-id list-id
+              :slug    (:slug (get (:sources db/config) list-id))}}))
 
 (defn- page-index [page list-id slug-end format-params config-defaults]
-  (let [search (:search format-params)]
+  (let [search (:search format-params)
+        source (when list-id
+                 {:list-id list-id
+                  :slug    (:slug (get (:sources db/config) list-id))})]
     (with-html-defaults config-defaults
-      {:list-id  list-id
+      {:source   source
        :search   search
        :page     (name page)
        :slug-end (or (not-empty slug-end) "news")
        :entries
        ;; FIXME: Confusing use of entries twice?
        (entries-format
-        (merge {:list-id list-id
-                :entries
-                (condp = page
-                  :news    (fetch/news list-id search)
-                  :bug     (fetch/bugs list-id search)
-                  :patch   (fetch/patches list-id search)
-                  :request (fetch/requests list-id search)
-                  ;; :mail    (fetch/mails list-id search)
-                  )}
+        (merge {:entries
+                (map #(assoc % :list-slug (core/list-id-to-slug (:list-id %)))
+                     (condp = page
+                       :news    (fetch/news list-id search)
+                       :bug     (fetch/bugs list-id search)
+                       :patch   (fetch/patches list-id search)
+                       :request (fetch/requests list-id search)
+                       ;; :mail    (fetch/mails list-id search)
+                       ))}
                format-params))})))
 
 (defn- page-overview [_ list-id _ _ config-defaults]
@@ -117,7 +125,8 @@
                 :body    (html/render-file
                           (str "html/" (:theme db/config) "/index.html")
                           (merge (html-defaults)
-                                 {:howto (md/md-to-html-string
+                                 {:page  "howto"
+                                  :howto (md/md-to-html-string
                                           (slurp (io/resource "md/howto.md")))}))})}]
       ["bugs"
        ["" {:get #(get-page :bug %)}]
