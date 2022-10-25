@@ -45,6 +45,7 @@
                (:ui source)
                {:display (or (:show (:ui source))
                              (:show (:ui db/config))
+                             (:watch source)
                              (:watch db/config))})
         (dissoc :show))))
 

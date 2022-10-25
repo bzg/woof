@@ -54,7 +54,8 @@
   (spec/keys
    :req-un [::slug]
    :opt-un [::archived-message-format
-            ::ui]))
+            ::ui
+            ::watch]))
 
 (spec/def ::sources
   (spec/map-of ::list-id ::list-config))

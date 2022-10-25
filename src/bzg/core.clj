@@ -25,8 +25,9 @@
 
 ;; Utility functions
 
-(def action-re
-  (let [watch            (:watch db/config)
+(defn- action-re [& [list-id]]
+  (let [watch            (or (:watch (get (:sources db/config) list-id))
+                             (:watch db/config))
         subject-prefix   #(:subject-prefix (% watch))
         subject-match    #(:subject-match (% watch))
         build-pattern    #(re-pattern
@@ -376,23 +377,24 @@
 
 ;;; Core functions to return db entries
 
-(defn- new? [what msg]
-  (condp = what
-    :patch        (or
-                   ;; New patches with a subject starting with "[PATCH"
-                   (re-find (:patch action-re) (:subject msg))
-                   ;; New patches with a text/x-diff or text/x-patch MIME part
-                   (and (:multipart? msg)
-                        (not-empty
-                         (filter #(re-matches #"^text/x-(diff|patch).*" %)
-                                 (map :content-type (:body msg))))))
-    :bug          (re-find (:bug action-re) (:subject msg))
-    :request      (re-find (:request action-re) (:subject msg))
-    :announcement (re-find (:announcement action-re) (:subject msg))
-    :change       (when-let [m (re-find (:change action-re) (:subject msg))]
-                    (peek m))
-    :release      (when-let [m (re-find (:release action-re) (:subject msg))]
-                    (peek m))))
+(defn- new? [what list-id msg]
+  (let [action-re (action-re list-id)]
+    (condp = what
+      :patch        (or
+                     ;; New patches with a subject starting with "[PATCH"
+                     (re-find (:patch action-re) (:subject msg))
+                     ;; New patches with a text/x-diff or text/x-patch MIME part
+                     (and (:multipart? msg)
+                          (not-empty
+                           (filter #(re-matches #"^text/x-(diff|patch).*" %)
+                                   (map :content-type (:body msg))))))
+      :bug          (re-find (:bug action-re) (:subject msg))
+      :request      (re-find (:request action-re) (:subject msg))
+      :announcement (re-find (:announcement action-re) (:subject msg))
+      :change       (when-let [m (re-find (:change action-re) (:subject msg))]
+                      (peek m))
+      :release      (when-let [m (re-find (:release action-re) (:subject msg))]
+                      (peek m)))))
 
 (defn- add-admin! [cmd-val from]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
@@ -677,18 +679,18 @@
        (let [done (atom false)]
          (doseq [w      [:patch :bug :request]
                  :while (false? @done)]
-           (when (and (w watched) (new? w msg))
+           (when (and (w watched) (new? w list-id msg))
              (report! {:report-type w :report-eid (add-mail! msg)})
              (swap! done false?))))
        ;; Or detect new release/change/announcement by a maintainer
        (when (some maintainers (list from))
          (or
           (when (:announcement watched)
-            (when (new? :announcement msg)
+            (when (new? :announcement list-id msg)
               (report! {:report-type :announcement
                         :report-eid  (add-mail! msg)})))
           (when (:change watched)
-            (when-let [version (new? :change msg)]
+            (when-let [version (new? :change list-id msg)]
               (if (some (fetch/released-versions list-id) (list version))
                 (timbre/error
                  (format "%s tried to announce a change against released version %s"
@@ -697,7 +699,7 @@
                           :report-eid  (add-mail! msg)
                           :version     version}))))
           (when (:release watched)
-            (when-let [version (new? :release msg)]
+            (when-let [version (new? :release list-id msg)]
               (let [release-report-eid (add-mail! msg)]
                 (report! {:report-type :release
                           :report-eid  release-report-eid
