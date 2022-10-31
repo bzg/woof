@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en" class="has-navbar-fixed-top">
+  {% include "html/default/head.html" %}
+  <body>
+    {% include "html/default/hero.html"%}
+    <div class="container">
+      {% safe %}
+      <div class="content">{{howto}}</div>
+      {% endsafe %}
+    </div>
+    {% include "html/default/footer.html" %}
+  </body>
+</html>

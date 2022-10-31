@@ -53,7 +53,7 @@
   (merge (html-defaults source-id)
          {:config config-defaults}
          {:sources (map (fn [[k v]] {:source-id k :slug (:slug v)
-                                     :doc     (:doc v)})
+                                     :doc       (:doc v)})
                         (:sources db/config))}
          m))
 
@@ -61,7 +61,7 @@
   (with-html-defaults config-defaults
     {:page   "sources"
      :source {:source-id source-id
-              :slug    (:slug (get (:sources db/config) source-id))}}))
+              :slug      (:slug (get (:sources db/config) source-id))}}))
 
 (defn- page-index [page source-id slug-end format-params config-defaults]
   (let [search (:search format-params)
@@ -94,12 +94,20 @@
      ;; TODO: Implement overview features here
      }))
 
+(defn- page-howto [_ source-id _ _ config-defaults]
+  (with-html-defaults config-defaults
+    {:source-id source-id
+     :page      "howto"
+     :howto     (md/md-to-html-string
+                 (slurp (io/resource "md/howto.md")))}))
+
 (defn- get-page [page {:keys [query-params path-params uri]}]
   (let [format-params   {:search     (or (get query-params "search") "")
                          :sorting-by (get query-params "sorting-by")}
         config-defaults (into {} (d/entity db/db [:defaults "init"]))
         html-page       (condp = page
                           :sources  {:html "/sources.html" :fn page-sources}
+                          :howto    {:html "/howto.html" :fn page-howto}
                           :overview {:html "/overview.html" :fn page-overview}
                           {:html "/index.html" :fn page-index})
         slug-end        (peek (re-find #"/([^/]+)$" (or uri "")))
@@ -118,16 +126,8 @@
       ["" {:get #(get-page :news %)}]
       ["news:format" {:get #(data/get-news-data %)}]
       ["sources" {:get #(get-page :sources %)}]
-      ["howto"
-       {:get (fn [_]
-               {:status  200
-                :headers {"Content-Type" "text/html"}
-                :body    (html/render-file
-                          (str "html/" (:theme db/config) "/index.html")
-                          (merge (html-defaults)
-                                 {:page  "howto"
-                                  :howto (md/md-to-html-string
-                                          (slurp (io/resource "md/howto.md")))}))})}]
+      ["howto" {:get #(get-page :howto %)}]
+      ["overview" {:get #(get-page :overview %)}]
       ["bugs"
        ["" {:get #(get-page :bug %)}]
        [":format" {:get #(data/get-bugs-data %)}]]
@@ -140,12 +140,12 @@
       ["mails"
        ["" {:get #(get-page :mail %)}]
        [":format" {:get #(data/get-mails-data %)}]]
-      ["overview"
-       ["" {:get #(get-page :overview %)}]]
       ;; List per source
       ["source/:source-slug/"
        ["" {:get #(get-page :news %)}]
        ["news:format" {:get #(data/get-news-data %)}]
+       ["howto" {:get #(get-page :howto %)}]
+       ["overview" {:get #(get-page :overview %)}]
        ["bugs"
         ["" {:get #(get-page :bug %)}]
         [":format" {:get #(data/get-bugs-data %)}]]
@@ -157,9 +157,7 @@
         [":format" {:get #(data/get-requests-data %)}]]
        ["mails"
         ["" {:get #(get-page :mail %)}]
-        [":format" {:get #(data/get-mails-data %)}]]
-       ["overview"
-        ["" {:get #(get-page :overview %)}]]]]]
+        [":format" {:get #(data/get-mails-data %)}]]]]]
     {:data {:middleware [params/wrap-params]}})
    (ring/create-default-handler
     {:not-found
