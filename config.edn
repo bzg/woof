@@ -28,6 +28,7 @@
    :doc  "Allow to document source"
    :ui   {:title        "Liste ~bzg/wooff"
           :project-name "Wooff"
+          :project-url "https://bzg.fr"
           :data-formats {:rss true}}}
   "~bzg/wooff2@lists.sr.ht" {:slug "wooff2"}
   }
