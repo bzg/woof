@@ -49,8 +49,8 @@
                              (:watch db/config))})
         (dissoc :show))))
 
-(defn- with-html-defaults [config-defaults {:keys [source-id] :as m}]
-  (merge (html-defaults source-id)
+(defn- with-html-defaults [config-defaults {:keys [source] :as m}]
+  (merge (html-defaults (:source-id source))
          {:config config-defaults}
          {:sources (map (fn [[k v]] {:source-id k :slug (:slug v)
                                      :doc       (:doc v)})
@@ -89,16 +89,20 @@
 
 (defn- page-overview [_ source-id _ _ config-defaults]
   (with-html-defaults config-defaults
-    {:source-id source-id
-     :page      "overview"
+    {:source (when source-id
+               {:source-id source-id
+                :slug      (:slug (get (:sources db/config) source-id))})
+     :page   "overview"
      ;; TODO: Implement overview features here
      }))
 
 (defn- page-howto [_ source-id _ _ config-defaults]
   (with-html-defaults config-defaults
-    {:source-id source-id
-     :page      "howto"
-     :howto     (md/md-to-html-string
+    {:source (when source-id
+               {:source-id source-id
+                :slug      (:slug (get (:sources db/config) source-id))})
+     :page   "howto"
+     :howto  (md/md-to-html-string
                  (slurp (io/resource "md/howto.md")))}))
 
 (defn- get-page [page {:keys [query-params path-params uri]}]
