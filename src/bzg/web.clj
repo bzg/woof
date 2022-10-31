@@ -22,9 +22,9 @@
 
 (selmer/add-filter! :e-pluralize #(when (> (count %) 1) "es"))
 
-(defn- entries-format [{:keys [list-id entries sorting-by]}]
+(defn- entries-format [{:keys [source-id entries sorting-by]}]
   (let [message-format
-        (not-empty (core/archived-message {:list-id list-id}))
+        (not-empty (core/archived-message {:source-id source-id}))
         linkify-maybe
         (cond
           message-format
@@ -39,8 +39,8 @@
      (remove nil?)
      (map linkify-maybe))))
 
-(defn- html-defaults [& [list-id]]
-  (let [source (get (:sources db/config) list-id)]
+(defn- html-defaults [& [source-id]]
+  (let [source (get (:sources db/config) source-id)]
     (-> (merge (:ui db/config)
                (:ui source)
                {:display (or (:show (:ui source))
@@ -49,25 +49,25 @@
                              (:watch db/config))})
         (dissoc :show))))
 
-(defn- with-html-defaults [config-defaults {:keys [list-id] :as m}]
-  (merge (html-defaults list-id)
+(defn- with-html-defaults [config-defaults {:keys [source-id] :as m}]
+  (merge (html-defaults source-id)
          {:config config-defaults}
-         {:sources (map (fn [[k v]] {:list-id k :slug (:slug v)
+         {:sources (map (fn [[k v]] {:source-id k :slug (:slug v)
                                      :doc     (:doc v)})
                         (:sources db/config))}
          m))
 
-(defn- page-sources [_ list-id _ _ config-defaults]
+(defn- page-sources [_ source-id _ _ config-defaults]
   (with-html-defaults config-defaults
     {:page   "sources"
-     :source {:list-id list-id
-              :slug    (:slug (get (:sources db/config) list-id))}}))
+     :source {:source-id source-id
+              :slug    (:slug (get (:sources db/config) source-id))}}))
 
-(defn- page-index [page list-id slug-end format-params config-defaults]
+(defn- page-index [page source-id slug-end format-params config-defaults]
   (let [search (:search format-params)
-        source (when list-id
-                 {:list-id list-id
-                  :slug    (:slug (get (:sources db/config) list-id))})]
+        source (when source-id
+                 {:source-id source-id
+                  :slug      (:slug (get (:sources db/config) source-id))})]
     (with-html-defaults config-defaults
       {:source   source
        :search   search
@@ -77,20 +77,20 @@
        ;; FIXME: Confusing use of entries twice?
        (entries-format
         (merge {:entries
-                (map #(assoc % :list-slug (core/list-id-to-slug (:list-id %)))
+                (map #(assoc % :source-slug (core/source-id-to-slug (:source-id %)))
                      (condp = page
-                       :news    (fetch/news list-id search)
-                       :bug     (fetch/bugs list-id search)
-                       :patch   (fetch/patches list-id search)
-                       :request (fetch/requests list-id search)
-                       ;; :mail    (fetch/mails list-id search)
+                       :news    (fetch/news source-id search)
+                       :bug     (fetch/bugs source-id search)
+                       :patch   (fetch/patches source-id search)
+                       :request (fetch/requests source-id search)
+                       ;; :mail    (fetch/mails source-id search)
                        ))}
                format-params))})))
 
-(defn- page-overview [_ list-id _ _ config-defaults]
+(defn- page-overview [_ source-id _ _ config-defaults]
   (with-html-defaults config-defaults
-    {:list-id list-id
-     :page    "overview"
+    {:source-id source-id
+     :page      "overview"
      ;; TODO: Implement overview features here
      }))
 
@@ -103,13 +103,13 @@
                           :overview {:html "/overview.html" :fn page-overview}
                           {:html "/index.html" :fn page-index})
         slug-end        (peek (re-find #"/([^/]+)$" (or uri "")))
-        list-id         (core/slug-to-list-id (:list-slug path-params))]
+        source-id       (core/slug-to-source-id (:source-slug path-params))]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
       (io/resource (str "html/" (:theme db/config) (:html html-page)))
-      ((:fn html-page) page list-id slug-end format-params config-defaults))}))
+      ((:fn html-page) page source-id slug-end format-params config-defaults))}))
 
 (def handler
   (ring/ring-handler
@@ -143,7 +143,7 @@
       ["overview"
        ["" {:get #(get-page :overview %)}]]
       ;; List per source
-      ["source/:list-slug/"
+      ["source/:source-slug/"
        ["" {:get #(get-page :news %)}]
        ["news:format" {:get #(data/get-news-data %)}]
        ["bugs"

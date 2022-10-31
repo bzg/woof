@@ -49,7 +49,7 @@
 (spec/def ::address string?)
 (spec/def ::slug string?)
 
-(spec/def ::list-id string?)
+(spec/def ::source-id string?)
 (spec/def ::list-config
   (spec/keys
    :req-un [::slug]
@@ -58,7 +58,7 @@
             ::watch]))
 
 (spec/def ::sources
-  (spec/map-of ::list-id ::list-config))
+  (spec/map-of ::source-id ::list-config))
 
 (spec/def ::title (spec/nilable string?))
 (spec/def ::project-name (spec/nilable string?))

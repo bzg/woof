@@ -25,8 +25,8 @@
 
 ;; Utility functions
 
-(defn- action-re [& [list-id]]
-  (let [watch            (or (:watch (get (:sources db/config) list-id))
+(defn- action-re [& [source-id]]
+  (let [watch            (or (:watch (get (:sources db/config) source-id))
                              (:watch db/config))
         subject-prefix   #(:subject-prefix (% watch))
         subject-match    #(:subject-match (% watch))
@@ -97,23 +97,23 @@
       s
       (string/replace s #"^\[[^]]+\] " ""))))
 
-(defn slug-to-list-id [^String slug]
+(defn slug-to-source-id [^String slug]
   (when (not-empty slug)
     (key (first (filter #(= (:slug (val %)) slug)
                         (:sources db/config))))))
 
-(defn list-id-to-slug [^String list-id]
-  (when (not-empty list-id)
-    (-> db/config :sources (get list-id) :slug)))
+(defn source-id-to-slug [^String source-id]
+  (when (not-empty source-id)
+    (-> db/config :sources (get source-id) :slug)))
 
-(defn archived-message [{:keys [list-id message-id archived-at]}]
+(defn archived-message [{:keys [source-id message-id archived-at]}]
   (if archived-at (trim-url-brackets archived-at)
       (if-let [fmt (not-empty
                     (:archived-message-format
-                     (get (:sources db/config) list-id)))]
+                     (get (:sources db/config) source-id)))]
         (format fmt message-id)
         (if-let [fmt (:archived-list-message-format db/config)]
-          (format fmt list-id message-id)
+          (format fmt source-id message-id)
           ""))))
 
 (def email-re #"[^<@\s;,]+@[^>@\s;,]+")
@@ -122,7 +122,7 @@
   (re-find email-re (string/replace s #"mailto:" "")))
 
 ;; (defn format-email-notification
-;;   [{:keys [notification-type from id list-id
+;;   [{:keys [notification-type from id source-id
 ;;            action-string status-string]}]
 ;;   (str
 ;;    (condp = notification-type
@@ -145,7 +145,7 @@
 
 ;;    (when-let [archived-at
 ;;               (not-empty (archived-message
-;;                           {:list-id list-id :message-id id}))]
+;;                           {:source-id source-id :message-id id}))]
 ;;      (format "You can find your email here:\n%s\n\n" archived-at))
 
 ;;    (when-let [contribute-url (not-empty (:contribute-url db/config))]
@@ -167,16 +167,16 @@
   (let [{:keys [List-Post X-BeenThere References Archived-At]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         id          (true-id id)
-        list-id     (when-let [lid (or List-Post X-BeenThere)]
-                      (true-email-address lid))
+        source-id   (when-let [sid (or List-Post X-BeenThere)]
+                      (true-email-address sid))
         refs-string References
         refs        (if refs-string
                       (into #{} (string/split refs-string #"\s")) #{})]
     ;; Add the email
     (d/transact! db/conn [{:message-id id
-                           :list-id    list-id
+                           :source-id  source-id
                            :archived-at
-                           (archived-message {:list-id     list-id
+                           (archived-message {:source-id   source-id
                                               :archived-at Archived-At
                                               :message-id  id})
                            :subject    (trim-subject-prefix subject)
@@ -381,8 +381,8 @@
 
 ;;; Core functions to return db entries
 
-(defn- new? [what list-id msg]
-  (let [action-re (action-re list-id)]
+(defn- new? [what source-id msg]
+  (let [action-re (action-re source-id)]
     (condp = what
       :patch        (or
                      ;; New patches with a subject starting with "[PATCH"
@@ -604,21 +604,21 @@
 (defn- report! [{:keys [report-type status-trigger report-eid version] :as report}]
   (let [;; If there is a status, add or update a report
         status               (some #{:acked :owned :closed
-                                  :unacked :unowned :unclosed} (keys report))
+                                     :unacked :unowned :unclosed} (keys report))
         status-name          (and status (name status))
         status-report-eid    (and status (status report))
         from                 (or (:from (d/entity db/db report-eid))
-                              (:from (d/entity db/db status-report-eid)))
+                                 (:from (d/entity db/db status-report-eid)))
         username             (or (:username (d/entity db/db report-eid))
-                              (:username (d/entity db/db status-report-eid)))
+                                 (:username (d/entity db/db status-report-eid)))
         effective?           (let [closed-statuses
                                    ;; First closed status indicates an
                                    ;; "effective" report (e.g. Fixed,
                                    ;; Applied, Done.)
                                    (-> db/config :watch report-type :triggers :closed)]
-                            (when (and status status-trigger (< 1 (count closed-statuses)))
-                              (true? (= status-trigger
-                                        (first closed-statuses)))))
+                               (when (and status status-trigger (< 1 (count closed-statuses)))
+                                 (true? (= status-trigger
+                                           (first closed-statuses)))))
         admin-or-maintainer? (when-let [person (d/entity db/db [:email from])]
                                (or (:admin person) (:maintainer person)))]
     ;; Possibly add a new person
@@ -639,19 +639,19 @@
         (d/transact! db/conn [{report-type report-eid :version version}])
         (d/transact! db/conn [{report-type report-eid}])))))
 
-(defn- release-changes! [list-id version release-id]
+(defn- release-changes! [source-id version release-id]
   (let [changes-reports
-        (->> (fetch/reports {:list-id list-id :report-type :change})
+        (->> (fetch/reports {:source-id source-id :report-type :change})
              (filter #(= version (:version %)))
              (map #(get % :db/id)))]
     (doseq [r changes-reports]
       (d/transact! db/conn [{:db/id r :released release-id}]))))
 
 ;; FIXME: where to use?
-;; (defn- unrelease-changes! [list-id release-id]
+;; (defn- unrelease-changes! [source-id release-id]
 ;;   (let [changes-to-unrelease
 ;;         (->> (filter #(= release-id (:released %))
-;;                      (get-reports {:list-id list-id :report-type :change}))
+;;                      (get-reports {:source-id source-id :report-type :change}))
 ;;              (map #(get % :db/id)))]
 ;;     (doseq [r changes-to-unrelease]
 ;;       (d/transact! db/conn [[:db/retract r :released]]))))
@@ -663,7 +663,7 @@
                       (->> (string/split References #"\s")
                            (keep not-empty)
                            (map true-id)))
-        list-id     (when-let [lid (or List-Post X-BeenThere)]
+        source-id   (when-let [lid (or List-Post X-BeenThere)]
                       (true-email-address lid))
         from        (:address (first from))
         admins      (fetch/admins)
@@ -683,7 +683,7 @@
                 ;; mails from maintainers
                 (or (some maintainers (list from))
                     ;; A mailing list, only process mails sent there
-                    (some #{list-id}
+                    (some #{source-id}
                           (keys (:sources db/config)))))))
 
       ;; Possibly increment backrefs count in known emails
@@ -694,19 +694,19 @@
        (let [done (atom nil)]
          (doseq [w      [:patch :bug :request]
                  :while (nil? @done)]
-           (when (and (w watched) (new? w list-id msg))
+           (when (and (w watched) (new? w source-id msg))
              (reset! done (report! {:report-type w :report-eid (add-mail! msg)}))))
          @done)
        ;; Or detect new release/change/announcement by a maintainer
        (when (some maintainers (list from))
          (or
           (when (:announcement watched)
-            (when (new? :announcement list-id msg)
+            (when (new? :announcement source-id msg)
               (report! {:report-type :announcement
                         :report-eid  (add-mail! msg)})))
           (when (:change watched)
-            (when-let [version (new? :change list-id msg)]
-              (if (some (fetch/released-versions list-id) (list version))
+            (when-let [version (new? :change source-id msg)]
+              (if (some (fetch/released-versions source-id) (list version))
                 (timbre/error
                  (format "%s tried to announce a change against released version %s"
                          from version))
@@ -714,12 +714,12 @@
                           :report-eid  (add-mail! msg)
                           :version     version}))))
           (when (:release watched)
-            (when-let [version (new? :release list-id msg)]
+            (when-let [version (new? :release source-id msg)]
               (let [release-report-eid (add-mail! msg)]
                 (report! {:report-type :release
                           :report-eid  release-report-eid
                           :version     version})
-                (release-changes! list-id version release-report-eid))))))
+                (release-changes! source-id version release-report-eid))))))
 
        ;; Or a command or new actions against known reports
        (let [body-parts

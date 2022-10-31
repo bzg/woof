@@ -8,11 +8,11 @@
             [selmer.parser :as html]
             [clojure.java.io :as io]))
 
-(defn- format-org [resources list-id]
+(defn- format-org [resources source-id]
   (->> resources
        (map #(format " - [[%s][%s: %s]] (%s)"
                      (core/archived-message
-                      {:list-id     list-id
+                      {:source-id   source-id
                        :archived-at (:archived-at %)
                        :message-id  (:message-id %)})
                      (:username %)
@@ -20,13 +20,13 @@
                      (:date %)))
        (string/join "\n")))
 
-(defn- format-md [resources list-id]
+(defn- format-md [resources source-id]
   (->> resources
        (map #(format " - [%s: %s](%s \"%s\")"
                      (:username %)
                      (string/replace (:subject %) #"^\[[^]]+\] " "")
                      (core/archived-message
-                      {:list-id     list-id
+                      {:source-id   source-id
                        :archived-at (:archived-at %)
                        :message-id  (:message-id %)})
                      (:date %)))
@@ -41,9 +41,9 @@
       (assoc msg :link archived-at))
      archived-at)))
 
-(defn feed-item [{:keys [message-id archived-at subject date from] :as msg} list-id]
+(defn feed-item [{:keys [message-id archived-at subject date from] :as msg} source-id]
   (let [archived-at (core/archived-message
-                     {:list-id     list-id
+                     {:source-id   source-id
                       :archived-at archived-at
                       :message-id  message-id})
         link        (if (not-empty archived-at) archived-at message-id)]
@@ -54,25 +54,25 @@
      :guid        link
      :pubDate     (.toInstant date)}))
 
-(defn- format-rss [resources list-id]
+(defn- format-rss [resources source-id]
   (rss/channel-xml
-   {:title       (str (:project-name (:ui db/config)) " - " list-id)
+   {:title       (str (:project-name (:ui db/config)) " - " source-id)
     :link        (string/replace
                   (:hostname db/config)
-                  #"([^/])/*$" (str "$1/" list-id))
-    :description (str (:title db/config) " - " list-id)}
-   (sort-by :pubDate (map #(feed-item % list-id) resources))))
+                  #"([^/])/*$" (str "$1/" source-id))
+    :description (str (:title db/config) " - " source-id)}
+   (sort-by :pubDate (map #(feed-item % source-id) resources))))
 
 (defn get-data [what {:keys [path-params query-params]}]
-  (let [list-id   (core/slug-to-list-id (:list-slug path-params))
+  (let [source-id (core/slug-to-source-id (:source-slug path-params))
         format    (subs (:format path-params) 1)
         search    (or (:search query-params) "")
         resources (condp = what
-                    :bugs     (fetch/bugs list-id search)
-                    :requests (fetch/requests list-id search)
-                    :patches  (fetch/patches list-id search)
-                    :news     (fetch/news list-id search)
-                    ;; :mails         (fetch/mails list-id search)
+                    :bugs     (fetch/bugs source-id search)
+                    :requests (fetch/requests source-id search)
+                    :patches  (fetch/patches source-id search)
+                    :news     (fetch/news source-id search)
+                    ;; :mails         (fetch/mails source-id search)
                     )
         headers   (condp = format
                     "rss"  {"Content-Type" "application/xml"}
@@ -83,10 +83,10 @@
      :headers headers
      :body
      (condp = format
-       "rss"  (format-rss resources list-id)
+       "rss"  (format-rss resources source-id)
        "json" (json/write-str (map #(into {} %) resources))
-       "md"   (format-md resources list-id)
-       "org"  (format-org resources list-id))}))
+       "md"   (format-md resources source-id)
+       "org"  (format-org resources source-id))}))
 
 (defn get-bugs-data [params] (get-data :bugs params))
 (defn get-requests-data [params] (get-data :requests params))
