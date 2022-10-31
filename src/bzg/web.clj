@@ -40,19 +40,23 @@
      (map linkify-maybe))))
 
 (defn- html-defaults [& [source-id]]
-  (let [source (get (:sources db/config) source-id)]
+  (let [sources    (:sources db/config)
+        source-cfg (or (get (:sources db/config) source-id)
+                       (and (= 1 (count sources))
+                            (val (first sources))))]
     (-> (merge (:ui db/config)
-               (:ui source)
-               {:display (or (:show (:ui source))
+               (:ui source-cfg)
+               {:display (or (:show (:ui source-cfg))
                              (:show (:ui db/config))
-                             (:watch source)
+                             (:watch source-cfg)
                              (:watch db/config))})
         (dissoc :show))))
 
 (defn- with-html-defaults [config-defaults {:keys [source] :as m}]
   (merge (html-defaults (:source-id source))
          {:config config-defaults}
-         {:sources (map (fn [[k v]] {:source-id k :slug (:slug v)
+         {:sources (map (fn [[k v]] {:source-id k
+                                     :slug      (:slug v)
                                      :doc       (:doc v)})
                         (:sources db/config))}
          m))
