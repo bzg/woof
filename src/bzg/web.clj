@@ -34,7 +34,12 @@
           :else identity)]
     (->>
      entries
-     (sort-by (condp = sorting-by "date" :date "user" :role :backrefs))
+     (sort-by (condp = sorting-by
+                "date"     :date
+                "user"     :role
+                "status"   :status
+                "priority" :priority
+                :backrefs))
      reverse
      (remove nil?)
      (map linkify-maybe))))

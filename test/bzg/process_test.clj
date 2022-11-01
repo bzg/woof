@@ -30,6 +30,7 @@
 (defn- read-mail [f] (mail/file->message (str "test-mails/" f)))
 (def bug1 (read-mail "bug1"))
 (def bug1-confirmed (read-mail "bug1-confirmed"))
+(def bug1-urgent (read-mail "bug1-urgent"))
 (def bug1-fixed (read-mail "bug1-fixed"))
 (def bug2 (read-mail "bug2"))
 (def bug2-canceled (read-mail "bug2-canceled"))
@@ -55,6 +56,11 @@
     (do (core/read-and-process-mail (list bug1-confirmed))
         (is (= 1 (count (fetch/unconfirmed-bugs "test@list.io"))))
         (is (= 2 (count (fetch/unclosed-bugs "test@list.io"))))))
+  (testing "Declaring bug1 as urgent"
+    (do (core/read-and-process-mail (list bug1-urgent))
+        (is (= 1 (count (fetch/unconfirmed-bugs "test@list.io"))))
+        (is (= 2 (count (fetch/unclosed-bugs "test@list.io"))))
+        (is (= 1 (count (fetch/urgent-bugs "test@list.io"))))))
   (testing "Canceling bug2"
     (do (core/read-and-process-mail (list bug2-canceled))
         (is (= 0 (count (fetch/unconfirmed-bugs "test@list.io"))))

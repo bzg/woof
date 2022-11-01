@@ -40,14 +40,15 @@
 	<table class="table is-hoverable is-bordered is-fullwidth">
 	  <thead>
 	    <tr>
-	      <th class="has-text-centered" width="3%">I!I</th>
+	      <th class="has-text-centered" width="3%"><a href="?sorting-by=status" title="Sort entries by status">IiI</a></th>
+	      <th class="has-text-centered" width="3%"><a href="?sorting-by=priority" title="Sort entries by priority">I!I</a></th>
 	      <th>Subject</th>
 	      {% if not source %}
 	      {% if 1 < sources|length %}
 	      <th>Source</th>
 	      {% endif %}
 	      {% endif %}
-	      <th width="15%"><a href="?sorting-by=user" title="Sort entries by author">From<a></th>
+	      <th width="15%"><a href="?sorting-by=user" title="Sort entries by submitter's role">From<a></th>
 	      <th width="15%"><a href="?sorting-by=date" title="Sort entries by date">Date</a></th>
 	      <th class="has-text-centered" width="5%"><a href="?sorting-by=refs" title="Sort entries by number of references">Refs</a>
 	      </th>
@@ -57,13 +58,36 @@
 	    {% for entry in entries %}
 	    <tr>
 	      <td class="has-text-centered">
+		{% ifequal entry.status 3 %}
+		<span title="Acked and owned">🟩</span>
+		{% else %}
+		{% ifequal entry.status 2 %}
+		<span title="Owned">🟦</span>
+		{% else %}
+		{% ifequal entry.status 1 %}
+		<span title="Acked">🟨</span>
+		{% else %}
+		{% ifequal entry.status -1 %}
+		<span title="Closed">🟥</span>
+		{% else %}
+		<span title="Unacked">⬜</span>
+		{% endifequal %}
+		{% endifequal %}
+		{% endifequal %}
+		{% endifequal %}
+	      </td>
+	      <td class="has-text-centered">
+		{% ifequal entry.priority 3 %}
+		<span title="Urgent and important">🟥</span>
+		{% else %}
 		{% ifequal entry.priority 2 %}
-		🟥
+		<span title="Urgent">🟧</span>
 		{% else %}
 		{% ifequal entry.priority 1 %}
-		🟧
+		<span title="Important">🟨</span>
 		{% else %}
-		🟨
+		<span title="Unurgent and unimportant">⬜</span>
+		{% endifequal %}
 		{% endifequal %}
 		{% endifequal %}
 	      </td>

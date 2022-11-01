@@ -8,6 +8,17 @@
 ;;                       [:admin :maintainer]))]
 ;;     (merge e {:role roles})))
 
+(defn- compute-status [r]
+  (let [acked? (if (:acked r) 1 0)
+        owned? (if (:owned r) 2 0)]
+    (if (:closed r) -1
+        (+ acked? owned?))))
+
+(defn- compute-priority [r]
+  (let [important? (if (:important r) 1 0)
+        urgent?    (if (:urgent r) 2 0)]
+    (+ important? urgent?)))
+
 ;; FIXME: Use fulltext search for reports?
 (defn reports [{:keys [source-id report-type search closed? as-mail]}]
   (let [reports
@@ -22,12 +33,14 @@
              (remove (if-not (= closed? "on") :closed false?))
              (filter #(re-find (re-pattern (or search ""))
                                (:subject (report-type %))))
+             (map #(assoc % :status (compute-status %)))
+             (map #(assoc % :priority (compute-priority %)))
              (take (or (-> db/config :watch report-type :display-max) 100)))]
     (if as-mail
       (->> reports
-           (map report-type)
-           ;; (map #(assoc (d/touch (d/entity db (:db/id %)))
-           ;;              :priority (:priority %)))
+           (map #(assoc (get % report-type)
+                        :status (get % :status)
+                        :priority (get % :priority)))
            ;; FIXME: why does not work for patches only?
            ;; (map add-role)
            )
@@ -37,43 +50,41 @@
 (defn bugs [& [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
-            :closed?      closed?
+            :closed?     closed?
             :report-type :bug
             :as-mail     true}))
 
 (defn patches [& [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
-            :closed?      closed?
+            :closed?     closed?
             :report-type :patch
             :as-mail     true}))
 
 (defn changes [& [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
-            :closed?      closed?
+            :closed?     closed?
             :report-type :change
             :as-mail     true}))
 
 (defn requests [& [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
-            :closed?      closed?
+            :closed?     closed?
             :report-type :request
             :as-mail     true}))
 
 (defn announcements [& [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
-            :closed?      closed?
+            :closed?     closed?
             :report-type :announcement
             :as-mail     true}))
 
 (defn logs []
   (map first (d/q '[:find (d/pull ?e [*]) :where [?e :log _]] db/db)))
 
-;; FIXME: Handle priority:
-;; (remove #(if-let [p (:priority %)] (< p 2) true))
 (defn confirmed-bugs [& [source-id search closed?]]
   (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
                  :report-type :bug})
@@ -97,10 +108,20 @@
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn effective-bugs [& [source-id search closed?]]
-  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+(defn effective-bugs [& [source-id search]]
+  (->> (reports {:source-id   source-id :search (or search "")
+                 ;; Always search through all bugs:
+                 :closed?     "on"
                  :report-type :bug})
        (filter :effective)
+       (map :bug)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn urgent-bugs [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "")
+                 :closed?     closed?
+                 :report-type :bug})
+       (filter :urgent)
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 

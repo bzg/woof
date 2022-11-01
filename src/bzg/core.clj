@@ -21,8 +21,6 @@
 (defn set-defaults []
   (d/transact! db/conn [(merge {:defaults "init"} (:defaults db/config))]))
 
-(def priority 0)
-
 ;; Utility functions
 
 (defn- action-re [& [source-id]]
@@ -64,8 +62,13 @@
        distinct
        un-ify))
 
+(def priority-words-all
+  #{"Important" "Urgent" "Unimportant" "Unurgent"})
+
 (def report-words-re
-  (->> report-words-all
+  (->> (concat
+        report-words-all
+        priority-words-all)
        (string/join "|")
        re-pattern))
 
@@ -262,29 +265,34 @@
 (defn- is-report-update? [report-type body-report references]
   ;; Is there a known trigger (e.g. "Canceled") for this report type
   ;; in the body of the email?
-  (when (some (report-words report-type) (list body-report))
-    ;; Is this trigger against a known report, and if so, which one?
-    (when-let [e (-> #(ffirst (d/q `[:find ?e
-                                     :where
-                                     [?e ~report-type ?ref]
-                                     [?ref :message-id ~%]]
-                                   db/db))
-                     (map references)
-                     ;; FIXME: Is this below really needed?
-                     (as-> refs (remove nil? refs))
-                     first)]
-      (let [triggers (:triggers (report-type (:watch db/config)))
-            ;; Is this about :acked, :owned, :closed?
-            status   (key (first (filter
-                                  #(some (into #{} (un-ify (val %)))
-                                         (list body-report))
-                                  triggers)))]
-        {:status
-         (if (re-find #"(?i)Un" body-report)
-           ;; Maybe return :unacked, :unowned or :unclosed
-           (keyword (str "un" (name status)))
-           status)
-         :upstream-report-eid e}))))
+  (let [priority-word? (some priority-words-all (list body-report))]
+    (when (or priority-word?
+              (some (report-words report-type) (list body-report)))
+      ;; Is this trigger against a known report, and if so, which one?
+      (when-let [e (-> #(ffirst (d/q `[:find ?e
+                                       :where
+                                       [?e ~report-type ?ref]
+                                       [?ref :message-id ~%]]
+                                     db/db))
+                       (map references)
+                       ;; FIXME: Is this below really needed?
+                       (as-> refs (remove nil? refs))
+                       first)]
+        (let [;; About :important :urgent :acked, :owned or :closed ?
+              status
+              (cond priority-word?
+                    (if (re-find #"mportant" body-report) :important :urgent)
+                    :else
+                    (key (first (filter
+                                 #(some (into #{} (un-ify (val %)))
+                                        (list body-report))
+                                 (:triggers (report-type (:watch db/config)))))))]
+          {:status
+           (if (re-find #"(?i)Un" body-report)
+             ;; Maybe return :unacked, :unowned or :unclosed
+             (keyword (str "un" (name status)))
+             status)
+           :upstream-report-eid e})))))
 
 ;; Setup logging
 
@@ -603,7 +611,9 @@
 
 (defn- report! [{:keys [report-type status-trigger report-eid version] :as report}]
   (let [;; If there is a status, add or update a report
-        status               (some #{:acked :owned :closed
+        status               (some #{:urgent :important
+                                     :unurgent :unimportant
+                                     :acked :owned :closed
                                      :unacked :unowned :unclosed} (keys report))
         status-name          (and status (name status))
         status-report-eid    (and status (status report))
@@ -627,13 +637,12 @@
       ;; This is a status update about an existing report
       (if (re-matches #"^un(.+)" status-name)
         ;; Status is about undoing, retract attribute
-        (d/transact! db/conn [[:db/retract [report-type report-eid]
+        (d/transact! db/conn [[:db/retract report-eid
                                (keyword (string/replace status-name #"^un" ""))]])
-        ;; Status is a positive statement, set it to true
+        ;; Status is a positive statement, set it to the eid of the report
         (d/transact! db/conn [{:db/id     report-eid
                                status     status-report-eid
-                               :effective effective?
-                               }]))
+                               :effective effective?}]))
       ;; This is a change or a or a release
       (if (and admin-or-maintainer? version)
         (d/transact! db/conn [{report-type report-eid :version version}])
@@ -761,14 +770,13 @@
                 (doseq [w      [:patch :bug :request]
                         :while (nil? @done)]
                   (when (w watched)
-                    (when-let [{:keys [upstream-report-eid status priority]}
+                    (when-let [{:keys [upstream-report-eid status]}
                                (is-report-update? w body-report references)]
                       (reset! done
                               (report! {:report-type    w
                                         :report-eid     upstream-report-eid
                                         :status-trigger body-report
-                                        status          (add-mail! msg)
-                                        :priority       priority})))))
+                                        status          (add-mail! msg)})))))
                 @done)
 
               ;; Or an action against existing changes/releases by a maintainer
@@ -777,14 +785,13 @@
                   (doseq [w      [:change :release :announcement]
                           :while (nil? @done)]
                     (when (w (:announcement watched))
-                      (when-let [{:keys [upstream-report-eid status priority]}
+                      (when-let [{:keys [upstream-report-eid status]}
                                  (is-report-update? w body-report references)]
                         (reset! done
                                 (report! {:report-type    w
                                           :report-eid     upstream-report-eid
                                           :status-trigger body-report
-                                          status          (add-mail! msg)
-                                          :priority       priority}))))))
+                                          status          (add-mail! msg)}))))))
                 (timbre/warn
                  (format
                   "%s tried to update a change or a release while not a maintainer"
