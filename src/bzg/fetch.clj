@@ -2,11 +2,11 @@
   (:require [bzg.db :as db]
             [datalevin.core :as d]))
 
-;; (defn- add-role [e]
-;;   (let [roles (count (select-keys
-;;                       (d/entity db/db [:email (:from e)])
-;;                       [:admin :maintainer]))]
-;;     (merge e {:role roles})))
+(defn- add-role [e]
+  (let [roles (count (select-keys
+                      (d/entity db/db [:email (:from e)])
+                      [:admin :maintainer]))]
+    (assoc e :role roles)))
 
 (defn- compute-status [r]
   (let [acked? (if (:acked r) 1 0)
@@ -39,46 +39,31 @@
            (map #(assoc (get % report-type)
                         :status (get % :status)
                         :priority (get % :priority)))
-           ;; FIXME: why does not work for patches only?
-           ;; (map add-role)
-           )
+           (map add-role))
       reports)))
+
+(defn- reports-as-mail [report-type & [source-id search closed?]]
+  (reports {:source-id   source-id
+            :search      search
+            :closed?     closed?
+            :report-type report-type
+            :as-mail     true}))
 
 ;; FIXME: refactor?
 (defn bugs [& [source-id search closed?]]
-  (reports {:source-id   source-id
-            :search      search
-            :closed?     closed?
-            :report-type :bug
-            :as-mail     true}))
+  (reports-as-mail :bug source-id search closed?))
 
 (defn patches [& [source-id search closed?]]
-  (reports {:source-id   source-id
-            :search      search
-            :closed?     closed?
-            :report-type :patch
-            :as-mail     true}))
+  (reports-as-mail :patch source-id search closed?))
 
 (defn changes [& [source-id search closed?]]
-  (reports {:source-id   source-id
-            :search      search
-            :closed?     closed?
-            :report-type :change
-            :as-mail     true}))
-
-(defn requests [& [source-id search closed?]]
-  (reports {:source-id   source-id
-            :search      search
-            :closed?     closed?
-            :report-type :request
-            :as-mail     true}))
+  (reports-as-mail :change source-id search closed?))
 
 (defn announcements [& [source-id search closed?]]
-  (reports {:source-id   source-id
-            :search      search
-            :closed?     closed?
-            :report-type :announcement
-            :as-mail     true}))
+  (reports-as-mail :announcement source-id search closed?))
+
+(defn requests [& [source-id search closed?]]
+  (reports-as-mail :request source-id search closed?))
 
 (defn logs []
   (map first (d/q '[:find (d/pull ?e [*]) :where [?e :log _]] db/db)))
