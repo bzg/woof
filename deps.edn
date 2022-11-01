@@ -5,7 +5,7 @@
                :url  "http://www.eclipse.org/legal/epl-v20.html"}
  :paths       ["src" "resources"]
  :deps        {org.clojure/clojure       {:mvn/version "1.11.1"}
-               org.clojure/core.async    {:mvn/version "1.5.648"}
+               org.clojure/core.async    {:mvn/version "1.6.673"}
                org.clojure/data.json     {:mvn/version "2.4.0"}
                io.forward/clojure-mail   {:mvn/version "1.0.8"}
                http-kit/http-kit         {:mvn/version "2.6.0"}
@@ -19,7 +19,7 @@
                mount/mount               {:mvn/version "0.1.16"}
                tea-time/tea-time         {:mvn/version "1.0.1"}
                com.draines/postal        {:mvn/version "2.0.5"}
-               com.taoensso/timbre       {:mvn/version "5.2.1"}
+               com.taoensso/timbre       {:mvn/version "6.0.1"}
                selmer/selmer             {:mvn/version "1.12.55"}
                datalevin/datalevin       {:mvn/version "0.6.22"}
                com.cognitect/transit-clj {:mvn/version "1.0.329"}
