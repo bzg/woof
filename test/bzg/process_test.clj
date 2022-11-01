@@ -43,8 +43,6 @@
 
 ;; Run tests
 (deftest processes
-  (testing "Adding the root admin"
-    (is (not-empty (fetch/admins))))
   (testing "Adding bug1"
     (do (core/read-and-process-mail (list bug1))
         (is (= 1 (count (fetch/unconfirmed-bugs "test@list.io"))))

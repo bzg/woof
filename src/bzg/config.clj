@@ -46,19 +46,18 @@
                    :add-feature :remove-feature
                    :remove-maintainer :undelete :unignore
                    :global-notifications}
-    :maintainer  #{:maintenance :add-maintainer :delete :ignore}
-    :contributor #{:notifications :home :support}}
+    :maintainer  #{:maintenance :add-maintainer :delete :ignore
+                   :change :release :announcement}
+    :contributor #{:notifications :home :support
+                   :bug :patch :request}}
 
    :admin-report-words
-   {;; Contributors actions
-    :notifications        "Notifications"
+   {:notifications        "Notifications"
     :home                 "Home"
     :support              "Support"
-    ;; Maintainers actions
     :add-maintainer       "Add maintainer"
     :delete               "Delete"
     :ignore               "Ignore"
-    ;; Admin actions
     :add-admin            "Add admin"
     :remove-admin         "Remove admin"
     :remove-maintainer    "Remove maintainer"
@@ -67,5 +66,4 @@
     :unignore             "Unignore"
     :global-notifications "Global notifications"
     }
-
    })

@@ -121,43 +121,6 @@
 (defn- true-email-address [s]
   (re-find email-re (string/replace s #"mailto:" "")))
 
-;; (defn format-email-notification
-;;   [{:keys [notification-type from id source-id
-;;            action-string status-string]}]
-;;   (str
-;;    (condp = notification-type
-;;      :new
-;;      (str (format "Thanks for sharing this %s!\n\n" action-string)
-;;           (when (and (:support-url db/config)
-;;                      (some #{"bug" "request"} (list action-string)))
-;;             (str (or (:support-cta-email db/config)
-;;                      (:support-cta db/config)
-;;                      "Please support this project")
-;;                  ":\n"
-;;                  (:support-url db/config)
-;;                  "\n\n")))
-;;      :action-reporter
-;;      (format "Thanks for marking this %s as %s.\n\n"
-;;              action-string status-string)
-;;      :action-op
-;;      (format "%s marked your %s as %s.\n\n"
-;;              from action-string status-string))
-
-;;    (when-let [archived-at
-;;               (not-empty (archived-message
-;;                           {:source-id source-id :message-id id}))]
-;;      (format "You can find your email here:\n%s\n\n" archived-at))
-
-;;    (when-let [contribute-url (not-empty (:contribute-url db/config))]
-;;      (str (or (:contribute-cta-email db/config)
-;;               (:contribute-cta db/config)
-;;               (format "Please contribute to %s"
-;;                       (:project-name db/config)))
-;;           ":\n"
-;;           contribute-url))))
-
-;; Main reports functions
-
 ;; Core db functions to add and update entities
 
 (defn- add-log! [date msg]
@@ -237,6 +200,7 @@
   (let [{:keys [admin maintainer contributor]} (:permissions db/config)]
     (->> (concat admin maintainer contributor)
          (map #(% (:admin-report-words db/config)))
+         (remove nil?)
          (string/join "|")
          (format "(%s): (.+)\\s*$")
          re-pattern)))
@@ -345,6 +309,7 @@
           (timbre/info
            (format
             (condp = purpose
+              ;; FIXME: check accuracy
               :ack-reporter    "Sent mail to %s to ack report against known report"
               :ack-op-reporter "Sent mail to %s to ack report against initial report"
               :ack-op          "Sent mail to %s to ack initial report"
@@ -514,30 +479,32 @@
   (d/transact! db/conn [{:defaults "init" :notifications status}])
   (timbre/info (format "Notifications are now: %s" status)))
 
+(defn- user-allowed? [user action]
+  (let [allowed-roles-for-action
+        (->> (:permissions db/config)
+             (map #(when (some (val %) (list action))
+                     (key %)))
+             (remove nil?)
+             (into #{}))]
+    (if-not user
+      (:contributor allowed-roles-for-action )
+      (some user allowed-roles-for-action))))
+
 (defn- config! [{:keys [commands msg]}]
-  (let [from  (:address (first (:from msg)))
-        roles (select-keys (d/entity db/db [:email from])
-                           [:admin :contributor :maintainer])
-        role  (cond (:admin roles)      :admin
-                    (:maintainer roles) :maintainer
-                    :else               :contributor)]
+  (let [from (:address (first (:from msg)))
+        user (d/entity db/db [:email from])]
     (doseq [[cmd cmd-val] commands]
-      ;; FIXME: avoid redundancy?
-      (condp = role
-        :contributor
+      (when (user-allowed?
+             user (->> (:admin-report-words db/config)
+                       (filter (fn [[_ v]] (= v cmd)))
+                       first key))
         (condp = cmd
-          "Home"          (update-person! {:email from} [:home cmd-val])
-          "Notifications" (update-person! {:email from} [:notifications cmd-val])
-          "Support"       (update-person! {:email from} [:support cmd-val])
-          nil)
-        :maintainer
-        (condp = cmd
-          "Add maintainer" (add-maintainer! cmd-val from)
-          "Delete"         (delete! cmd-val)
-          "Ignore"         (ignore! cmd-val)
-          nil)
-        :admin
-        (condp = cmd
+          "Home"                 (update-person! {:email from} [:home cmd-val])
+          "Support"              (update-person! {:email from} [:support cmd-val])
+          "Notifications"        (update-person! {:email from} [:notifications cmd-val])
+          "Add maintainer"       (add-maintainer! cmd-val from)
+          "Delete"               (delete! cmd-val)
+          "Ignore"               (ignore! cmd-val)
           "Add admin"            (add-admin! cmd-val from)
           "Add maintainer"       (add-maintainer! cmd-val from)
           "Delete"               (delete! cmd-val)
@@ -550,19 +517,11 @@
           "Remove maintainer"    (remove-maintainer! cmd-val)
           "Support"              (update-person! {:email from} [:support cmd-val])
           "Undelete"             (undelete! cmd-val)
-          "Unignore"             (unignore! cmd-val)
-          nil)))
+          "Unignore"             (unignore! cmd-val))))
     (add-mail-config! msg)))
 
 ;;;; TODO
 ;; (defn- report-notify! [report-type msg-eid status-report-eid]
-;;   ;; If status is about undoing, retract existing status, otherwise
-;;   ;; add
-;;   (when-let [s status]
-;;     (if (re-matches #"^un(.+)" (name s))
-;;       (d/transact! db/conn [[:db/retract [report-type (:db/id op-report-mail)] s]])
-;;       (do (d/transact! db/conn [report-type msg-eid])
-;;           (d/transact! db/conn [(d/entity db/db [report-type msg-eid] status true)]))))
 ;;   (if status-string
 ;;     ;; Report against a known entry
 ;;     (do
@@ -594,44 +553,81 @@
 ;;               :ack-op)
 ;;         (timbre/info "Skipping email ack for admin or maintainer")))))
 
+;; (defn format-email-notification
+;;   [{:keys [notification-type from id source-id
+;;            action-string status-string]}]
+;;   (str
+;;    (condp = notification-type
+;;      :new
+;;      (str (format "Thanks for sharing this %s!\n\n" action-string)
+;;           (when (and (:support-url db/config)
+;;                      (some #{"bug" "request"} (list action-string)))
+;;             (str (or (:support-cta-email db/config)
+;;                      (:support-cta db/config)
+;;                      "Please support this project")
+;;                  ":\n"
+;;                  (:support-url db/config)
+;;                  "\n\n")))
+;;      :action-reporter
+;;      (format "Thanks for marking this %s as %s.\n\n"
+;;              action-string status-string)
+;;      :action-op
+;;      (format "%s marked your %s as %s.\n\n"
+;;              from action-string status-string))
+
+;;    (when-let [archived-at
+;;               (not-empty (archived-message
+;;                           {:source-id source-id :message-id id}))]
+;;      (format "You can find your email here:\n%s\n\n" archived-at))
+
+;;    (when-let [contribute-url (not-empty (:contribute-url db/config))]
+;;      (str (or (:contribute-cta-email db/config)
+;;               (:contribute-cta db/config)
+;;               (format "Please contribute to %s"
+;;                       (:project-name db/config)))
+;;           ":\n"
+;;           contribute-url))))
+
+;; Main reports functions
+
 (defn- report! [{:keys [report-type status-trigger report-eid version] :as report}]
   (let [;; If there is a status, add or update a report
-        status               (some #{:urgent :important
-                                     :unurgent :unimportant
-                                     :acked :owned :closed
-                                     :unacked :unowned :unclosed} (keys report))
-        status-name          (and status (name status))
-        status-report-eid    (and status (status report))
-        from                 (or (:from (d/entity db/db report-eid))
-                                 (:from (d/entity db/db status-report-eid)))
-        username             (or (:username (d/entity db/db report-eid))
-                                 (:username (d/entity db/db status-report-eid)))
-        effective?           (let [closed-statuses
-                                   ;; First closed status indicates an
-                                   ;; "effective" report (e.g. Fixed,
-                                   ;; Applied, Done.)
-                                   (-> db/config :watch report-type :triggers :closed)]
-                               (when (and status status-trigger (< 1 (count closed-statuses)))
-                                 (true? (= status-trigger
-                                           (first closed-statuses)))))
-        admin-or-maintainer? (when-let [person (d/entity db/db [:email from])]
-                               (or (:admin person) (:maintainer person)))]
+        status            (some #{:urgent :important
+                                  :unurgent :unimportant
+                                  :acked :owned :closed
+                                  :unacked :unowned :unclosed} (keys report))
+        status-name       (and status (name status))
+        status-report-eid (and status (status report))
+        from              (or (:from (d/entity db/db report-eid))
+                              (:from (d/entity db/db status-report-eid)))
+        username          (or (:username (d/entity db/db report-eid))
+                              (:username (d/entity db/db status-report-eid)))
+        effective?        (let [closed-statuses
+                                ;; First closed status indicates an
+                                ;; "effective" report (e.g. Fixed,
+                                ;; Applied, Done.)
+                                (-> db/config :watch report-type :triggers :closed)]
+                            (when (and status status-trigger (< 1 (count closed-statuses)))
+                              (true? (= status-trigger
+                                        (first closed-statuses)))))]
     ;; Possibly add a new person
     (update-person! {:email from :username username})
-    (if status-report-eid
-      ;; This is a status update about an existing report
-      (if (re-matches #"^un(.+)" status-name)
-        ;; Status is about undoing, retract attribute
-        (d/transact! db/conn [[:db/retract report-eid
-                               (keyword (string/replace status-name #"^un" ""))]])
-        ;; Status is a positive statement, set it to the eid of the report
-        (d/transact! db/conn [{:db/id     report-eid
-                               status     status-report-eid
-                               :effective effective?}]))
-      ;; This is a change or a or a release
-      (if (and admin-or-maintainer? version)
-        (d/transact! db/conn [{report-type report-eid :version version}])
-        (d/transact! db/conn [{report-type report-eid}])))))
+    (let [user (d/entity db/db [:email from])]
+      (if status-report-eid
+        ;; This is a status update about an existing report
+        (if (re-matches #"^un(.+)" status-name)
+          ;; Status is about undoing, retract attribute
+          (d/transact! db/conn [[:db/retract report-eid
+                                 (keyword (string/replace status-name #"^un" ""))]])
+          ;; Status is a positive statement, set it to the eid of the report
+          (d/transact! db/conn [{:db/id     report-eid
+                                 status     status-report-eid
+                                 :effective effective?}]))
+        ;; This is a change or a or a release
+        (when (user-allowed? user report-type)
+          (if version
+            (d/transact! db/conn [{report-type report-eid :version version}])
+            (d/transact! db/conn [{report-type report-eid}])))))))
 
 (defn- release-changes! [source-id version release-id]
   (let [changes-reports
@@ -660,22 +656,23 @@
         source-id   (when-let [lid (or List-Post X-BeenThere)]
                       (true-email-address lid))
         from        (:address (first from))
-        admins      (fetch/admins)
-        maintainers (fetch/maintainers)
+        user        (d/entity db/db [:email from])
+        admin?      (:admin user)
+        maintainer? (:maintainer user)
         defaults    (d/entity db/db [:defaults "init"])
         watched     (:watch db/config)]
 
     (when (and
            ;; First check whether this user should be ignored
-           (not (:ignored (d/entity db/db [:email from])))
+           (not (:ignored user))
            ;; Always process messages from an admin
-           (or (some admins (list from))
+           (or admin?
                (and
                 ;; Don't process anything when under maintenance
                 (not (:maintenance defaults))
                 ;; When not under maintenance, always process direct
                 ;; mails from maintainers
-                (or (some maintainers (list from))
+                (or maintainer?
                     ;; A mailing list, only process mails sent there
                     (some #{source-id}
                           (keys (:sources db/config)))))))
@@ -683,37 +680,36 @@
       ;; Possibly increment backrefs count in known emails
       (is-in-a-known-thread? references)
 
-      (or
-       ;; Detect a new bug/patch/request
+      (or ;; Detect a new bug/patch/request
        (let [done (atom nil)]
          (doseq [w      [:patch :bug :request]
                  :while (nil? @done)]
-           (when (and (w watched) (new? w source-id msg))
+           (when (and (w watched)
+                      (user-allowed? user w)
+                      (new? w source-id msg))
              (reset! done (report! {:report-type w :report-eid (add-mail! msg)}))))
          @done)
-       ;; Or detect new release/change/announcement by a maintainer
-       (when (some maintainers (list from))
-         (or
-          (when (:announcement watched)
-            (when (new? :announcement source-id msg)
-              (report! {:report-type :announcement
-                        :report-eid  (add-mail! msg)})))
-          (when (:change watched)
-            (when-let [version (new? :change source-id msg)]
-              (if (some (fetch/released-versions source-id) (list version))
-                (timbre/error
-                 (format "%s tried to announce a change against released version %s"
-                         from version))
-                (report! {:report-type :change
-                          :report-eid  (add-mail! msg)
-                          :version     version}))))
-          (when (:release watched)
-            (when-let [version (new? :release source-id msg)]
-              (let [release-report-eid (add-mail! msg)]
-                (report! {:report-type :release
-                          :report-eid  release-report-eid
-                          :version     version})
-                (release-changes! source-id version release-report-eid))))))
+       (or ;; Or detect new release/change/announcement
+        (when (and (user-allowed? user :announcement) (:announcement watched))
+          (when (new? :announcement source-id msg)
+            (report! {:report-type :announcement
+                      :report-eid  (add-mail! msg)})))
+        (when (and (user-allowed? user :change) (:change watched))
+          (when-let [version (new? :change source-id msg)]
+            (if (some (fetch/released-versions source-id) (list version))
+              (timbre/error
+               (format "%s tried to announce a change against released version %s"
+                       from version))
+              (report! {:report-type :change
+                        :report-eid  (add-mail! msg)
+                        :version     version}))))
+        (when (and (user-allowed? user :release) (:release watched))
+          (when-let [version (new? :release source-id msg)]
+            (let [release-report-eid (add-mail! msg)]
+              (report! {:report-type :release
+                        :report-eid  release-report-eid
+                        :version     version})
+              (release-changes! source-id version release-report-eid)))))
 
        ;; Or a command or new actions against known reports
        (let [body-parts
@@ -740,7 +736,6 @@
                                    (rest m)))
                            (remove nil?))]
              (config! {:commands cmds :msg msg}))
-
            ;; Or a report against a known patch, bug, etc
            (when-let
                [body-reports
@@ -748,8 +743,7 @@
                      (map #(re-find report-words-re %))
                      (remove nil?))]
 
-             (or
-              ;; New action against a known patch/bug/request
+             (or ;; New action against a known patch/bug/request
               (let [done (atom nil)]
                 (doseq [w      [:patch :bug :request]
                         :while (nil? @done)]
@@ -763,25 +757,23 @@
                                           :status-trigger body-report
                                           status          (add-mail! msg)}))))))
                 @done)
-
-              ;; Or an action against existing changes/releases by a maintainer
-              (if (some maintainers (list from))
-                (let [done (atom nil)]
-                  (doseq [w      [:change :release :announcement]
-                          :while (nil? @done)]
-                    (when (w (:announcement watched))
-                      (doseq [body-report body-reports]
-                        (when-let [{:keys [upstream-report-eid status]}
-                                   (is-report-update? w body-report references)]
-                          (reset! done
-                                  (report! {:report-type    w
-                                            :report-eid     upstream-report-eid
-                                            :status-trigger body-report
-                                            status          (add-mail! msg)})))))))
-                (timbre/warn
-                 (format
-                  "%s tried to update a change or a release while not a maintainer"
-                  from)))))))))))
+              ;; Or an action against existing changes/releases
+              (let [done (atom nil)]
+                (doseq [w      [:change :release :announcement]
+                        :while (nil? @done)]
+                  (when (w (and (user-allowed? user w) (:announcement watched)))
+                    (doseq [body-report body-reports]
+                      (when-let [{:keys [upstream-report-eid status]}
+                                 (is-report-update? w body-report references)]
+                        (reset! done
+                                (report! {:report-type    w
+                                          :report-eid     upstream-report-eid
+                                          :status-trigger body-report
+                                          status          (add-mail! msg)})))))))
+              (timbre/warn
+               (format
+                "%s tried to update a change or a release while not a maintainer"
+                from))))))))))
 
 ;;; Inbox monitoring
 (def woof-inbox-monitor (atom nil))

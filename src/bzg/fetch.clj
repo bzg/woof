@@ -225,19 +225,20 @@
          (remove nil?)
          flatten)))
 
-;; Main admin functions
+;; Admin functions
 
-(defn persons []
-  (->> (d/q '[:find ?p :where [?p :email ?_]] db/db)
-       (map first)
-       (map #(d/entity db/db %))))
+(comment
+  (defn persons []
+    (->> (d/q '[:find ?p :where [?p :email ?_]] db/db)
+         (map first)
+         (map #(d/entity db/db %))))
 
-(defn admins []
-  (->> (filter :admin (persons))
-       (map :email)
-       (into #{})))
+  (defn admins []
+    (->> (filter :admin (persons))
+         (map :email)
+         (into #{})))
 
-(defn maintainers []
-  (->> (filter :admin (persons))
-       (map :email)
-       (into #{})))
+  (defn maintainers []
+    (->> (filter :admin (persons))
+         (map :email)
+         (into #{}))))
