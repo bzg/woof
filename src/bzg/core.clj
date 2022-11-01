@@ -62,13 +62,10 @@
        distinct
        un-ify))
 
-(def priority-words-all
-  #{"Important" "Urgent" "Unimportant" "Unurgent"})
-
 (def report-words-re
   (->> (concat
         report-words-all
-        priority-words-all)
+        (:priority-words-all db/config))
        (string/join "|")
        re-pattern))
 
@@ -236,16 +233,8 @@
                           username email new-role-str))]
         (timbre/info msg)))))
 
-(def permissions
-  {:admin       #{:add-admin :remove-admin
-                  :add-feature :remove-feature
-                  :remove-maintainer :undelete :unignore
-                  :global-notifications}
-   :maintainer  #{:maintenance :add-maintainer :delete :ignore}
-   :contributor #{:notifications :home :support}})
-
 (def config-strings-re
-  (let [{:keys [admin maintainer contributor]} permissions]
+  (let [{:keys [admin maintainer contributor]} (:permissions db/config)]
     (->> (concat admin maintainer contributor)
          (map #(% (:admin-report-words db/config)))
          (string/join "|")
@@ -262,7 +251,7 @@
 (defn- is-report-update? [report-type body-report references]
   ;; Is there a known trigger (e.g. "Canceled") for this report type
   ;; in the body of the email?
-  (let [priority-word? (some priority-words-all (list body-report))]
+  (let [priority-word? (some (:priority-words-all db/config) (list body-report))]
     (when (or priority-word?
               (some (report-words report-type) (list body-report)))
       ;; Is this trigger against a known report, and if so, which one?

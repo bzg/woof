@@ -38,6 +38,16 @@
                                            :owned  ["Handled"]
                                            :closed ["Done" "Canceled"]}}}
 
+   :priority-words-all #{"Important" "Urgent" "Unimportant" "Unurgent"}
+
+   :permissions
+   {:admin       #{:add-admin :remove-admin
+                   :add-feature :remove-feature
+                   :remove-maintainer :undelete :unignore
+                   :global-notifications}
+    :maintainer  #{:maintenance :add-maintainer :delete :ignore}
+    :contributor #{:notifications :home :support}}
+
    :admin-report-words
    {;; Contributors actions
     :notifications        "Notifications"
@@ -56,5 +66,5 @@
     :unignore             "Unignore"
     :global-notifications "Global notifications"
     }
-   
+
    })
