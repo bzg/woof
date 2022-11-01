@@ -28,8 +28,6 @@
                 `[:find ?e :where [?e ~report-type ?m]])
               db/db)
              (map #(d/entity db/db (first %)))
-             ;; FIXME: Handle private?
-             ;; (remove :private)
              (remove (if-not (= closed? "on") :closed false?))
              (filter #(re-find (re-pattern (or search ""))
                                (:subject (report-type %))))

@@ -166,7 +166,7 @@
 (defn- add-log! [date msg]
   (d/transact! db/conn [{:log date :msg msg}]))
 
-(defn- add-mail! [{:keys [id from subject] :as msg} & private]
+(defn- add-mail! [{:keys [id from subject] :as msg} & config]
   (let [{:keys [List-Post X-BeenThere References Archived-At]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         id          (true-id id)
@@ -184,7 +184,7 @@
                                               :message-id  id})
                            :subject    (trim-subject-prefix subject)
                            :references refs
-                           :private    (or private false)
+                           :config     (or config false)
                            :from       (:address (first from))
                            :username   (:name (first from))
                            :date       (java.util.Date.)
@@ -192,7 +192,7 @@
     ;; Return the added mail eid
     (:db/id (d/entity db/db [:message-id id]))))
 
-(defn- add-mail-private! [msg]
+(defn- add-mail-config! [msg]
   (add-mail! msg (java.util.Date.)))
 
 (defn update-person! [{:keys [email username role]} & [action]]
@@ -567,7 +567,7 @@
           "Undelete"             (undelete! cmd-val)
           "Unignore"             (unignore! cmd-val)
           nil)))
-    (add-mail-private! msg)))
+    (add-mail-config! msg)))
 
 ;;;; TODO
 ;; (defn- report-notify! [report-type msg-eid status-report-eid]
