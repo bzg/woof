@@ -1,9 +1,10 @@
 (ns bzg.config-test
   (:require [aero.core :refer (read-config)]
+            [bzg.config :as config]
             [clojure.spec.alpha :as spec]
             [clojure.test :refer [deftest is testing]]))
 
-(def config (read-config "config.edn"))
+(def config (merge config/defaults (read-config "config.edn")))
 
 (spec/def ::smtp-host (spec/nilable string?))
 (spec/def ::smtp-port integer?)
@@ -36,10 +37,10 @@
 
 (spec/def ::maintenance boolean?)
 (spec/def ::notifications boolean?)
-(spec/def ::watch map?) ;; TODO
-(spec/def ::show map?) ;; TODO
-(spec/def ::display-max map?) ;; TODO
-(spec/def ::data-formats map?) ;; TODO
+(spec/def ::watch map?) ;; FIXME
+(spec/def ::show map?) ;; FIXME
+(spec/def ::display-max map?) ;; FIXME
+(spec/def ::data-formats map?) ;; FIXME
 
 (spec/def ::defaults
   (spec/keys

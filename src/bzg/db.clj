@@ -1,9 +1,11 @@
 (ns bzg.db
   (:require [datalevin.core :as d]
+            [datalevin.core :as d]
+            [bzg.config :as config]
             [aero.core :refer (read-config)]))
 
 ;; Set up configuration
-(def config (read-config "config.edn"))
+(def config (merge config/defaults (read-config "config.edn")))
 
 ;; Set up the database
 (def schema
