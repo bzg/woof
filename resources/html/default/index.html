@@ -67,11 +67,11 @@
 		{% ifequal entry.status 1 %}
 		<span title="Acked">🟨</span>
 		{% else %}
-		{% ifequal entry.status -1 %}
+		{% if entry.status < 0 %}
 		<span title="Closed">🟥</span>
 		{% else %}
 		<span title="Unacked">⬜</span>
-		{% endifequal %}
+		{% endif %}
 		{% endifequal %}
 		{% endifequal %}
 		{% endifequal %}
