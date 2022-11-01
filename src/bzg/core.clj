@@ -264,18 +264,17 @@
                        ;; FIXME: Is this below really needed?
                        (as-> refs (remove nil? refs))
                        first)]
-        (let [;; About :important :urgent :acked, :owned or :closed ?
-              status
+        (let [status ;; :important :urgent :acked, :owned or :closed ?
               (cond priority-word?
-                    (if (re-find #"mportant" body-report) :important :urgent)
+                    (if (re-find #"(?i)important" body-report) :important :urgent)
                     :else
                     (key (first (filter
                                  #(some (into #{} (un-ify (val %)))
                                         (list body-report))
                                  (:triggers (report-type (:watch db/config)))))))]
           {:status
-           (if (re-find #"(?i)Un" body-report)
-             ;; Maybe return :unacked, :unowned or :unclosed
+           (if (re-find #"(?i)Un|No[tn]-?" body-report)
+             ;; Maybe return :un-[status]
              (keyword (str "un" (name status)))
              status)
            :upstream-report-eid e})))))

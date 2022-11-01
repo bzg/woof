@@ -38,7 +38,8 @@
                                            :owned  ["Handled"]
                                            :closed ["Done" "Canceled"]}}}
 
-   :priority-words-all #{"Important" "Urgent" "Unimportant" "Unurgent"}
+   :priority-words-all #{"Important" "Not important" "Unimportant"
+                         "Urgent" "Not urgent" "Non urgent" "Non-urgent"}
 
    :permissions
    {:admin       #{:add-admin :remove-admin
