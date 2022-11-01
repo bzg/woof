@@ -34,20 +34,6 @@
            )
       reports)))
 
-(defn mails [& [source-id search]]
-  (->> (d/q `[:find (d/pull ?e [*])
-              :where
-              [?e :message-id _]
-              [?e :source-id ~source-id]]
-            db/db)
-       (map first)
-       (remove :private)
-       (remove :deleted)
-       (filter #(re-find (re-pattern (or search "")) (:subject %)))
-       (sort-by :date)
-       ;; (map add-role)
-       (take (-> (d/entity db/db [:defaults "init"]) :display-max :mail))))
-
 ;; FIXME: refactor?
 (defn bugs [& [source-id search]]
   (reports {:source-id   source-id

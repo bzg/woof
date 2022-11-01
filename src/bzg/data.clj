@@ -71,9 +71,7 @@
                     :bugs     (fetch/bugs source-id search)
                     :requests (fetch/requests source-id search)
                     :patches  (fetch/patches source-id search)
-                    :news     (fetch/news source-id search)
-                    ;; :mails         (fetch/mails source-id search)
-                    )
+                    :news     (fetch/news source-id search))
         headers   (condp = format
                     "rss"  {"Content-Type" "application/xml"}
                     "md"   {"Content-Type" "text/plain; charset=utf-8"}
@@ -92,5 +90,3 @@
 (defn get-requests-data [params] (get-data :requests params))
 (defn get-patches-data [params] (get-data :patches params))
 (defn get-news-data [params] (get-data :news params))
-(defn get-mails-data [params] (get-data :mails params))
-

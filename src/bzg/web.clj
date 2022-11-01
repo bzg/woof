@@ -46,10 +46,10 @@
                             (val (first sources))))]
     (-> (merge (:ui db/config)
                (:ui source-cfg)
-               {:display (or (:show (:ui source-cfg))
-                             (:show (:ui db/config))
-                             (:watch source-cfg)
-                             (:watch db/config))})
+               {:display (or ;; (:show (:ui source-cfg))
+                          ;; (:show (:ui db/config))
+                          (:watch source-cfg)
+                          (:watch db/config))})
         (dissoc :show))))
 
 (defn- with-html-defaults [config-defaults {:keys [source] :as m}]
@@ -145,9 +145,6 @@
       ["requests"
        ["" {:get #(get-page :request %)}]
        [":format" {:get #(data/get-requests-data %)}]]
-      ["mails"
-       ["" {:get #(get-page :mail %)}]
-       [":format" {:get #(data/get-mails-data %)}]]
       ;; List per source
       ["source/:source-slug/"
        ["" {:get #(get-page :news %)}]
@@ -162,10 +159,7 @@
         [":format" {:get #(data/get-patches-data %)}]]
        ["requests"
         ["" {:get #(get-page :request %)}]
-        [":format" {:get #(data/get-requests-data %)}]]
-       ["mails"
-        ["" {:get #(get-page :mail %)}]
-        [":format" {:get #(data/get-mails-data %)}]]]]]
+        [":format" {:get #(data/get-requests-data %)}]]]]]
     {:data {:middleware [params/wrap-params]}})
    (ring/create-default-handler
     {:not-found
