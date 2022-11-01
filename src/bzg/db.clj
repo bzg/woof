@@ -1,6 +1,5 @@
 (ns bzg.db
   (:require [datalevin.core :as d]
-            [datalevin.core :as d]
             [bzg.config :as config]
             [aero.core :refer (read-config)]))
 

@@ -743,11 +743,10 @@
 
            ;; Or a report against a known patch, bug, etc
            (when-let
-               [body-report
+               [body-reports
                 (->> body-seq
                      (map #(re-find report-words-re %))
-                     (remove nil?)
-                     first)]
+                     (remove nil?))]
 
              (or
               ;; New action against a known patch/bug/request
@@ -755,13 +754,14 @@
                 (doseq [w      [:patch :bug :request]
                         :while (nil? @done)]
                   (when (w watched)
-                    (when-let [{:keys [upstream-report-eid status]}
-                               (is-report-update? w body-report references)]
-                      (reset! done
-                              (report! {:report-type    w
-                                        :report-eid     upstream-report-eid
-                                        :status-trigger body-report
-                                        status          (add-mail! msg)})))))
+                    (doseq [body-report body-reports]
+                      (when-let [{:keys [upstream-report-eid status]}
+                                 (is-report-update? w body-report references)]
+                        (reset! done
+                                (report! {:report-type    w
+                                          :report-eid     upstream-report-eid
+                                          :status-trigger body-report
+                                          status          (add-mail! msg)}))))))
                 @done)
 
               ;; Or an action against existing changes/releases by a maintainer
@@ -770,13 +770,14 @@
                   (doseq [w      [:change :release :announcement]
                           :while (nil? @done)]
                     (when (w (:announcement watched))
-                      (when-let [{:keys [upstream-report-eid status]}
-                                 (is-report-update? w body-report references)]
-                        (reset! done
-                                (report! {:report-type    w
-                                          :report-eid     upstream-report-eid
-                                          :status-trigger body-report
-                                          status          (add-mail! msg)}))))))
+                      (doseq [body-report body-reports]
+                        (when-let [{:keys [upstream-report-eid status]}
+                                   (is-report-update? w body-report references)]
+                          (reset! done
+                                  (report! {:report-type    w
+                                            :report-eid     upstream-report-eid
+                                            :status-trigger body-report
+                                            status          (add-mail! msg)})))))))
                 (timbre/warn
                  (format
                   "%s tried to update a change or a release while not a maintainer"
