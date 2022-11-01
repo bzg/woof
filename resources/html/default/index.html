@@ -25,112 +25,111 @@
       <section class="section" style="padding: 0rem .5rem 1.5rem .5rem">
 	<div class="container">
 
-      {% ifequal entries|count 0 %}
-      <h1 id="entries" class="title is-size-4">No {{page}}.</h1>
-      {% else %}
-      <h1 id="entries" class="title is-size-4">
-	<span>
-	  {% if data-formats.rss %}<a class="tag is-info is-light" href="{{slug-end}}.rss">RSS</a>{% endif %}
-	  {% if data-formats.json %}<a class="tag is-success is-light" href="{{slug-end}}.json">JSON</a>{% endif %}
-	  {% if data-formats.org %}<a class="tag is-danger is-light" href="{{slug-end}}.org">ORG</a>{% endif %}
-	  {% if data-formats.md %}<a class="tag is-warning is-light" href="{{slug-end}}.md">MD</a>{% endif %}
-	</span>
-      </h1>
-      <div class="table-container">
-	<table class="table is-hoverable is-bordered is-fullwidth">
-	  <thead>
-	    <tr>
-	      <th class="has-text-centered" width="3%"><a href="?sorting-by=status" title="Sort entries by status">IiI</a></th>
-	      <th class="has-text-centered" width="3%"><a href="?sorting-by=priority" title="Sort entries by priority">I!I</a></th>
-	      <th>Subject</th>
-	      {% if not source %}
-	      {% if 1 < sources|length %}
-	      <th>Source</th>
-	      {% endif %}
-	      {% endif %}
-	      <th width="15%"><a href="?sorting-by=user" title="Sort entries by submitter's role">From<a></th>
-	      <th width="15%"><a href="?sorting-by=date" title="Sort entries by date">Date</a></th>
-	      <th class="has-text-centered" width="5%"><a href="?sorting-by=refs" title="Sort entries by number of references">Refs</a>
-	      </th>
-	    </tr>
-	  </thead>
-	  <tbody>
-	    {% for entry in entries %}
-	    <tr>
-	      <td class="has-text-centered">
-		{% ifequal entry.status 3 %}
-		<span title="Acked and owned">🟩</span>
-		{% else %}
-		{% ifequal entry.status 2 %}
-		<span title="Owned">🟦</span>
-		{% else %}
-		{% ifequal entry.status 1 %}
-		<span title="Acked">🟨</span>
-		{% else %}
-		{% if entry.status < 0 %}
-		<span title="Closed">🟥</span>
-		{% else %}
-		<span title="Unacked">⬜</span>
-		{% endif %}
-		{% endifequal %}
-		{% endifequal %}
-		{% endifequal %}
-	      </td>
-	      <td class="has-text-centered">
-		{% ifequal entry.priority 3 %}
-		<span title="Urgent and important">🟥</span>
-		{% else %}
-		{% ifequal entry.priority 2 %}
-		<span title="Urgent">🟧</span>
-		{% else %}
-		{% ifequal entry.priority 1 %}
-		<span title="Important">🟨</span>
-		{% else %}
-		<span title="Unurgent and unimportant">⬜</span>
-		{% endifequal %}
-		{% endifequal %}
-		{% endifequal %}
-	      </td>
-	      <td>
-		{% if entry.link %}
-		<a href="{{entry.link}}" target="_blank" title="Sent by {{entry.from}} on {{entry.date}}">{{entry.subject}}</a>
-		{% else %}
-		{{entry.subject}}
-		{% endif %}
-	      </td>
-	      {% if not source %}
-	      {% if 1 < sources|length %}
-	      <td>
-		<a href="/source/{{entry.source-slug}}/"
-		   title="Display Woof! page for {entry.source-id}}">
-		  {{entry.source-slug}}
-		</a>
-	      </td>
-	      {% endif %}
-	      {% endif %}
-	      <td>
-		{% ifequal entry.role 2 %}
-		<strong>{{entry.username}}</strong>
-		{% else %}
-		{% ifequal entry.role 1 %}
-		<em>{{entry.username}}</em>
-		{% else %}
-		{{entry.username}}
-		{% endifequal %}
-		{% endifequal %}
-	      </td>
-	      <td>{{entry.date|date:shortDate}}</td>
-	      <td>{{entry.backrefs}}</td>
-	    </tr>
-	    {% endfor %}
-	  </tbody>
-	</table>
-      </div>
-      {% endifequal %}
-      
+	  {% ifequal entries|count 0 %}
+	  <h1 id="entries" class="title is-size-4">No {{page}}.</h1>
+	  {% else %}
+	  <h1 id="entries" class="title is-size-4">
+	    <span>
+	      {% if data-formats.rss %}<a class="tag is-info is-light" href="{{slug-end}}.rss">RSS</a>{% endif %}
+	      {% if data-formats.json %}<a class="tag is-success is-light" href="{{slug-end}}.json">JSON</a>{% endif %}
+	      {% if data-formats.org %}<a class="tag is-danger is-light" href="{{slug-end}}.org">ORG</a>{% endif %}
+	      {% if data-formats.md %}<a class="tag is-warning is-light" href="{{slug-end}}.md">MD</a>{% endif %}
+	    </span>
+	  </h1>
+	  <div class="table-container">
+	    <table class="table is-hoverable is-fullwidth">
+	      <thead>
+		<tr>
+		  <th class="has-text-centered" width="3%"><a href="?sorting-by=priority" title="Sort entries by priority">I!I</a></th>
+		  <th>Subject</th>
+		  {% if not source %}
+		  {% if 1 < sources|length %}
+		  <th>Source</th>
+		  {% endif %}
+		  {% endif %}
+		  <th width="15%"><a href="?sorting-by=user" title="Sort entries by submitter's role">From<a></th>
+		    <th width="15%"><a href="?sorting-by=date" title="Sort entries by date">Date</a></th>
+		    <th class="has-text-centered" width="5%"><a href="?sorting-by=refs" title="Sort entries by number of references">Refs</a></th>
+		    <th class="has-text-centered" width="3%"><a href="?sorting-by=status" title="Sort entries by status">IiI</a></th>
+		</tr>
+	      </thead>
+	      <tbody>
+		{% for entry in entries %}
+		<tr>
+		  <td class="has-text-centered">
+		    {% ifequal entry.priority 3 %}
+		    <span title="Urgent and important">🟥</span>
+		    {% else %}
+		    {% ifequal entry.priority 2 %}
+		    <span title="Urgent">🟧</span>
+		    {% else %}
+		    {% ifequal entry.priority 1 %}
+		    <span title="Important">🟨</span>
+		    {% else %}
+		    <span title="Unurgent and unimportant">⬜</span>
+		    {% endifequal %}
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
+		  <td>
+		    {% if entry.link %}
+		    <a href="{{entry.link}}" target="_blank" title="Sent by {{entry.from}} on {{entry.date}}">{{entry.subject}}</a>
+		    {% else %}
+		    {{entry.subject}}
+		    {% endif %}
+		  </td>
+		  {% if not source %}
+		  {% if 1 < sources|length %}
+		  <td>
+		    <a href="/source/{{entry.source-slug}}/"
+		       title="Display Woof! page for {entry.source-id}}">
+		      {{entry.source-slug}}
+		    </a>
+		  </td>
+		  {% endif %}
+		  {% endif %}
+		  <td>
+		    {% ifequal entry.role 2 %}
+		    <strong>{{entry.username}}</strong>
+		    {% else %}
+		    {% ifequal entry.role 1 %}
+		    <em>{{entry.username}}</em>
+		    {% else %}
+		    {{entry.username}}
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
+		  <td>{{entry.date|date:shortDate}}</td>
+		  <td>{{entry.backrefs}}</td>
+		  <td class="has-text-centered">
+		    {% ifequal entry.status 3 %}
+		    <span title="Acked and owned">🟩</span>
+		    {% else %}
+		    {% ifequal entry.status 2 %}
+		    <span title="Owned">🟦</span>
+		    {% else %}
+		    {% ifequal entry.status 1 %}
+		    <span title="Acked">🟨</span>
+		    {% else %}
+		    {% if entry.status < 0 %}
+		    <span title="Closed">🟥</span>
+		    {% else %}
+		    <span title="Unacked">⬜</span>
+		    {% endif %}
+		    {% endifequal %}
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
+		</tr>
+		{% endfor %}
+	      </tbody>
+	    </table>
+	  </div>
+	  {% endifequal %}
+
 	</div>
       </section>
-      
+
       {% endif %}
       {% endif %}
     </div>
