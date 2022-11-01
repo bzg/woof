@@ -212,9 +212,9 @@
                              {:contributor contributor-since?})
         new-role-str       (string/join ", " (map name (keys new-role)))
         person             (merge {:email email :username username}
-                                  new-role action)]
-    ;; FIXME: Clumsy
-    (when (d/transact! db/conn [person])
+                                  new-role action)
+        transaction        (d/transact! db/conn [person])]
+    (when-not (seq (:tx-data transaction))
       (let [msg (cond
                   (and existing-person role action)
                   (format "Updated %s (%s) as %s: %s"
@@ -233,9 +233,6 @@
                           username email action)
                   role
                   (format "Added %s (%s) as %s"
-                          username email new-role-str)
-                  :else
-                  (format "%s (%s) already known as %s"
                           username email new-role-str))]
         (timbre/info msg)))))
 
