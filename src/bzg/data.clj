@@ -66,6 +66,7 @@
 (defn get-data [what {:keys [path-params query-params]}]
   (let [source-id (core/slug-to-source-id (:source-slug path-params))
         format    (subs (:format path-params) 1)
+        ;; FIXME: search param unused?
         search    (or (:search query-params) "")
         resources (condp = what
                     :bugs     (fetch/bugs source-id search)

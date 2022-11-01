@@ -9,7 +9,7 @@
 ;;     (merge e {:role roles})))
 
 ;; FIXME: Use fulltext search for reports?
-(defn reports [{:keys [source-id report-type search as-mail]}]
+(defn reports [{:keys [source-id report-type search closed? as-mail]}]
   (let [reports
         (->> (d/q
               (if source-id
@@ -17,10 +17,9 @@
                 `[:find ?e :where [?e ~report-type ?m]])
               db/db)
              (map #(d/entity db/db (first %)))
-             ;; Always remove canceled and deleted reports
+             ;; FIXME: Handle private?
              ;; (remove :private)
-             (remove :deleted)
-             (remove :canceled)
+             (remove (if-not (= closed? "on") :closed false?))
              (filter #(re-find (re-pattern (or search ""))
                                (:subject (report-type %))))
              (take (or (-> db/config :watch report-type :display-max) 100)))]
@@ -35,33 +34,38 @@
       reports)))
 
 ;; FIXME: refactor?
-(defn bugs [& [source-id search]]
+(defn bugs [& [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
+            :closed?      closed?
             :report-type :bug
             :as-mail     true}))
 
-(defn patches [& [source-id search]]
+(defn patches [& [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
+            :closed?      closed?
             :report-type :patch
             :as-mail     true}))
 
-(defn changes [& [source-id search]]
+(defn changes [& [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
+            :closed?      closed?
             :report-type :change
             :as-mail     true}))
 
-(defn requests [& [source-id search]]
+(defn requests [& [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
+            :closed?      closed?
             :report-type :request
             :as-mail     true}))
 
-(defn announcements [& [source-id search]]
+(defn announcements [& [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
+            :closed?      closed?
             :report-type :announcement
             :as-mail     true}))
 
@@ -70,78 +74,89 @@
 
 ;; FIXME: Handle priority:
 ;; (remove #(if-let [p (:priority %)] (< p 2) true))
-(defn confirmed-bugs [& [source-id search]]
-  (->> (reports {:source-id source-id :search (or search "") :report-type :bug})
+(defn confirmed-bugs [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :bug})
        (filter :acked)
-       (remove :closed)
+       (remove (if (not-empty closed?) :closed false?))
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn unconfirmed-bugs [& [source-id search]]
-  (->> (reports {:source-id source-id :search (or search "") :report-type :bug})
+(defn unconfirmed-bugs [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :bug})
        (remove :acked)
-       (remove :closed)
+       (remove (if (not-empty closed?) :closed false?))
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn unclosed-bugs [& [source-id search]]
-  (->> (reports {:source-id source-id :search (or search "") :report-type :bug})
-       (remove :closed)
+(defn unclosed-bugs [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :bug})
+       (remove (if (not-empty closed?) :closed false?))
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn effective-bugs [& [source-id search]]
-  (->> (reports {:source-id source-id :search (or search "") :report-type :bug})
+(defn effective-bugs [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :bug})
        (filter :effective)
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn approved-patches [& [source-id search]]
-  (->> (reports {:source-id source-id :search (or search "") :report-type :patch})
+(defn approved-patches [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :patch})
        (filter :acked)
-       (remove :closed)
+       (remove (if (not-empty closed?) :closed false?))
        (map :patch)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn unapproved-patches [& [source-id search]]
-  (->> (reports {:source-id source-id :search (or search "") :report-type :patch})
+(defn unapproved-patches [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :patch})
        (remove :acked)
-       (remove :closed)
+       (remove (if (not-empty closed?) :closed false?))
        (map :patch)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn handled-requests [& [source-id search]]
-  (->> (reports {:source-id source-id :search (or search "") :report-type :request})
+(defn handled-requests [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :request})
        (filter :owned)
-       (remove :closed)
+       (remove (if (not-empty closed?) :closed false?))
        (map :request)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn unhandled-requests [& [source-id search]]
-  (->> (reports {:source-id source-id :search (or search "") :report-type :request})
+(defn unhandled-requests [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :request})
        (remove :owned)
+       (remove (if (not-empty closed?) :closed false?))
        (map :request)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn undone-requests [& [source-id search]]
-  (->> (reports {:source-id source-id :search (or search "") :report-type :request})
-       (remove :closed)
+(defn undone-requests [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :request})
+       (remove (if (not-empty closed?) :closed false?))
        (map :request)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn unreleased-changes [& [source-id search]]
-  (->> (reports {:source-id source-id :search (or search "") :report-type :change})
-       (remove :closed)
+(defn unreleased-changes [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :change})
+       (remove (if (not-empty closed?) :closed false?))
        (map :change)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn latest-release [source-id]
+(defn latest-release [source-id closed?]
   (->> (d/q `[:find ?e :where
               [?e :release ?m]
               [?m :source-id ~source-id]] db/db)
        (map first)
        (map #(d/entity db/db %))
-       (remove :closed)
+       (remove (if (not-empty closed?) :closed false?))
        (map (juxt :release #(hash-map :version (:version %))))
        (map (juxt #(select-keys (d/entity db/db (:db/id (first %)))
                                 [:date])
@@ -156,11 +171,12 @@
               [?m :source-id ~source-id]] db/db)
        (map first)
        (map #(d/entity db/db %))
+       ;; FIXME: conditionnally remove :closed?
        (remove :closed)
        (map :version)
        (into #{})))
 
-;; (defn releases [& [source-id search]]
+;; (defn releases [& [source-id search closed]]
 ;;   (->> (d/q (if source-id
 ;;               `[:find ?e :where
 ;;                 [?e :release ?m]
@@ -174,32 +190,34 @@
 ;;        (filter #(re-find (re-pattern (or search "")) (:subject %)))
 ;;        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn releases [& [source-id search]]
+(defn releases [& [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
+            :closed?     closed?
             :report-type :release
             :as-mail     true}))
 
-(defn latest-released-changes [& [source-id search]]
-  (let [latest-version (:version (latest-release source-id))]
-    (->> (reports {:source-id source-id :search (or search "") :report-type :change})
+(defn latest-released-changes [& [source-id search closed?]]
+  (let [latest-version (:version (latest-release source-id closed?))]
+    (->> (reports {:source-id source-id :search      (or search "")
+                   :closed?   closed?   :report-type :change})
          (filter #(and (= latest-version (:version %))
                        (:released %)))
          (map :change)
          (map #(d/touch (d/entity db/db (:db/id %)))))))
 
-(defn news [& [source-id search]]
+(defn news [& [source-id search closed?]]
   (let [search    (or search "")
         news-show (:news (:show (:ui db/config)))]
     (->> (list
           (when (:announcements news-show)
-            (announcements source-id search))
+            (announcements source-id search closed?))
           (when (:releases news-show)
-            (releases source-id search))
+            (releases source-id search closed?))
           (when (:unreleased-changes news-show)
-            (unreleased-changes source-id search))
+            (unreleased-changes source-id search closed?))
           (when (:latest-released-changes news-show)
-            (latest-released-changes source-id search)))
+            (latest-released-changes source-id search closed?)))
          (remove nil?)
          flatten)))
 

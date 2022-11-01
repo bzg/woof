@@ -20,15 +20,18 @@
     {% ifunequal page "overview" %}
     {% ifunequal page "howto" %}
     <div class="columns">
-      <div class="column is-offset-4 is-4">
+      <div class="column is-offset-3 is-6">
 	<div class="level">
 	  <form class="level-item">
-	    <input class="input" name="search" value="{{search}}"
-		   placeHolder="Plain text search" type="text">
+	    <label class="level-item checkbox mx-2">
+	      <input type="checkbox" name="closed"
+		     {% ifequal closed? "on" %}checked{% endifequal %}> With closed?
+	    </label>
+	    <input type="text" class="input mx-2" name="search" value="{{search}}"
+		   placeHolder="Plain text search">
 	    <button class="button is-success is-light" type="submit">Filter</button>
 	  </form>
-	  <form>
-	    <input name="search" type="hidden" value="">
+	  <form class="level-item">
 	    <button class="button is-danger is-light" type="submit">❌</button>
 	  </form>
 	</div>
@@ -37,6 +40,5 @@
     {% endifunequal %}
     {% endifunequal %}
     {% endifunequal %}
-
   </div>
 </section>

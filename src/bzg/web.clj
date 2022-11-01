@@ -68,13 +68,15 @@
               :slug      (:slug (get (:sources db/config) source-id))}}))
 
 (defn- page-index [page source-id slug-end format-params config-defaults]
-  (let [search (:search format-params)
-        source (when source-id
-                 {:source-id source-id
-                  :slug      (:slug (get (:sources db/config) source-id))})]
+  (let [search  (:search format-params)
+        closed? (:closed? format-params)
+        source  (when source-id
+                  {:source-id source-id
+                   :slug      (:slug (get (:sources db/config) source-id))})]
     (with-html-defaults config-defaults
       {:source   source
        :search   search
+       :closed?  closed?
        :page     (name page)
        :slug-end (or (not-empty slug-end) "news")
        :entries
@@ -83,12 +85,10 @@
         (merge {:entries
                 (map #(assoc % :source-slug (core/source-id-to-slug (:source-id %)))
                      (condp = page
-                       :news    (fetch/news source-id search)
-                       :bug     (fetch/bugs source-id search)
-                       :patch   (fetch/patches source-id search)
-                       :request (fetch/requests source-id search)
-                       ;; :mail    (fetch/mails source-id search)
-                       ))}
+                       :news    (fetch/news source-id search closed?)
+                       :bug     (fetch/bugs source-id search closed?)
+                       :patch   (fetch/patches source-id search closed?)
+                       :request (fetch/requests source-id search closed?)))}
                format-params))})))
 
 (defn- page-overview [_ source-id _ _ config-defaults]
@@ -111,6 +111,7 @@
 
 (defn- get-page [page {:keys [query-params path-params uri]}]
   (let [format-params   {:search     (or (get query-params "search") "")
+                         :closed?    (or (get query-params "closed") "")
                          :sorting-by (get query-params "sorting-by")}
         config-defaults (into {} (d/entity db/db [:defaults "init"]))
         html-page       (condp = page
