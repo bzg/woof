@@ -97,7 +97,7 @@
 		  {% endif %}
 		  <td>
 		    {% ifequal entry.role 2 %}
-		    <strong>{{entry.username}}</strong>
+		    <strong title="{{entry.from}}">{{entry.username}}</strong>
 		    {% else %}
 		    {% ifequal entry.role 1 %}
 		    <em>{{entry.username}}</em>
