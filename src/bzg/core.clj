@@ -193,7 +193,10 @@
                           username email action)
                   role
                   (format "Added %s (%s) as %s"
-                          username email new-role-str))]
+                          username email new-role-str)
+                  :else
+                  (format "Added %s (%s) as a contributor"
+                          username email))]
         (timbre/info msg)))))
 
 (def config-strings-re
@@ -769,11 +772,7 @@
                                 (report! {:report-type    w
                                           :report-eid     upstream-report-eid
                                           :status-trigger body-report
-                                          status          (add-mail! msg)})))))))
-              (timbre/warn
-               (format
-                "%s tried to update a change or a release while not a maintainer"
-                from))))))))))
+                                          status          (add-mail! msg)})))))))))))))))
 
 ;;; Inbox monitoring
 (def woof-inbox-monitor (atom nil))
