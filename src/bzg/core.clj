@@ -148,7 +148,7 @@
                            :from       (:address (first from))
                            :username   (:name (first from))
                            :date       (java.util.Date.)
-                           :backrefs   1}])
+                           :refs       1}])
     ;; Return the added mail eid
     (:db/id (d/entity db/db [:message-id id]))))
 
@@ -212,8 +212,8 @@
 (defn- is-in-a-known-thread? [references]
   (doseq [i (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db/db))
                     references)]
-    (let [backrefs (:backrefs (d/entity db/db [:message-id i]))]
-      (d/transact! db/conn [{:message-id i :backrefs (inc backrefs)}]))))
+    (let [refs (:refs (d/entity db/db [:message-id i]))]
+      (d/transact! db/conn [{:message-id i :refs (inc refs)}]))))
 
 (defn- is-report-update? [report-type body-report references]
   ;; Is there a known trigger (e.g. "Canceled") for this report type
@@ -680,7 +680,7 @@
                     (some #{source-id}
                           (keys (:sources db/config)))))))
 
-      ;; Possibly increment backrefs count in known emails
+      ;; Possibly increment refs count in known emails
       (is-in-a-known-thread? references)
 
       (or ;; Detect a new bug/patch/request

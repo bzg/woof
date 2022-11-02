@@ -40,7 +40,7 @@
 	    <table class="table is-hoverable is-fullwidth">
 	      <thead>
 		<tr>
-		  <th class="has-text-centered" width="3%"><a href="?sorting-by=priority" title="Sort entries by priority">I!I</a></th>
+		  <th class="has-text-centered" width="3%"><a href="?sorting-by=priority" title="Sort entries by priority">Priority</a></th>
 		  <th>Subject</th>
 		  {% if not source %}
 		  {% if 1 < sources|length %}
@@ -50,7 +50,7 @@
 		  <th width="15%"><a href="?sorting-by=user" title="Sort entries by submitter's role">From<a></th>
 		    <th width="15%"><a href="?sorting-by=date" title="Sort entries by date">Date</a></th>
 		    <th class="has-text-centered" width="5%"><a href="?sorting-by=refs" title="Sort entries by number of references">Refs</a></th>
-		    <th class="has-text-centered" width="3%"><a href="?sorting-by=status" title="Sort entries by status">IiI</a></th>
+		    <th class="has-text-centered" width="3%"><a href="?sorting-by=status" title="Sort entries by status">Status</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
@@ -107,7 +107,7 @@
 		    {% endifequal %}
 		  </td>
 		  <td>{{entry.date|date:shortDate}}</td>
-		  <td>{{entry.backrefs}}</td>
+		  <td>{{entry.refs}}</td>
 		  <td class="has-text-centered">
 		    {% ifequal entry.status 3 %}
 		    <span title="Acked and owned">🟩</span>

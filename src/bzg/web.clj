@@ -39,7 +39,8 @@
                 "user"     :role
                 "status"   :status
                 "priority" :priority
-                :backrefs))
+                "refs"     :refs
+                :priority))
      reverse
      (remove nil?)
      (map linkify-maybe))))
