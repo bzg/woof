@@ -4,8 +4,10 @@
   {:db-dir   ".db"
    :log-file "log.txt"
    :theme    "default"
+   ;; FIXME: Check why mail here?
    :log      [:db :file :mail]
 
+   ;; FIXME: Document for easier configuration
    :watch {:change       {:subject-prefix ["CHANGE"]
                           :subject-match  []
                           :doc            ""
@@ -38,6 +40,7 @@
                                            :owned  ["Handled"]
                                            :closed ["Done" "Canceled"]}}}
 
+   ;; FIXME: Document what is accepted here (Un/Not/Non)
    :priority-words-all #{"Important" "Not important" "Unimportant"
                          "Urgent" "Not urgent" "Non urgent" "Non-urgent"}
 
@@ -51,6 +54,7 @@
     :contributor #{:notifications :home :support
                    :bug :patch :request}}
 
+   ;; FIXME: Document each admin word
    :admin-report-words
    {:notifications        "Notifications"
     :home                 "Home"

@@ -81,10 +81,17 @@
 		  {% if not source %}
 		  {% if 1 < sources|length %}
 		  <td>
+		    {% ifequal slug-end "news" %}
 		    <a href="/source/{{entry.source-slug}}/"
-		       title="Display Woof! page for {entry.source-id}}">
+		       title="Display page for {{entry.source-id}}">
 		      {{entry.source-slug}}
 		    </a>
+		    {% else %}
+		    <a href="/source/{{entry.source-slug}}/{{slug-end}}"
+		       title="Display page for {{entry.source-id}}">
+		      {{entry.source-slug}}
+		    </a>
+		    {% endifequal %}
 		  </td>
 		  {% endif %}
 		  {% endif %}

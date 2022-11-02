@@ -18,6 +18,7 @@
  :port     #long #or [#env WOOF_PORT 3000]
 
  ;; Sources
+ ;; FIXME: Document how to configure it
  :sources
  {"~bzg/wooff@lists.sr.ht"
   {:slug "wooff"
@@ -54,6 +55,7 @@
                              :org  true
                              :md   true}
       :show
+      ;; FIXME: Document what keywords are accepted here
       {:news
        #{:unreleased-changes :releases :latest-released-changes :announcements}
        :bug
