@@ -14,7 +14,7 @@
       <div class="content colum is-size-1 is-offset-4 is-4 has-text-centered">
 	<p class="button is-size-4 is-info is-light">
 	  <a title="Send an email to the admin" href="mailto:{{config.admin}}">
-	    Under maintenance, sorry.
+	    {{config.i18n.under-maintenance}}
 	  </a>
 	</p>
       </div>
@@ -25,8 +25,10 @@
       <section class="section" style="padding: 0rem .5rem 1.5rem .5rem">
 	<div class="container">
 
+	  {{config.lang}}
+
 	  {% ifequal entries|count 0 %}
-	  <h1 id="entries" class="title is-size-4">No {{page}}.</h1>
+	  <h1 id="entries" class="title is-size-4">{{config.i18n.no}} {{page}}.</h1>
 	  {% else %}
 	  <h1 id="entries" class="title is-size-4">
 	    <span>
@@ -40,17 +42,17 @@
 	    <table class="table is-hoverable is-fullwidth">
 	      <thead>
 		<tr>
-		  <th class="has-text-centered" width="3%"><a href="?sorting-by=priority" title="Sort entries by priority">Priority</a></th>
-		  <th>Subject</th>
+		  <th class="has-text-centered" width="3%"><a href="?sorting-by=priority" title="{{config.i18n.sort-entries-by}} {{config.i18n.priority}}">{{config.i18n.Priority}}</a></th>
+		  <th>{{config.i18n.subject}}</th>
 		  {% if not source %}
 		  {% if 1 < sources|length %}
-		  <th>Source</th>
+		  <th>{{config.i18n.source}}</th>
 		  {% endif %}
 		  {% endif %}
-		  <th width="15%"><a href="?sorting-by=user" title="Sort entries by submitter's role">From<a></th>
-		    <th width="15%"><a href="?sorting-by=date" title="Sort entries by date">Date</a></th>
-		    <th class="has-text-centered" width="5%"><a href="?sorting-by=refs" title="Sort entries by number of references">Refs</a></th>
-		    <th class="has-text-centered" width="3%"><a href="?sorting-by=status" title="Sort entries by status">Status</a></th>
+		  <th width="15%"><a href="?sorting-by=user" title="{{config.i18n.sort-entries-by}} {{config.i18n.role}}">{{config.i18n.from}}<a></th>
+		    <th width="15%"><a href="?sorting-by=date" title="{{config.i18n.sort-entries-by}} {{config.i18n.date}}">{{config.i18n.Date}}</a></th>
+		    <th class="has-text-centered" width="5%"><a href="?sorting-by=refs" title="{{config.i18n.sort-entries-by}} {{config.i18n.number-of-references}}">{{config.i18n.refs}}</a></th>
+		    <th class="has-text-centered" width="3%"><a href="?sorting-by=status" title="{{config.i18n.sort-entries-by}} {{config.i18n.status}}">{{config.i18n.Status}}</a></th>
 		</tr>
 	      </thead>
 	      <tbody>
@@ -58,22 +60,22 @@
 		<tr>
 		  <td class="has-text-centered">
 		    {% ifequal entry.priority 3 %}
-		    <span title="Urgent and important">🟥</span>
+		    <span title="{{config.i18n.Urgent}} {{config.i18n.and}} {{config.i18n.important}}">🟥</span>
 		    {% else %}
 		    {% ifequal entry.priority 2 %}
-		    <span title="Urgent">🟧</span>
+		    <span title="{{config.i18n.Urgent}}">🟧</span>
 		    {% else %}
 		    {% ifequal entry.priority 1 %}
 		    <span title="Important">🟨</span>
 		    {% else %}
-		    <span title="Unurgent and unimportant">⬜</span>
+		    <span title="{{config.i18n.Unurgent}} {{config.i18n.and}} {{config.i18n.unimportant}}">⬜</span>
 		    {% endifequal %}
 		    {% endifequal %}
 		    {% endifequal %}
 		  </td>
 		  <td>
 		    {% if entry.link %}
-		    <a href="{{entry.link}}" target="_blank" title="Sent by {{entry.from}} on {{entry.date}}">{{entry.subject}}</a>
+		    <a href="{{entry.link}}" target="_blank" title="{{config.i18n.sent-by}} {{entry.from}} - {{entry.date}}">{{entry.subject}}</a>
 		    {% else %}
 		    {{entry.subject}}
 		    {% endif %}
@@ -83,12 +85,12 @@
 		  <td>
 		    {% ifequal slug-end "news" %}
 		    <a href="/source/{{entry.source-slug}}/"
-		       title="Display page for {{entry.source-id}}">
+		       title="{{config.i18n.Display-page-for}} {{entry.source-id}}">
 		      {{entry.source-slug}}
 		    </a>
 		    {% else %}
 		    <a href="/source/{{entry.source-slug}}/{{slug-end}}"
-		       title="Display page for {{entry.source-id}}">
+		       title="{{config.i18n.Display-page-for}} {{entry.source-id}}">
 		      {{entry.source-slug}}
 		    </a>
 		    {% endifequal %}
@@ -107,21 +109,21 @@
 		    {% endifequal %}
 		  </td>
 		  <td>{{entry.date|date:shortDate}}</td>
-		  <td>{{entry.refs}}</td>
+		  <td class="has-text-centered">{{entry.refs}}</td>
 		  <td class="has-text-centered">
 		    {% ifequal entry.status 3 %}
-		    <span title="Acked and owned">🟩</span>
+		    <span title="{{config.i18n.Acked}} {{config.i18n.and}} {{config.i18n.owned}}">🟩</span>
 		    {% else %}
 		    {% ifequal entry.status 2 %}
-		    <span title="Owned">🟦</span>
+		    <span title="{{config.i18n.Owned}}">🟦</span>
 		    {% else %}
 		    {% ifequal entry.status 1 %}
-		    <span title="Acked">🟨</span>
+		    <span title="{{config.i18n.Acked}}">🟨</span>
 		    {% else %}
 		    {% if entry.status < 0 %}
-		    <span title="Closed">🟥</span>
+		    <span title="{{config.i18n.Closed}}">🟥</span>
 		    {% else %}
-		    <span title="Unacked">⬜</span>
+		    <span title="{{config.i18n.Unacked}}">⬜</span>
 		    {% endif %}
 		    {% endifequal %}
 		    {% endifequal %}

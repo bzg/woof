@@ -6,15 +6,10 @@
     <div class="container">
       {% include "html/default/tabs.html" with active="overview" %}
       {% if display.overview %}
-
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
 	  <div class="content">
-
-	    <p>The <em>overview</em> page is not implemented yet.</p>
-
-	    <p>To share ideas on what should be displayed here, please send a message to the <a href="https://lists.sr.ht/~bzg/woof">Woof! public mailing list</a>.</p>
-
+	    <p>{{config.i18n.overview-tmp-message}}</p>
 	  </div>
 	</div>
       </section>

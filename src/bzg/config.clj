@@ -4,6 +4,7 @@
   {:db-dir   ".db"
    :log-file "log.txt"
    :theme    "default"
+   :lang     "en" ;; Accepted: en, fr
    ;; FIXME: Check why mail here?
    :log      [:db :file :mail]
 

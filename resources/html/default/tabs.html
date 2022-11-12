@@ -2,30 +2,30 @@
   <ul>
 
     <li {% ifequal page "news" %}class="is-active"{% endifequal %}>
-      <a title="News" href=".">News</a>
+      <a href=".">{{config.i18n.news}}</a>
     </li>
 
     {% if display.bug %}
     <li {% ifequal page "bug" %}class="is-active"{% endifequal %}>
-      <a title="Bugs" href="bugs">Bugs</a>
+      <a href="bugs">{{config.i18n.bugs}}</a>
     </li>
     {% endif %}
 
     {% if display.patch %}
     <li {% ifequal page "patch" %}class="is-active"{% endifequal %}>
-      <a title="Patches" href="patches">Patches</a>
+      <a href="patches">{{config.i18n.patches}}</a>
     </li>
     {% endif %}
 
     {% if display.request %}
     <li {% ifequal page "request" %}class="is-active"{% endifequal %}>
-      <a title="Requests" href="requests">Requests</a>
+      <a href="requests">{{config.i18n.requests}}</a>
     </li>
     {% endif %}
 
     {% if display.overview %}
     <li {% ifequal page "overview" %}class="is-active"{% endifequal %}>
-      <a title="Overview" href="overview">Overview</a>
+      <a href="overview">{{config.i18n.overview}}</a>
     </li>
     {% endif %}
 

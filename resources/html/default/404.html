@@ -8,13 +8,13 @@
       <div class="content colum is-size-1 is-offset-4 is-4 has-text-centered">
 	<p class="button is-size-4 is-info is-light">
 	  <a title="Send an email to the admin" href="mailto:{{config.admin}}">
-	    Under maintenance, sorry.
+	    {{config.i18n.maintenance}}
 	  </a>
 	</p>
       </div>
       {% else %}
       <section>
-	<p>404 error.</p>
+	<p>{{config.i18n.404-error}}</p>
       </section>
       {% endif %}
     </div>

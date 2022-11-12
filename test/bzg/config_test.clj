@@ -65,11 +65,7 @@
 (spec/def ::project-name (spec/nilable string?))
 (spec/def ::project-url (spec/nilable string?))
 (spec/def ::contribute-url (spec/nilable string?))
-(spec/def ::contribute-cta (spec/nilable string?))
-(spec/def ::contribute-cta-email (spec/nilable string?))
 (spec/def ::support-url (spec/nilable string?))
-(spec/def ::support-cta (spec/nilable string?))
-(spec/def ::support-cta-email (spec/nilable string?))
 (spec/def ::feed-title (spec/nilable string?))
 (spec/def ::feed-description (spec/nilable string?))
 
@@ -79,11 +75,7 @@
             ::project-name]
    :opt-un [::project-url
             ::contribute-url
-            ::contribute-cta
-            ::contribute-cta-email
             ::support-url
-            ::support-cta
-            ::support-cta-email
             ::show]))
 
 (spec/def ::config

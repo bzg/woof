@@ -2,6 +2,7 @@
   (:require [org.httpkit.server :as server]
             [reitit.ring :as ring]
             [bzg.core :as core]
+            [bzg.i18n :as i18n]
             [bzg.data :as data]
             [bzg.fetch :as fetch]
             [bzg.db :as db]
@@ -113,13 +114,15 @@
                 :slug      (:slug (get (:sources db/config) source-id))})
      :page   "howto"
      :howto  (md/md-to-html-string
-                 (slurp (io/resource "md/howto.md")))}))
+              (slurp (io/resource "md/howto.md")))}))
 
-(defn- get-page [page {:keys [query-params path-params uri]}]
+(defn- get-page [page {:keys [query-params path-params uri headers]}]
   (let [format-params   {:search     (or (get query-params "search") "")
                          :closed?    (or (get query-params "closed") "")
                          :sorting-by (get query-params "sorting-by")}
-        config-defaults (into {} (d/entity db/db [:defaults "init"]))
+        lang            (subs (get headers "accept-language") 0 2)
+        config-defaults (conj (into {} (d/entity db/db [:defaults "init"]))
+                              {:i18n (get i18n/langs (keyword lang))})
         html-page       (condp = page
                           :sources  {:html "/sources.html" :fn page-sources}
                           :howto    {:html "/howto.html" :fn page-howto}

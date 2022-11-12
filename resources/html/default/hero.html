@@ -2,18 +2,18 @@
   <div class="hero-body" style="padding: 2rem 1.2rem">
     <h1 class="title has-text-centered" style="margin-bottom: 1em;">{{title}}</h1>
     <h2 class="subtitle column is-8 is-offset-2 has-text-centered" style="margin-bottom:0;">
-      <a title="Go the the main page" href="/">Home</a>
-      — <a title="Go the project's homepage" href="{{project-url}}">{{project-name}}</a>
+      <a href="/">{{config.i18n.home}}</a>
+      — <a title="{{config.i18n.go-to-project-page}}" href="{{project-url}}">{{project-name}}</a>
       {% ifunequal sources|count 1 %}
-      — <a title="List the sources monitored by this Woof! instance" href="/sources">Sources</a>
+      — <a title="{{config.i18n.list-sources}}" href="/sources">{{config.i18n.sources}}</a>
       {% endifunequal %}
-      {% if contribute-cta %}
-      — <a title="How to contribute to this project?" href="{{contribute-url}}">{{contribute-cta}}</a>
+      {% if contribute-url %}
+      — <a title="{{config.i18n.contribute-project}}" href="{{contribute-url}}">{{config.i18n.Contribute}}</a>
       {% endif %}
-      {% if support-cta %}
-      — <a title="Support this project" href="{{support-url}}">{{support-cta}}</a>
+      {% if support-url %}
+      — <a title="{{config.i18n.support-project}}" href="{{support-url}}">{{config.i18n.Support}}</a>
       {% endif %}
-      — <a href="howto" title="How to use Woof! to update this page?">Howto</a>
+      — <a href="howto" title="{{config.i18n.how-to-woof}}">{{config.i18n.howto}}</a>
     </h2>
 
     {% ifunequal page "sources" %}
@@ -25,11 +25,11 @@
 	  <form class="level-item">
 	    <label class="level-item checkbox mx-2">
 	      <input type="checkbox" name="closed"
-		     {% ifequal closed? "on" %}checked{% endifequal %}> With closed?
+		     {% ifequal closed? "on" %}checked{% endifequal %}> {{config.i18n.with-closed?}}
 	    </label>
 	    <input type="text" class="input mx-2" name="search" value="{{search}}"
 		   placeHolder="Plain text search">
-	    <button class="button is-success is-light" type="submit">Filter</button>
+	    <button class="button is-success is-light" type="submit">{{config.i18n.filter}}</button>
 	  </form>
 	  <form class="level-item">
 	    <button class="button is-danger is-light" type="submit">❌</button>

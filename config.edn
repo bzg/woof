@@ -41,19 +41,15 @@
  :admin-address  "bzg@bzg.fr"
  :admin-username "Big Bad Woof"
 
- :ui {:title                "Example woof instance"
-      :project-name         "Example project name"
-      :project-url          "http://localhost:3000"
-      :contribute-url       "https://bzg.fr"
-      :contribute-cta       "Contribute"
-      :contribute-cta-email "Please contribute"
-      :support-url          "https://localhost:3000"
-      :support-cta          "Donate"
-      :support-cta-email    "Please support us with a donation"
-      :data-formats         {:rss  true
-                             :json true
-                             :org  true
-                             :md   true}
+ :ui {:title          "Example woof instance"
+      :project-name   "Example project name"
+      :project-url    "http://localhost:3000"
+      :contribute-url "https://bzg.fr"
+      :support-url    "https://localhost:3000"
+      :data-formats   {:rss  true
+                       :json true
+                       :org  true
+                       :md   true}
       :show
       ;; FIXME: Document what keywords are accepted here
       {:news
