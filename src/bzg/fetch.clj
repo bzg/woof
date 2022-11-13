@@ -68,7 +68,9 @@
 (defn logs []
   (map first (d/q '[:find (d/pull ?e [*]) :where [?e :log _]] db/db)))
 
-(defn confirmed-bugs [& [source-id search closed?]]
+;; Functions to fetch (un)acked/(un)owned/(un)closed bugs/patches/requests
+
+(defn acked-bugs [& [source-id search closed?]]
   (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
                  :report-type :bug})
        (filter :acked)
@@ -76,11 +78,34 @@
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn unconfirmed-bugs [& [source-id search closed?]]
+(defn unacked-bugs [& [source-id search closed?]]
   (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
                  :report-type :bug})
        (remove :acked)
        (remove (if (not-empty closed?) :closed false?))
+       (map :bug)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn owned-bugs [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :bug})
+       (filter :owned)
+       (remove (if (not-empty closed?) :closed false?))
+       (map :bug)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn unowned-bugs [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :bug})
+       (remove :owned)
+       (remove (if (not-empty closed?) :closed false?))
+       (map :bug)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn closed-bugs [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :bug})
+       (filter :closed)
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
@@ -91,24 +116,7 @@
        (map :bug)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn effective-bugs [& [source-id search]]
-  (->> (reports {:source-id   source-id :search (or search "")
-                 ;; Always search through all bugs:
-                 :closed?     "on"
-                 :report-type :bug})
-       (filter :effective)
-       (map :bug)
-       (map #(d/touch (d/entity db/db (:db/id %))))))
-
-(defn urgent-bugs [& [source-id search closed?]]
-  (->> (reports {:source-id   source-id :search (or search "")
-                 :closed?     closed?
-                 :report-type :bug})
-       (filter :urgent)
-       (map :bug)
-       (map #(d/touch (d/entity db/db (:db/id %))))))
-
-(defn approved-patches [& [source-id search closed?]]
+(defn acked-patches [& [source-id search closed?]]
   (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
                  :report-type :patch})
        (filter :acked)
@@ -116,7 +124,7 @@
        (map :patch)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn unapproved-patches [& [source-id search closed?]]
+(defn unacked-patches [& [source-id search closed?]]
   (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
                  :report-type :patch})
        (remove :acked)
@@ -124,7 +132,55 @@
        (map :patch)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn handled-requests [& [source-id search closed?]]
+(defn owned-patches [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :patch})
+       (filter :owned)
+       (remove (if (not-empty closed?) :closed false?))
+       (map :patch)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn unowned-patches [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :patch})
+       (remove :owned)
+       (remove (if (not-empty closed?) :closed false?))
+       (map :patch)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn closed-patches [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :patch})
+       (filter :closed)
+       (remove (if (not-empty closed?) :closed false?))
+       (map :patch)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn unclosed-patches [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :patch})
+       (remove :closed)
+       (remove (if (not-empty closed?) :closed false?))
+       (map :patch)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn acked-requests [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :request})
+       (filter :acked)
+       (remove (if (not-empty closed?) :closed false?))
+       (map :request)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn unacked-requests [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :request})
+       (remove :acked)
+       (remove (if (not-empty closed?) :closed false?))
+       (map :request)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn owned-requests [& [source-id search closed?]]
   (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
                  :report-type :request})
        (filter :owned)
@@ -132,7 +188,7 @@
        (map :request)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn unhandled-requests [& [source-id search closed?]]
+(defn unowned-requests [& [source-id search closed?]]
   (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
                  :report-type :request})
        (remove :owned)
@@ -140,7 +196,14 @@
        (map :request)
        (map #(d/touch (d/entity db/db (:db/id %))))))
 
-(defn undone-requests [& [source-id search closed?]]
+(defn closed-requests [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
+                 :report-type :request})
+       (filter :closed)
+       (map :request)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn unclosed-requests [& [source-id search closed?]]
   (->> (reports {:source-id   source-id :search (or search "") :closed? closed?
                  :report-type :request})
        (remove (if (not-empty closed?) :closed false?))
@@ -153,6 +216,8 @@
        (remove (if (not-empty closed?) :closed false?))
        (map :change)
        (map #(d/touch (d/entity db/db (:db/id %))))))
+
+
 
 (defn latest-release [source-id closed?]
   (->> (d/q `[:find ?e :where
@@ -224,6 +289,54 @@
             (latest-released-changes source-id search closed?)))
          (remove nil?)
          flatten)))
+
+;; Aliases
+
+(def confirmed-bugs acked-bugs)
+(def unconfirmed-bugs unacked-bugs)
+(def handled-bugs owned-bugs)
+(def unhandled-bugs unowned-bugs)
+(def fixed-bugs closed-bugs)
+(def canceled-bugs closed-bugs)
+(def unfixed-bugs unclosed-bugs)
+(def uncanceled-bugs unclosed-bugs)
+
+(def approved-patches acked-patches)
+(def unapproved-patches unacked-patches)
+(def handled-patches owned-patches)
+(def unhandled-patches unowned-patches)
+(def applied-patches closed-patches)
+(def canceled-patches closed-patches)
+(def unapplied-patches unclosed-patches)
+(def uncanceled-patches unclosed-patches)
+
+(def approved-requests acked-requests)
+(def unapproved-requests unacked-requests)
+(def handled-requests owned-requests)
+(def unhandled-requests unowned-requests)
+(def done-requests closed-requests)
+(def canceled-requests closed-requests)
+(def uncanceled-requests unclosed-requests)
+(def undone-requests unclosed-requests)
+
+;; For tests
+
+(defn urgent-bugs [& [source-id search closed?]]
+  (->> (reports {:source-id   source-id :search (or search "")
+                 :closed?     closed?
+                 :report-type :bug})
+       (filter :urgent)
+       (map :bug)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
+
+(defn effective-bugs [& [source-id search]]
+  (->> (reports {:source-id   source-id :search (or search "")
+                 ;; Always search through all bugs:
+                 :closed?     "on"
+                 :report-type :bug})
+       (filter :effective)
+       (map :bug)
+       (map #(d/touch (d/entity db/db (:db/id %))))))
 
 ;; Admin functions
 

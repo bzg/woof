@@ -51,14 +51,38 @@
                        :org  true
                        :md   true}
       :show
-      ;; FIXME: Document what keywords are accepted here
       {:news
+       ;; :unreleased-changes :releases :latest-released-changes :announcements
        #{:unreleased-changes :releases :latest-released-changes :announcements}
        :bug
+       ;; - :confirmed-bugs :acked-bugs
+       ;; - :unconfirmed-bugs :unacked-bugs
+       ;; - :handled-bugs :owned-bugs
+       ;; - :unhandled-bugs :unowned-bugs
+       ;; - :fixed-bugs :closed-bugs
+       ;; - :canceled-bugs :closed-bugs
+       ;; - :unfixed-bugs :unclosed-bugs
+       ;; - :uncanceled-bugs :unclosed-bugs
        #{:unconfirmed-bugs :confirmed-bugs :owned-bugs}
        :patch
+       ;; - :approved-patches :unacked-patches
+       ;; - :unapproved-patches :unacked-patches
+       ;; - :handled-patches :owned-patches
+       ;; - :unhandled-patches :unowned-patches
+       ;; - :applied-patches :closed-patches
+       ;; - :canceled-patches :closed-patches
+       ;; - :unapplied-patches :unclosed-patches
+       ;; - :uncanceled-patches :unclosed-patches
        #{:unapproved-patches :approved-patches :owned-patches}
        :request
+       ;; - :approved-requests :acked-requests
+       ;; - :unapproved-requests :unacked-requests
+       ;; - :handled-requests :owned-requests
+       ;; - :unhandled-requests :unowned-requests
+       ;; - :done-requests :closed-requests
+       ;; - :canceled-requests :closed-requests
+       ;; - :uncanceled-requests :unclosed-requests
+       ;; - :undone-requests :unclosed-requests
        #{:unapproved-requests :approved-requests :owned-requests}
        :overview false}}
  }
