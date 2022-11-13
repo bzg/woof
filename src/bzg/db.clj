@@ -13,13 +13,11 @@
    :log      {:db/valueType :db.type/instant
               :db/unique    :db.unique/identity}
 
-   :confirmed {:db/valueType :db.type/ref}
-   :canceled  {:db/valueType :db.type/ref}
-   :applied   {:db/valueType :db.type/ref}
-   :approved  {:db/valueType :db.type/ref}
-   :done      {:db/valueType :db.type/ref}
-   :fixed     {:db/valueType :db.type/ref}
-   :handled   {:db/valueType :db.type/ref}
+   :acked     {:db/valueType :db.type/ref}
+   :owned     {:db/valueType :db.type/ref}
+   :closed    {:db/valueType :db.type/ref}
+   :urgent    {:db/valueType :db.type/ref}
+   :important {:db/valueType :db.type/ref}
 
    :message-id {:db/valueType :db.type/string
                 :db/unique    :db.unique/identity}
