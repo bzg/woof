@@ -20,6 +20,13 @@
         urgent?    (if (:urgent r) 2 0)]
     (+ important? urgent?)))
 
+(defn- compute-vote [r]
+  (let [up   (count (:up r))
+        down (count (:down r))]
+    (if-not (zero? (+ up down))
+      (str (/ up (+ up down)))
+      "N/A")))
+
 (def email-re #"[^<@\s;,]+@[^>@\s;,]+\.[^>@\s;,]+")
 
 (defn- parse-search-string [s]
@@ -66,14 +73,22 @@
              (filter (if-let [f (:closed-by s-el)] #(= (:from (:closed %)) f) seq))
              (map #(assoc % :status (compute-status %)))
              (map #(assoc % :priority (compute-priority %)))
+             (map #(assoc % :vote (compute-vote %)))
              (take (or (-> db/config :watch report-type :display-max) 100)))]
     (if as-mail
       (->> reports
            (map #(assoc (get % report-type)
+                        :vote (get % :vote)
                         :status (get % :status)
                         :priority (get % :priority)))
            (map add-role))
       reports)))
+
+;; (:vote (first (reports {:source-id   "~bzg/wooff@lists.sr.ht"
+;;                         :search      ""
+;;                         :closed?     false
+;;                         :report-type :request
+;;                         :as-mail     false})))
 
 (defn- reports-as-mail [report-type & [source-id search closed?]]
   (reports {:source-id   source-id

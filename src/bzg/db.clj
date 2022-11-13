@@ -18,6 +18,7 @@
    :closed    {:db/valueType :db.type/ref}
    :urgent    {:db/valueType :db.type/ref}
    :important {:db/valueType :db.type/ref}
+   :last-vote {:db/valueType :db.type/ref}
 
    :message-id {:db/valueType :db.type/string
                 :db/unique    :db.unique/identity}

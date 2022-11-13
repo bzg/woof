@@ -61,13 +61,15 @@
        (map vals)
        flatten
        distinct
-       un-ify))
+       un-ify
+       (concat '("\\+1" "-1"))))
 
 (def report-words-re
   (->> (concat
         report-words-all
         (:priority-words-all db/config))
        (string/join "|")
+       (str "^")
        re-pattern))
 
 (defn- report-words [report-type]
@@ -75,12 +77,8 @@
         (flatten (vals (:triggers (report-type (:watch db/config)))))]
     (into #{} (un-ify original-report-words))))
 
-(defn- make-to [username address]
+(defn make-to [username address]
   (str username " <" address ">"))
-
-(defn get-full-email-from-from [from]
-  (make-to (if-let [user (:username (d/entity db/db [:email from]))] user "N/A")
-           from))
 
 (defn- true-id [^String id]
   (peek (re-matches #"^<?(.+[^>])>?$" id)))
@@ -138,6 +136,12 @@
                "plain" (:body %)
                "html"  (parser/html->text (:body %))))
        (string/join "\n")))
+
+(defn- get-mail-body-as-seq [msg]
+  (->> msg get-mail-body
+       string/split-lines
+       (map string/trim)
+       (filter not-empty)))
 
 (defn- add-mail! [{:keys [id from subject] :as msg} & [with-body? config-mail?]]
   (let [{:keys [List-Post X-BeenThere References Archived-At]}
@@ -235,8 +239,11 @@
 (defn- is-report-update? [report-type body-report references]
   ;; Is there a known trigger (e.g. "Canceled") for this report type
   ;; in the body of the email?
-  (let [priority-word? (some (:priority-words-all db/config) (list body-report))]
+  (let [body-report-list (list body-report)
+        priority-word?   (some (:priority-words-all db/config) body-report-list)
+        vote?            (some #{"-1" "+1"} body-report-list)]
     (when (or priority-word?
+              vote?
               (some (report-words report-type) (list body-report)))
       ;; Is this trigger against a known report, and if so, which one?
       (when-let [e (-> #(ffirst (d/q `[:find ?e
@@ -251,6 +258,8 @@
         (let [status ;; :important :urgent :acked, :owned or :closed ?
               (cond priority-word?
                     (if (re-find #"(?i)important" body-report) :important :urgent)
+                    vote?
+                    :last-vote
                     :else
                     (key (first (filter
                                  #(some (into #{} (un-ify (val %)))
@@ -614,6 +623,7 @@
   (let [;; If there is a status, add or update a report
         status            (some #{:urgent :important
                                   :unurgent :unimportant
+                                  :last-vote
                                   :acked :owned :closed
                                   :unacked :unowned :unclosed} (keys report))
         status-name       (and status (name status))
@@ -635,11 +645,21 @@
     (let [user (d/entity db/db [:email from])]
       (if status-report-eid
         ;; This is a status update about an existing report
-        (if (re-matches #"^un(.+)" status-name)
+        (cond
           ;; Status is about undoing, retract attribute
+          (re-matches #"^un(.+)" status-name)
           (d/transact! db/conn [[:db/retract report-eid
                                  (keyword (string/replace status-name #"^un" ""))]])
+          ;; Status is about voting, update :up or :down set with the email address
+          (= status-name "last-vote")
+          (d/transact! db/conn [(merge {:db/id report-eid
+                                        status status-report-eid}
+                                       (let [eid (d/entity db/db report-eid)]
+                                         (if (re-matches #"^-1" status-trigger)
+                                           {:down (into #{} (conj (:down eid) from))}
+                                           {:up (into #{} (conj (:up eid) from))})))])
           ;; Status is a positive statement, set it to the eid of the report
+          :else
           (d/transact! db/conn [{:db/id     report-eid
                                  status     status-report-eid
                                  :effective effective?}]))
@@ -737,11 +757,7 @@
               (release-changes! source-id version release-report-eid)))))
 
        ;; Or a command or new actions against known reports
-       (let [body-seq
-             (->> msg get-mail-body
-                  string/split-lines
-                  (map string/trim)
-                  (filter not-empty))]
+       (let [body-seq (get-mail-body-as-seq msg)]
 
          (if (empty? references)
            ;; This is a configuration command

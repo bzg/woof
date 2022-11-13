@@ -43,6 +43,9 @@
 	      <thead>
 		<tr>
 		  <th class="has-text-centered" width="3%"><a href="?sorting-by=priority" title="{{config.i18n.sort-entries-by}} {{config.i18n.priority}}">{{config.i18n.Priority}}</a></th>
+		  {% if page = "request" %}
+		  <th>{{config.i18n.Vote}}</th>
+		  {% endif %}
 		  <th>{{config.i18n.subject}}</th>
 		  {% if not source %}
 		  {% if 1 < sources|length %}
@@ -73,6 +76,9 @@
 		    {% endifequal %}
 		    {% endifequal %}
 		  </td>
+		  {% if page = "request" %}
+		  <td>{{entry.vote}}</td>
+		  {% endif %}
 		  <td>
 		    {% if entry.link %}
 		    <a href="{{entry.link}}" target="_blank" title="{{config.i18n.sent-by}} {{entry.from}} - {{entry.date}}">{{entry.subject}}</a>

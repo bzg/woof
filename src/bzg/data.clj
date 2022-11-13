@@ -30,7 +30,7 @@
                      (:date %)))
        (string/join "\n")))
 
-(defn feed-item [{:keys [message-id archived-at subject date from body] :as msg} source-id]
+(defn feed-item [{:keys [message-id archived-at subject date username from body]} source-id]
   (let [archived-at (core/archived-message
                      {:source-id   source-id
                       :archived-at archived-at
@@ -40,7 +40,7 @@
         {:title       subject
          :link        link
          :description subject
-         :author      (core/get-full-email-from-from from)
+         :author      (core/make-to username from)
          :guid        link
          :pubDate     (.toInstant date)}]
     (if (not-empty body)
