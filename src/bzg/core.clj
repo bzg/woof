@@ -121,10 +121,8 @@
           (format fmt source-id message-id)
           ""))))
 
-(def email-re #"[^<@\s;,]+@[^>@\s;,]+")
-
 (defn- true-email-address [s]
-  (re-find email-re (string/replace s #"mailto:" "")))
+  (re-find fetch/email-re (string/replace s #"mailto:" "")))
 
 ;; Core db functions to add and update entities
 

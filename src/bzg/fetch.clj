@@ -1,5 +1,6 @@
 (ns bzg.fetch
   (:require [bzg.db :as db]
+            [clojure.string :as string]
             [datalevin.core :as d]))
 
 (defn- add-role [e]
@@ -19,9 +20,36 @@
         urgent?    (if (:urgent r) 2 0)]
     (+ important? urgent?)))
 
+(def email-re #"[^<@\s;,]+@[^>@\s;,]+\.[^>@\s;,]+")
+
+(defn- parse-search-string [s]
+  (when s
+    (let [re-find-in-search
+          (fn [s search]
+            (peek (re-find
+                   (re-pattern
+                    (format "(^|\\s)%s(?:%s)?:(%s)" (first s) (subs s 1) email-re))
+                   search)))
+          from   (re-find-in-search "from" s)
+          acked  (re-find-in-search "acked" s)
+          owned  (re-find-in-search "owned" s)
+          closed (re-find-in-search "closed" s)
+          msg    (peek (re-find #"(^|\s)m(?:sg)?:([^\s-]+)" s))
+          raw    (-> s
+                     (string/replace (re-pattern (format "(^|\\s)[faoc](rom|cked|wned|losed)?:(%s)" email-re)) "")
+                     (string/replace #"(^|\s)m(sg)?:([^\s]+)" "")
+                     string/trim)]
+      {:from      from
+       :acked-by  acked
+       :owned-by  owned
+       :closed-by closed
+       :msg-id    msg
+       :raw       raw})))
+
 ;; FIXME: Use fulltext search for reports?
 (defn reports [{:keys [source-id report-type search closed? as-mail]}]
-  (let [reports
+  (let [s-el (parse-search-string search)
+        reports
         (->> (d/q
               (if source-id
                 `[:find ?e :where [?e ~report-type ?m] [?m :source-id ~source-id]]
@@ -29,8 +57,13 @@
               db/db)
              (map #(d/entity db/db (first %)))
              (remove (if-not (= closed? "on") :closed false?))
-             (filter #(re-find (re-pattern (or search ""))
+             (filter #(re-find (re-pattern (or (:raw s-el) ""))
                                (:subject (report-type %))))
+             (filter (if-let [f (:from s-el)] #(= (:from (report-type %)) f) seq))
+             (filter (if-let [f (:msg-id s-el)] #(= (:message-id (report-type %)) f) seq))
+             (filter (if-let [f (:acked-by s-el)] #(= (:from (:acked %)) f) seq))
+             (filter (if-let [f (:owned-by s-el)] #(= (:from (:owned %)) f) seq))
+             (filter (if-let [f (:closed-by s-el)] #(= (:from (:closed %)) f) seq))
              (map #(assoc % :status (compute-status %)))
              (map #(assoc % :priority (compute-priority %)))
              (take (or (-> db/config :watch report-type :display-max) 100)))]
