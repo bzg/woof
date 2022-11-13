@@ -40,6 +40,8 @@
                   :db/unique    :db.unique/identity}
    :announcement {:db/valueType :db.type/ref
                   :db/unique    :db.unique/identity}
+   :blog         {:db/valueType :db.type/ref
+                  :db/unique    :db.unique/identity}
    :release      {:db/valueType :db.type/ref
                   :db/unique    :db.unique/identity}})
 

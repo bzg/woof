@@ -22,6 +22,11 @@
                           :doc            ""
                           :triggers       {:closed ["Canceled"]}
                           :display-max    20}
+           :blog         {:subject-prefix ["BLOG"]
+                          :subject-match  []
+                          :doc            ""
+                          :triggers       {:closed ["Canceled"]}
+                          :display-max    20}
            :bug          {:subject-prefix ["BUG"]
                           :subject-match  []
                           :doc            ""
@@ -53,7 +58,7 @@
     :maintainer  #{:maintenance :add-maintainer :delete :ignore
                    :change :release :announcement}
     :contributor #{:notifications :home :support
-                   :bug :patch :request}}
+                   :bug :patch :request :blog}}
 
    ;; FIXME: Document each admin word
    :admin-report-words

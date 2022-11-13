@@ -63,6 +63,9 @@
 (defn announcements [& [source-id search closed?]]
   (reports-as-mail :announcement source-id search closed?))
 
+(defn blogs [& [source-id search closed?]]
+  (reports-as-mail :blog source-id search closed?))
+
 (defn requests [& [source-id search closed?]]
   (reports-as-mail :request source-id search closed?))
 
@@ -214,6 +217,8 @@
     (->> (list
           (when (:announcements news-show)
             (announcements source-id search closed?))
+          (when (:blogs news-show)
+            (blogs source-id search closed?))
           (when (:releases news-show)
             (releases source-id search closed?))
           (when (:unreleased-changes news-show)

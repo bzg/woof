@@ -52,8 +52,12 @@
                        :md   true}
       :show
       {:news
-       ;; :unreleased-changes :releases :latest-released-changes :announcements
-       #{:unreleased-changes :releases :latest-released-changes :announcements}
+       ;; :unreleased-changes :releases :latest-released-changes :announcements :blogs
+       #{:unreleased-changes
+         :releases
+         :latest-released-changes
+         :announcements
+         :blogs}
        :bug
        ;; - :confirmed-bugs :acked-bugs
        ;; - :unconfirmed-bugs :unacked-bugs
@@ -63,7 +67,7 @@
        ;; - :canceled-bugs :closed-bugs
        ;; - :unfixed-bugs :unclosed-bugs
        ;; - :uncanceled-bugs :unclosed-bugs
-       #{:unconfirmed-bugs :confirmed-bugs :owned-bugs}
+       #{:unconfirmed-bugs :confirmed-bugs :handled-bugs}
        :patch
        ;; - :approved-patches :unacked-patches
        ;; - :unapproved-patches :unacked-patches
@@ -73,7 +77,7 @@
        ;; - :canceled-patches :closed-patches
        ;; - :unapplied-patches :unclosed-patches
        ;; - :uncanceled-patches :unclosed-patches
-       #{:unapproved-patches :approved-patches :owned-patches}
+       #{:unapproved-patches :approved-patches :handled-patches}
        :request
        ;; - :approved-requests :acked-requests
        ;; - :unapproved-requests :unacked-requests
@@ -83,6 +87,6 @@
        ;; - :canceled-requests :closed-requests
        ;; - :uncanceled-requests :unclosed-requests
        ;; - :undone-requests :unclosed-requests
-       #{:unapproved-requests :approved-requests :owned-requests}
+       #{:unapproved-requests :approved-requests :handled-requests}
        :overview false}}
  }

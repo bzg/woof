@@ -42,6 +42,7 @@
      :bug          (build-pattern prefix-re any-re :bug)
      :request      (build-pattern prefix-re any-re :request)
      :announcement (build-pattern prefix-re any-re :announcement)
+     :blog         (build-pattern prefix-re any-re :blog)
      :change       (build-pattern change-prefix-re any-re :change)
      :release      (build-pattern change-prefix-re any-re :release)}))
 
@@ -76,6 +77,10 @@
 
 (defn- make-to [username address]
   (str username " <" address ">"))
+
+(defn get-full-email-from-from [from]
+  (make-to (if-let [user (:username (d/entity db/db [:email from]))] user "N/A")
+           from))
 
 (defn- true-id [^String id]
   (peek (re-matches #"^<?(.+[^>])>?$" id)))
@@ -126,7 +131,17 @@
 (defn- add-log! [date msg]
   (d/transact! db/conn [{:log date :msg msg}]))
 
-(defn- add-mail! [{:keys [id from subject] :as msg} & config]
+(defn- get-mail-body [msg]
+  (->> (if (:multipart? msg) (:body msg) (list (:body msg)))
+       (map #(condp (fn [a b]
+                      (re-matches
+                       (re-pattern (str "text/" a ".*")) b))
+                 (:content-type %)
+               "plain" (:body %)
+               "html"  (parser/html->text (:body %))))
+       (string/join "\n")))
+
+(defn- add-mail! [{:keys [id from subject] :as msg} & [with-body? config-mail?]]
   (let [{:keys [List-Post X-BeenThere References Archived-At]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         id          (true-id id)
@@ -134,26 +149,30 @@
                       (true-email-address sid))
         refs-string References
         refs        (if refs-string
-                      (into #{} (string/split refs-string #"\s")) #{})]
+                      (into #{} (string/split refs-string #"\s")) #{})
+        mail-data   {:message-id id
+                     :source-id  source-id
+                     :archived-at
+                     (archived-message {:source-id   source-id
+                                        :archived-at Archived-At
+                                        :message-id  id})
+                     :subject    (trim-subject-prefix subject)
+                     :references refs
+                     :config     (or config-mail? false)
+                     :from       (:address (first from))
+                     :username   (:name (first from))
+                     :date       (java.util.Date.)
+                     :refs       1}
+        mail-data   (if with-body?
+                      (conj mail-data {:body (get-mail-body msg)})
+                      mail-data)]
     ;; Add the email
-    (d/transact! db/conn [{:message-id id
-                           :source-id  source-id
-                           :archived-at
-                           (archived-message {:source-id   source-id
-                                              :archived-at Archived-At
-                                              :message-id  id})
-                           :subject    (trim-subject-prefix subject)
-                           :references refs
-                           :config     (or config false)
-                           :from       (:address (first from))
-                           :username   (:name (first from))
-                           :date       (java.util.Date.)
-                           :refs       1}])
+    (d/transact! db/conn [mail-data])
     ;; Return the added mail eid
     (:db/id (d/entity db/db [:message-id id]))))
 
-(defn- add-mail-config! [msg]
-  (add-mail! msg (java.util.Date.)))
+(defn- add-config-mail! [msg]
+  (add-mail! msg nil (java.util.Date.)))
 
 (defn update-person! [{:keys [email username role]} & [action]]
   ;; An email is enough to update a person
@@ -355,6 +374,7 @@
                                    (map :content-type (:body msg))))))
       :bug          (re-find (:bug action-re) (:subject msg))
       :request      (re-find (:request action-re) (:subject msg))
+      :blog         (re-find (:blog action-re) (:subject msg))
       :announcement (re-find (:announcement action-re) (:subject msg))
       :change       (when-let [m (re-find (:change action-re) (:subject msg))]
                       (peek m))
@@ -427,7 +447,7 @@
                         db/db)
                   ;; Delete all but changes and releases, even if the
                   ;; email being deleted is from a maintainer
-                  [:bug :patch :request :announcement])
+                  [:bug :patch :request :announcement :blog])
                  (map concat) flatten)]
         (when (seq reports)
           (doseq [r reports]
@@ -446,7 +466,7 @@
                           [?mail-id :deleted _]
                           [?mail-id :from ~email]]
                         db/db)
-                  [:bug :patch :request :announcement])
+                  [:bug :patch :request :announcement :blog])
                  (map concat) flatten)]
         (when (seq reports)
           (doseq [r reports]
@@ -485,8 +505,7 @@
 (defn- user-allowed? [user action]
   (let [allowed-roles-for-action
         (->> (:permissions db/config)
-             (map #(when (some (val %) (list action))
-                     (key %)))
+             (map #(when (some (val %) (list action)) (key %)))
              (remove nil?)
              (into #{}))]
     (if-not user
@@ -521,7 +540,7 @@
           "Support"              (update-person! {:email from} [:support cmd-val])
           "Undelete"             (undelete! cmd-val)
           "Unignore"             (unignore! cmd-val))))
-    (add-mail-config! msg)))
+    (add-config-mail! msg)))
 
 ;;;; TODO
 ;; (defn- report-notify! [report-type msg-eid status-report-eid]
@@ -692,11 +711,16 @@
                       (new? w source-id msg))
              (reset! done (report! {:report-type w :report-eid (add-mail! msg)}))))
          @done)
-       (or ;; Or detect new release/change/announcement
+
+       (or ;; Or detect new announcement/blog/change
+        (when (and (user-allowed? user :blog) (:blog watched))
+          (when (new? :blog source-id msg)
+            (report! {:report-type :blog
+                      :report-eid  (add-mail! msg :with-body)})))
         (when (and (user-allowed? user :announcement) (:announcement watched))
           (when (new? :announcement source-id msg)
             (report! {:report-type :announcement
-                      :report-eid  (add-mail! msg)})))
+                      :report-eid  (add-mail! msg :with-body)})))
         (when (and (user-allowed? user :change) (:change watched))
           (when-let [version (new? :change source-id msg)]
             (if (some (fetch/released-versions source-id) (list version))
@@ -704,34 +728,24 @@
                (format "%s tried to announce a change against released version %s"
                        from version))
               (report! {:report-type :change
-                        :report-eid  (add-mail! msg)
+                        :report-eid  (add-mail! msg :with-body)
                         :version     version}))))
         (when (and (user-allowed? user :release) (:release watched))
           (when-let [version (new? :release source-id msg)]
-            (let [release-report-eid (add-mail! msg)]
+            (let [release-report-eid (add-mail! msg :with-body)]
               (report! {:report-type :release
                         :report-eid  release-report-eid
                         :version     version})
               (release-changes! source-id version release-report-eid)))))
 
        ;; Or a command or new actions against known reports
-       (let [body-parts
-             (if (:multipart? msg) (:body msg) (list (:body msg)))
-             body-seq
-             (->> body-parts
-                  (map #(condp (fn [a b]
-                                 (re-matches
-                                  (re-pattern (str "text/" a ".*")) b))
-                            (:content-type %)
-                          "plain" (:body %)
-                          "html"  (parser/html->text (:body %))))
-                  (string/join "\n")
+       (let [body-seq
+             (->> msg get-mail-body
                   string/split-lines
                   (map string/trim)
                   (filter not-empty))]
 
          (if (empty? references)
-
            ;; This is a configuration command
            (when-let [cmds
                       (->> body-seq
@@ -762,9 +776,9 @@
                 @done)
               ;; Or an action against existing changes/releases
               (let [done (atom nil)]
-                (doseq [w      [:change :release :announcement]
+                (doseq [w      [:change :release :announcement :blog]
                         :while (nil? @done)]
-                  (when (w (and (user-allowed? user w) (:announcement watched)))
+                  (when (and (user-allowed? user w) (w watched))
                     (doseq [body-report body-reports]
                       (when-let [{:keys [upstream-report-eid status]}
                                  (is-report-update? w body-report references)]

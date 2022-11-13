@@ -4,9 +4,7 @@
             [bzg.db :as db]
             [clojure.string :as string]
             [clojure.data.json :as json]
-            [clj-rss.core :as rss]
-            [selmer.parser :as html]
-            [clojure.java.io :as io]))
+            [clj-rss.core :as rss]))
 
 (defn- format-org [resources source-id]
   (->> resources
@@ -32,36 +30,35 @@
                      (:date %)))
        (string/join "\n")))
 
-(defn feed-item-description [msg archived-at]
-  (format
-   "<![CDATA[ %s ]]>"
-   (if (re-matches #"http.*" archived-at)
-     (html/render-file
-      (io/resource (str "html/" (:theme db/config) "/link.html"))
-      (assoc msg :link archived-at))
-     archived-at)))
-
-(defn feed-item [{:keys [message-id archived-at subject date from] :as msg} source-id]
+(defn feed-item [{:keys [message-id archived-at subject date from body] :as msg} source-id]
   (let [archived-at (core/archived-message
                      {:source-id   source-id
                       :archived-at archived-at
                       :message-id  message-id})
-        link        (if (not-empty archived-at) archived-at message-id)]
-    {:title       subject
-     :link        link
-     :description (feed-item-description msg archived-at)
-     :author      from
-     :guid        link
-     :pubDate     (.toInstant date)}))
+        link        (if (not-empty archived-at) archived-at message-id)
+        item-data
+        {:title       subject
+         :link        link
+         :description subject
+         :author      (core/get-full-email-from-from from)
+         :guid        link
+         :pubDate     (.toInstant date)}]
+    (if (not-empty body)
+      (conj item-data {"content:encoded"
+                       (format "<![CDATA[%s]]>"
+                               (string/replace body "\n" "<br>"))})
+      item-data)))
 
 (defn- format-rss [resources source-id]
-  (rss/channel-xml
-   {:title       (str (:project-name (:ui db/config)) " - " source-id)
-    :link        (string/replace
-                  (:hostname db/config)
-                  #"([^/])/*$" (str "$1/" source-id))
-    :description (str (:title db/config) " - " source-id)}
-   (sort-by :pubDate (map #(feed-item % source-id) resources))))
+  (let [source-id-suffix (str " - " source-id)]
+    (rss/channel-xml
+     {:title       (str (:project-name (:ui db/config))
+                        (when source-id source-id-suffix))
+      :link        (string/replace (:project-url (:ui db/config))
+                                   #"([^/])/*$" (str "$1/" source-id))
+      :description (str (:title (:ui db/config))
+                        (when source-id  source-id-suffix))}
+     (sort-by :pubDate (map #(feed-item % source-id) resources)))))
 
 (defn get-data [what {:keys [path-params query-params]}]
   (let [source-id (core/slug-to-source-id (:source-slug path-params))
