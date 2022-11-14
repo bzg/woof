@@ -11,7 +11,7 @@
             [ring.middleware.params :as params]
             [reitit.ring.middleware.parameters :as parameters]
             [ring.middleware.cors :refer [wrap-cors]]
-            [mount.core :as mount]
+            [integrant.core :as ig]
             [tea-time.core :as tt]
             [selmer.parser :as html]
             [selmer.filters :as selmer]
@@ -187,20 +187,34 @@
        :access-control-allow-origin [#"^*$"]
        :access-control-allow-methods [:get])]}))
 
-(def woof-server)
-(mount/defstate ^{:on-reload :noop} woof-server
-  :start (do (server/run-server
-              (reload/wrap-reload handler {:dirs ["src" "resources"]})
-              {:port (:port db/config)})
-             (timbre/info (format "Woof web server started on %s (port %s)"
-                                  (:hostname db/config)
-                                  (:port db/config))))
-  ;; FIXME: Use in production
-  ;; :start (server/run-server
-  ;;         handler {:port (edn/read-string (:port config/env))})
-  :stop (when woof-server
-          (woof-server :timeout 100)
-          (timbre/info "Woof web server stopped")))
+(def components-config
+  (let [server       (:inbox-server db/config)
+        user         (:inbox-user db/config)
+        password     (:inbox-password db/config)
+        folder       (:inbox-folder db/config)
+        monitor-opts {:server   server
+                      :user     user
+                      :password password
+                      :folder   folder}]
+    {:inbox/monitor  monitor-opts
+     :reload/monitor monitor-opts
+     :http/service   {:port     (:port db/config)
+                      :hostname (:hostname db/config)}}))
+
+(defmethod ig/init-key :http/service [_ {:keys [port hostname]}]
+  (server/run-server
+   (reload/wrap-reload handler {:dirs ["src" "resources"]})
+   {:port port}
+   (timbre/info
+    (format "Web server started on %s (port %s)" hostname port))))
+
+(defmethod ig/init-key :inbox/monitor [_ opts]
+  (core/start-inbox-monitor! opts)
+  (timbre/info
+   (format "Inbox monitoring started on %s" (:user opts))))
+
+(defmethod ig/init-key :reload/monitor [_ opts]
+  (core/reload-monitor! opts))
 
 (defn -main []
   (let [admin-address (:admin-address db/config)]
@@ -213,15 +227,6 @@
                          ;; The root admin cannot be removed
                          {:root true})
     (core/start-mail-loop!)
-    (mount/start #'core/woof-manager #'woof-server)))
+    (ig/init components-config)))
 
 ;; (-main)
-
-(comment
-  (mount/start #'core/woof-manager)
-  (mount/stop #'core/woof-manager)
-  (mount/start #'woof-server)
-  (mount/stop #'woof-server)
-  (mount/start)
-  (mount/stop)
-  )

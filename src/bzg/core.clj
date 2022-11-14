@@ -7,7 +7,7 @@
             [clojure.walk :as walk]
             [bzg.fetch :as fetch]
             [bzg.db :as db]
-            [mount.core :as mount]
+            ;; [integrant.core :as ig]
             [tea-time.core :as tt]
             [postal.core :as postal]
             [postal.support]
@@ -803,24 +803,19 @@
                                           status          (add-mail! msg)})))))))))))))))
 
 ;;; Inbox monitoring
-(def woof-inbox-monitor (atom nil))
-
 (defn read-and-process-mail [mails]
   (->> mails
        (map message/read-message)
        (map process-mail)
        doall))
 
-(defn- start-inbox-monitor! []
+(def woof-inbox-monitor (atom nil))
+(defn start-inbox-monitor! [{:keys [server user password folder]}]
   (reset!
    woof-inbox-monitor
    (let [session      (mail/get-session "imaps")
-         mystore      (mail/store "imaps" session
-                                  (:inbox-server db/config)
-                                  (:inbox-user db/config)
-                                  (:inbox-password db/config))
-         folder       (mail/open-folder mystore (:inbox-folder db/config)
-                                        :readonly)
+         mystore      (mail/store "imaps" session server user password)
+         folder       (mail/open-folder mystore folder :readonly)
          idle-manager (events/new-idle-manager session)]
      (events/add-message-count-listener
       ;; Process incoming mails
@@ -831,18 +826,10 @@
       idle-manager)
      idle-manager)))
 
-(defn- start-tasks! []
+(defn reload-monitor! [opts]
   (tt/every! 1200 ;; 20 minutes
              (fn []
                (try
                  (events/stop @woof-inbox-monitor)
                  (catch Exception _ nil))
-               (start-inbox-monitor!))))
-
-(def woof-manager) ;; FIXME: Needed?
-(mount/defstate woof-manager
-  :start (do (start-tasks!)
-             (timbre/info "Woof email monitoring started"))
-  :stop (when woof-manager
-          (events/stop woof-inbox-monitor)
-          (timbre/info "Woof email monitoring stopped")))
+               (start-inbox-monitor! opts))))
