@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="has-navbar-fixed-top">
+<html lang="{{config.i18n.lang}}" class="has-navbar-fixed-top">
   {% include "html/default/head.html" %}
   <body>
     {% include "html/default/hero.html"%}
@@ -24,8 +24,6 @@
 
       <section class="section" style="padding: 0rem .5rem 1.5rem .5rem">
 	<div class="container">
-
-	  {{config.lang}}
 
 	  {% ifequal entries|count 0 %}
 	  <h1 id="entries" class="title is-size-4">{{config.i18n.no}} {{page}}.</h1>
