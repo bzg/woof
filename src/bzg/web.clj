@@ -121,8 +121,7 @@
                          :closed?    (or (get query-params "closed") "")
                          :sorting-by (get query-params "sorting-by")}
         lang            (if-let [lang (get headers "accept-language")]
-                          (subs (get headers "accept-language") 0 2)
-                          "en")
+                          (subs lang 0 2) "en")
         config-defaults (conj (into {} (d/entity db/db [:defaults "init"]))
                               {:i18n (get i18n/langs (keyword lang))})
         html-page       (condp = page

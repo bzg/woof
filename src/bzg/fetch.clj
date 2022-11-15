@@ -84,12 +84,6 @@
            (map add-role))
       reports)))
 
-;; (:vote (first (reports {:source-id   "~bzg/wooff@lists.sr.ht"
-;;                         :search      ""
-;;                         :closed?     false
-;;                         :report-type :request
-;;                         :as-mail     false})))
-
 (defn- reports-as-mail [report-type & [source-id search closed?]]
   (reports {:source-id   source-id
             :search      search
