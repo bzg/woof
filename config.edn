@@ -28,6 +28,7 @@
           :project-url  "https://bzg.fr"
           :data-formats {:rss true}}}
   "~bzg/wooff2@lists.sr.ht" {:slug "wooff2"}
+  "woof-test@bzg.fr"        {:slug "woof-test"}
   }
 
  ;; Default application state

@@ -77,7 +77,7 @@
         (flatten (vals (:triggers (report-type (:watch db/config)))))]
     (into #{} (un-ify original-report-words))))
 
-(defn make-to [username address]
+(defn make-to [^String username ^String address]
   (str username " <" address ">"))
 
 (defn- true-id [^String id]
@@ -119,8 +119,9 @@
           (format fmt source-id message-id)
           ""))))
 
-(defn- true-email-address [s]
-  (re-find fetch/email-re (string/replace s #"mailto:" "")))
+(defn- true-email-address [^String s]
+  (when s
+    (re-find fetch/email-re (string/replace s #"mailto:" ""))))
 
 ;; Core db functions to add and update entities
 
@@ -143,12 +144,10 @@
        (map string/trim)
        (filter not-empty)))
 
-(defn- add-mail! [{:keys [id from subject] :as msg} & [with-body? config-mail?]]
-  (let [{:keys [List-Post X-BeenThere References Archived-At]}
+(defn- add-mail! [{:keys [id from subject source-id] :as msg} & [with-body? config-mail?]]
+  (let [{:keys [References Archived-At]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         id          (true-id id)
-        source-id   (when-let [sid (or List-Post X-BeenThere)]
-                      (true-email-address sid))
         refs-string References
         refs        (if refs-string
                       (into #{} (string/split refs-string #"\s")) #{})
@@ -686,36 +685,33 @@
 ;;     (doseq [r changes-to-unrelease]
 ;;       (d/transact! db/conn [[:db/retract r :released]]))))
 
-(defn process-mail [{:keys [from] :as msg}]
-  (let [{:keys [List-Post X-BeenThere References]}
+(defn process-mail [{:keys [from to] :as msg}]
+  (let [{:keys [References List-Post X-BeenThere]}
         (walk/keywordize-keys (apply conj (:headers msg)))
-        references  (when (not-empty References)
-                      (->> (string/split References #"\s")
-                           (keep not-empty)
-                           (map true-id)))
-        source-id   (when-let [lid (or List-Post X-BeenThere)]
-                      (true-email-address lid))
-        from        (:address (first from))
-        user        (d/entity db/db [:email from])
-        admin?      (:admin user)
-        maintainer? (:maintainer user)
-        defaults    (d/entity db/db [:defaults "init"])
-        watched     (:watch db/config)]
+        references     (when (not-empty References)
+                         (->> (string/split References #"\s")
+                              (keep not-empty)
+                              (map true-id)))
+        tos            (map :address to)
+        to-all         (->> (concat tos (list List-Post X-BeenThere))
+                            (map true-email-address)
+                            (remove nil?)
+                            (into #{}))
+        source-id      (some to-all (keys (:sources db/config)))
+        msg            (assoc msg :source-id source-id)
+        to-woof-inbox? (some (into #{} tos) (:inbox-user db/config))
+        from           (:address (first from))
+        user           (d/entity db/db [:email from])
+        defaults       (d/entity db/db [:defaults "init"])
+        watched        (:watch db/config)]
 
     (when (and
-           ;; First check whether this user should be ignored
+           ;; Don't process anything when under maintenance
+           (not (:maintenance defaults))
+           ;; Don't process emails from ignored users
            (not (:ignored user))
-           ;; Always process messages from an admin
-           (or admin?
-               (and
-                ;; Don't process anything when under maintenance
-                (not (:maintenance defaults))
-                ;; When not under maintenance, always process direct
-                ;; mails from maintainers
-                (or maintainer?
-                    ;; A mailing list, only process mails sent there
-                    (some #{source-id}
-                          (keys (:sources db/config)))))))
+           ;; Process mails sent to an identified source or to Woof inbox
+           (or source-id to-woof-inbox?))
 
       ;; Possibly increment refs count in known emails
       (is-in-a-known-thread? references)
