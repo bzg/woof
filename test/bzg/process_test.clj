@@ -39,6 +39,8 @@
 (def patch1-approved (read-mail "patch1-approved"))
 (def request1 (read-mail "request1"))
 (def change1 (read-mail "change1"))
+(def change1-canceled (read-mail "change1-canceled"))
+(def change1-uncanceled (read-mail "change1-uncanceled"))
 (def release1 (read-mail "release1"))
 
 ;; Run tests
@@ -83,6 +85,12 @@
         (is (= 1 (count (fetch/requests "test@list.io"))))))
   (testing "Adding a change"
     (do (core/read-and-process-mail (list change1))
+        (is (= 1 (count (fetch/unreleased-changes "test@list.io"))))))
+  (testing "Canceling a change"
+    (do (core/read-and-process-mail (list change1-canceled))
+        (is (= 0 (count (fetch/unreleased-changes "test@list.io"))))))
+  (testing "Uncanceling a change"
+    (do (core/read-and-process-mail (list change1-uncanceled))
         (is (= 1 (count (fetch/unreleased-changes "test@list.io"))))))
   (testing "Adding a release"
     (do (core/read-and-process-mail (list release1))

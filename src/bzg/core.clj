@@ -636,9 +636,9 @@
                                 ;; "effective" report (e.g. Fixed,
                                 ;; Applied, Done.)
                                 (-> db/config :watch report-type :triggers :closed)]
-                            (when (and status status-trigger (< 1 (count closed-statuses)))
-                              (true? (= status-trigger
-                                        (first closed-statuses)))))]
+                            (if (and status status-trigger (< 1 (count closed-statuses)))
+                              (true? (= status-trigger (first closed-statuses)))
+                              false))]
     ;; Possibly add a new person
     (update-person! {:email from :username username})
     (let [user (d/entity db/db [:email from])]
