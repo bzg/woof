@@ -110,14 +110,15 @@
     (-> db/config :sources (get source-id) :slug)))
 
 (defn archived-message [{:keys [source-id message-id archived-at]}]
-  (if archived-at (trim-url-brackets archived-at)
-      (if-let [fmt (not-empty
-                    (:archived-message-format
-                     (get (:sources db/config) source-id)))]
-        (format fmt message-id)
-        (if-let [fmt (:archived-list-message-format db/config)]
-          (format fmt source-id message-id)
-          ""))))
+  (if archived-at
+    (trim-url-brackets archived-at)
+    (if-let [fmt (not-empty
+                  (:archived-message-format
+                   (get (:sources db/config) source-id)))]
+      (format fmt message-id)
+      (if-let [fmt (:archived-list-message-format db/config)]
+        (format fmt source-id message-id)
+        ""))))
 
 (defn- true-email-address [^String s]
   (when s
@@ -148,22 +149,21 @@
   (let [{:keys [References Archived-At]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         id          (true-id id)
-        refs-string References
-        refs        (if refs-string
-                      (into #{} (string/split refs-string #"\s")) #{})
-        mail-data   {:message-id id
-                     :source-id  source-id
-                     :archived-at
-                     (archived-message {:source-id   source-id
-                                        :archived-at Archived-At
-                                        :message-id  id})
-                     :subject    (trim-subject-prefix subject)
-                     :references refs
-                     :config     (or config-mail? false)
-                     :from       (:address (first from))
-                     :username   (:name (first from))
-                     :date       (java.util.Date.)
-                     :refs       1}
+        archived-at (archived-message {:source-id   source-id
+                                       :message-id  id
+                                       :archived-at Archived-At})
+        mail-data   {:message-id  id
+                     :source-id   source-id
+                     :subject     (trim-subject-prefix subject)
+                     :archived-at archived-at
+                     :references  (if-let [refs (not-empty References)]
+                                    (into #{} (string/split refs #"\s"))
+                                    #{})
+                     :config      (or config-mail? false)
+                     :from        (:address (first from))
+                     :username    (:name (first from))
+                     :date        (java.util.Date.)
+                     :refs        1}
         mail-data   (if with-body?
                       (conj mail-data {:body (get-mail-body msg)})
                       mail-data)]
@@ -718,8 +718,7 @@
 
       (or ;; Detect a new bug/patch/request
        (let [done (atom nil)]
-         (doseq [w      [:patch :bug :request]
-                 :while (nil? @done)]
+         (doseq [w [:patch :bug :request] :while (nil? @done)]
            (when (and (w watched)
                       (user-allowed? user w)
                       (new? w source-id msg))
@@ -727,14 +726,15 @@
          @done)
 
        (or ;; Or detect new announcement/blog/change
-        (when (and (user-allowed? user :blog) (:blog watched))
-          (when (new? :blog source-id msg)
-            (report! {:report-type :blog
-                      :report-eid  (add-mail! msg :with-body)})))
-        (when (and (user-allowed? user :announcement) (:announcement watched))
-          (when (new? :announcement source-id msg)
-            (report! {:report-type :announcement
-                      :report-eid  (add-mail! msg :with-body)})))
+        ;; FIXME: refactor below
+        (let [done (atom nil)]
+          (doseq [w [:blog :announcement] :while (nil? @done)]
+            (when (new? w source-id msg)
+              (reset! done (report!
+                            {:report-type w
+                             :report-eid  (add-mail! msg :with-body)}))))
+          @done)
+
         (when (and (user-allowed? user :change) (:change watched))
           (when-let [version (new? :change source-id msg)]
             (if (some (fetch/released-versions source-id) (list version))
@@ -744,6 +744,7 @@
               (report! {:report-type :change
                         :report-eid  (add-mail! msg :with-body)
                         :version     version}))))
+
         (when (and (user-allowed? user :release) (:release watched))
           (when-let [version (new? :release source-id msg)]
             (let [release-report-eid (add-mail! msg :with-body)]
@@ -772,8 +773,7 @@
 
              (or ;; New action against a known patch/bug/request
               (let [done (atom nil)]
-                (doseq [w      [:patch :bug :request]
-                        :while (nil? @done)]
+                (doseq [w [:patch :bug :request :announcement :blog] :while (nil? @done)]
                   (when (w watched)
                     (doseq [body-report body-reports]
                       (when-let [{:keys [upstream-report-eid status]}
@@ -786,8 +786,7 @@
                 @done)
               ;; Or an action against existing changes/releases
               (let [done (atom nil)]
-                (doseq [w      [:change :release :announcement :blog]
-                        :while (nil? @done)]
+                (doseq [w [:change :release] :while (nil? @done)]
                   (when (and (user-allowed? user w) (w watched))
                     (doseq [body-report body-reports]
                       (when-let [{:keys [upstream-report-eid status]}
