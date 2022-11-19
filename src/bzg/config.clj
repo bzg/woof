@@ -39,7 +39,7 @@
                           :triggers       {:acked  ["Approved" "Reviewed"]
                                            :owned  ["Handled"]
                                            :closed ["Applied" "Canceled"]}}
-           :request      {:subject-prefix ["FP" "FR" "TODO" "POLL"]
+           :request      {:subject-prefix ["FP" "FR" "RFC" "TODO" "POLL"]
                           :subject-match  []
                           :doc            ""
                           :triggers       {:acked  ["Approved"]
