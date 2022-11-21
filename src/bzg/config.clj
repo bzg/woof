@@ -22,7 +22,7 @@
                           :doc            ""
                           :triggers       {:closed ["Canceled"]}
                           :display-max    20}
-           :blog         {:subject-prefix ["BLOG"]
+           :blog         {:subject-prefix ["BLOG" "TIP"]
                           :subject-match  []
                           :doc            ""
                           :triggers       {:closed ["Canceled"]}
