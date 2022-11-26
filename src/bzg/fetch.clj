@@ -253,6 +253,20 @@
 
 ;; Main news function
 
+(defn index [& [source-id search closed?]]
+  (let [search (or search "")]
+    (->> (list
+          (releases source-id search closed?)
+          (unreleased-changes source-id search closed?)
+          (latest-released-changes source-id search closed?)
+          (announcements source-id search closed?)
+          (blogs source-id search closed?)
+          (bugs source-id search closed?)
+          (patches source-id search closed?)
+          (requests source-id search closed?))
+         (remove nil?)
+         flatten)))
+
 (defn news [& [source-id search closed?]]
   (let [search    (or search "")
         news-show (:news (:show (:ui db/config)))]

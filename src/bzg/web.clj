@@ -50,10 +50,12 @@
                             (val (first sources))))]
     (-> (merge (:ui db/config)
                (:ui source-cfg)
-               {:display (or ;; (:show (:ui source-cfg))
-                          ;; (:show (:ui db/config))
-                          (:watch source-cfg)
-                          (:watch db/config))})
+               {:display (or (:show (:ui source-cfg))
+                             (:show (:ui db/config))
+                             ;; FIXME: Remove below?
+                             ;; (:watch source-cfg)
+                             ;; (:watch db/config)
+                             )})
         (dissoc :show))))
 
 (defn- with-html-defaults [config-defaults {:keys [source] :as m}]
@@ -64,12 +66,6 @@
                                      :doc       (:doc v)})
                         (:sources db/config))}
          m))
-
-(defn- page-sources [_ source-id _ _ config-defaults]
-  (with-html-defaults config-defaults
-    {:page   "sources"
-     :source {:source-id source-id
-              :slug      (:slug (get (:sources db/config) source-id))}}))
 
 (defn- page-index [page source-id slug-end format-params config-defaults]
   (let [search  (:search format-params)
@@ -82,18 +78,25 @@
        :search   search
        :closed?  closed?
        :page     (name page)
-       :slug-end (or (not-empty slug-end) "news")
+       :slug-end (or (not-empty slug-end) "index")
        :entries
        ;; FIXME: Confusing use of entries twice?
        (entries-format
         (merge {:entries
                 (map #(assoc % :source-slug (core/source-id-to-slug (:source-id %)))
                      (condp = page
+                       :index   (fetch/index source-id search closed?)
                        :news    (fetch/news source-id search closed?)
                        :bug     (fetch/bugs source-id search closed?)
                        :patch   (fetch/patches source-id search closed?)
                        :request (fetch/requests source-id search closed?)))}
                format-params))})))
+
+(defn- page-sources [_ source-id _ _ config-defaults]
+  (with-html-defaults config-defaults
+    {:page   "sources"
+     :source {:source-id source-id
+              :slug      (:slug (get (:sources db/config) source-id))}}))
 
 (defn- page-overview [_ source-id _ _ config-defaults]
   (with-html-defaults config-defaults
@@ -139,11 +142,14 @@
   (ring/ring-handler
    (ring/router
     [["/"
-      ["" {:get #(get-page :news %)}]
-      ["news:format" {:get #(data/get-news-data %)}]
+      ["" {:get #(get-page :index %)}]
+      ["index:format" {:get #(data/get-all-data %)}]
       ["sources" {:get #(get-page :sources %)}]
       ["howto" {:get #(get-page :howto %)}]
       ["overview" {:get #(get-page :overview %)}]
+      ["news"
+       ["" {:get #(get-page :news %)}]
+       [":format" {:get #(data/get-news-data %)}]]
       ["bugs"
        ["" {:get #(get-page :bug %)}]
        [":format" {:get #(data/get-bugs-data %)}]]
@@ -155,10 +161,13 @@
        [":format" {:get #(data/get-requests-data %)}]]
       ;; List per source
       ["source/:source-slug/"
-       ["" {:get #(get-page :news %)}]
-       ["news:format" {:get #(data/get-news-data %)}]
+       ["" {:get #(get-page :index %)}]
+       ["index:format" {:get #(data/get-all-data %)}]
        ["howto" {:get #(get-page :howto %)}]
        ["overview" {:get #(get-page :overview %)}]
+       ["news"
+        ["" {:get #(get-page :news %)}]
+        [":format" {:get #(data/get-all-data %)}]]
        ["bugs"
         ["" {:get #(get-page :bug %)}]
         [":format" {:get #(data/get-bugs-data %)}]]

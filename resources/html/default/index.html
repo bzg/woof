@@ -87,7 +87,7 @@
 		  {% if not source %}
 		  {% if 1 < sources|length %}
 		  <td>
-		    {% ifequal slug-end "news" %}
+		    {% ifequal slug-end "index" %}
 		    <a href="/source/{{entry.source-slug}}/"
 		       title="{{config.i18n.Display-page-for}} {{entry.source-id}}">
 		      {{entry.source-slug}}

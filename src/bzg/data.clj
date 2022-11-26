@@ -66,6 +66,7 @@
         ;; FIXME: search param unused?
         search    (or (:search query-params) "")
         resources (condp = what
+                    :index    (fetch/index source-id search)
                     :bugs     (fetch/bugs source-id search)
                     :requests (fetch/requests source-id search)
                     :patches  (fetch/patches source-id search)
@@ -84,6 +85,7 @@
        "md"   (format-md resources source-id)
        "org"  (format-org resources source-id))}))
 
+(defn get-all-data [params] (get-data :index params))
 (defn get-bugs-data [params] (get-data :bugs params))
 (defn get-requests-data [params] (get-data :requests params))
 (defn get-patches-data [params] (get-data :patches params))

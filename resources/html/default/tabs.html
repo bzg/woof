@@ -1,9 +1,15 @@
 <div class="tabs is-boxed">
   <ul>
 
-    <li {% ifequal page "news" %}class="is-active"{% endifequal %}>
-      <a href=".">{{config.i18n.news}}</a>
+    <li {% ifequal page "index" %}class="is-active"{% endifequal %}>
+      <a href=".">{{config.i18n.all}}</a>
     </li>
+
+    {% if display.news %}
+    <li {% ifequal page "news" %}class="is-active"{% endifequal %}>
+      <a href="news">{{config.i18n.news}}</a>
+    </li>
+    {% endif %}
 
     {% if display.bug %}
     <li {% ifequal page "bug" %}class="is-active"{% endifequal %}>
