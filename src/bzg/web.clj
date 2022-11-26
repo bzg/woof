@@ -14,14 +14,11 @@
             [integrant.core :as ig]
             [tea-time.core :as tt]
             [selmer.parser :as html]
-            [selmer.filters :as selmer]
             [markdown.core :as md]
             [clojure.java.io :as io]
             [datalevin.core :as d]
             [taoensso.timbre :as timbre])
   (:gen-class))
-
-(selmer/add-filter! :e-pluralize #(when (> (count %) 1) "es"))
 
 (defn- entries-format [{:keys [source-id entries sorting-by]}]
   (let [message-format
