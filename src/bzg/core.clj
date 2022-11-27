@@ -24,27 +24,22 @@
 ;; Utility functions
 
 (defn- action-re [& [source-id]]
-  (let [watch            (or (:watch (get (:sources db/config) source-id))
-                             (:watch db/config))
-        subject-prefix   #(:subject-prefix (% watch))
-        subject-match    #(:subject-match (% watch))
-        build-pattern    #(re-pattern
-                           (str (format %1 (string/join "|" (subject-prefix %3)))
-                                (when-let [match (seq (subject-match %3))]
-                                  (str "|" (string/join "|" match)))))
-        prefix-re        "(?:^\\[(?:%s)\\])"
-        change-prefix-re "(?:^\\[(?:%s)\\s+([^]]+)\\])"
-        any-re           ".*%s.*"]
-    {:patch        (build-pattern
-                    "(?:^\\[(?:%s)(?: [^\\s]+)?(?: [0-9]+/[0-9]+)?\\])"
-                    any-re
-                    :patch)
-     :bug          (build-pattern prefix-re any-re :bug)
-     :request      (build-pattern prefix-re any-re :request)
-     :announcement (build-pattern prefix-re any-re :announcement)
-     :blog         (build-pattern prefix-re any-re :blog)
-     :change       (build-pattern change-prefix-re any-re :change)
-     :release      (build-pattern change-prefix-re any-re :release)}))
+  (let [watch          (or (:watch (get (:sources db/config) source-id))
+                           (:watch db/config))
+        subject-prefix #(:subject-prefix (% watch))
+        subject-match  #(:subject-match (% watch))
+        build-pattern  #(re-pattern
+                         (str (format "^\\[(%s)(?:\\s+([^\\]]+))?\\]"
+                                      (string/join "|" (subject-prefix %)))
+                              (when-let [match (seq (subject-match %))]
+                                (str "\\s" (string/join "|" match)))))]
+    {:patch        (build-pattern :patch)
+     :bug          (build-pattern :bug)
+     :request      (build-pattern :request)
+     :announcement (build-pattern :announcement)
+     :blog         (build-pattern :blog)
+     :change       (build-pattern :change)
+     :release      (build-pattern :release)}))
 
 (def action-prefixes
   (flatten (map :subject-prefix (vals (:watch db/config)))))
@@ -369,24 +364,23 @@
 ;;; Core functions to return db entries
 
 (defn- new? [what source-id msg]
-  (let [action-re (action-re source-id)]
+  (let [action-re (action-re source-id)
+        subject   (:subject msg)]
     (condp = what
       :patch        (or
-                     ;; New patches with a subject starting with "[PATCH"
-                     (re-find (:patch action-re) (:subject msg))
+                     ;; New patches with a subject starting with "[PATCH..."
+                     (re-find (:patch action-re) subject)
                      ;; New patches with a text/x-diff or text/x-patch MIME part
                      (and (:multipart? msg)
                           (not-empty
                            (filter #(re-matches #"^text/x-(diff|patch).*" %)
                                    (map :content-type (:body msg))))))
-      :bug          (re-find (:bug action-re) (:subject msg))
-      :request      (re-find (:request action-re) (:subject msg))
-      :blog         (re-find (:blog action-re) (:subject msg))
-      :announcement (re-find (:announcement action-re) (:subject msg))
-      :change       (when-let [m (re-find (:change action-re) (:subject msg))]
-                      (peek m))
-      :release      (when-let [m (re-find (:release action-re) (:subject msg))]
-                      (peek m)))))
+      :bug          (re-find (:bug action-re) subject)
+      :request      (re-find (:request action-re) subject)
+      :blog         (re-find (:blog action-re) subject)
+      :announcement (re-find (:announcement action-re) subject)
+      :change       (re-find (:change action-re) subject)
+      :release      (re-find (:release action-re) subject))))
 
 (defn- add-admin! [cmd-val from]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
@@ -704,7 +698,7 @@
         from           (:address (first from))
         user           (d/entity db/db [:email from])
         defaults       (d/entity db/db [:defaults "init"])
-        watched        (:watch db/config)]
+        watched        (keys (:watch db/config))]
 
     (when (and
            ;; Don't process anything when under maintenance
@@ -717,46 +711,30 @@
       ;; Possibly increment refs count in known emails
       (is-in-a-known-thread? references)
 
-      (or ;; Detect a new bug/patch/request
+      (or
+       ;; Detect a new report
        (let [done (atom nil)]
-         (doseq [w [:patch :bug :request] :while (nil? @done)]
-           (when (and (w watched)
-                      (user-allowed? user w)
-                      (new? w source-id msg))
-             (reset! done (report! {:report-type w :report-eid (add-mail! msg)}))))
-         @done)
-
-       (or ;; Or detect new announcement/blog/change
-        ;; FIXME: refactor below
-        (let [done (atom nil)]
-          (doseq [w [:blog :announcement] :while (nil? @done)]
-            (when (new? w source-id msg)
-              (reset! done (report!
-                            {:report-type w
-                             :report-eid  (add-mail! msg :with-body)}))))
-          @done)
-
-        (when (and (user-allowed? user :change) (:change watched))
-          (when-let [version (new? :change source-id msg)]
-            (if (some (fetch/released-versions source-id) (list version))
-              (timbre/error
-               (format "%s tried to announce a change against released version %s"
-                       from version))
-              (report! {:report-type :change
-                        :report-eid  (add-mail! msg :with-body)
-                        :version     version}))))
-
-        (when (and (user-allowed? user :release) (:release watched))
-          (when-let [version (new? :release source-id msg)]
-            (let [release-report-eid (add-mail! msg :with-body)]
-              (report! {:report-type :release
-                        :report-eid  release-report-eid
-                        :version     version})
-              (release-changes! source-id version release-report-eid)))))
+         (doseq [w watched :while (nil? @done)]
+           (when (user-allowed? user w)
+             (when-let [new-info (new? w source-id msg)]
+               (let [version (peek new-info)]
+                 (if (and (some (into #{w}) [:change :release])
+                          (some (fetch/released-versions source-id) (list version)))
+                   (timbre/error
+                    (format "%s tried to announce a change/release against an existing version %s"
+                            from version))
+                   (let [report-eid (add-mail! msg)]
+                     (reset! done
+                             (report! {:report-type w
+                                       ;; Don't store version for patches, blog and announcement
+                                       :version     (if-not (some #{:patch :blog :announcement} (list w))
+                                                      version)
+                                       :report-eid  report-eid}))
+                     (when (= w :release)
+                       (release-changes! source-id version report-eid)))))))))
 
        ;; Or a command or new actions against known reports
        (let [body-seq (get-mail-body-as-seq msg)]
-
          (if (empty? references)
            ;; This is a configuration command
            (when-let [cmds
@@ -766,37 +744,21 @@
                            (remove nil?))]
              (config! {:commands cmds :msg msg}))
            ;; Or a report against a known patch, bug, etc
-           (when-let
-               [body-reports
-                (->> body-seq
-                     (map #(re-find report-words-re %))
-                     (remove nil?))]
-
-             (or ;; New action against a known patch/bug/request
-              (let [done (atom nil)]
-                (doseq [w [:patch :bug :request :announcement :blog] :while (nil? @done)]
-                  (when (w watched)
-                    (doseq [body-report body-reports]
-                      (when-let [{:keys [upstream-report-eid status]}
-                                 (is-report-update? w body-report references)]
-                        (reset! done
-                                (report! {:report-type    w
-                                          :report-eid     upstream-report-eid
-                                          :status-trigger body-report
-                                          status          (add-mail! msg)}))))))
-                @done)
-              ;; Or an action against existing changes/releases
-              (let [done (atom nil)]
-                (doseq [w [:change :release] :while (nil? @done)]
-                  (when (and (user-allowed? user w) (w watched))
-                    (doseq [body-report body-reports]
-                      (when-let [{:keys [upstream-report-eid status]}
-                                 (is-report-update? w body-report references)]
-                        (reset! done
-                                (report! {:report-type    w
-                                          :report-eid     upstream-report-eid
-                                          :status-trigger body-report
-                                          status          (add-mail! msg)})))))))))))))))
+           (when-let [body-reports
+                      (->> body-seq
+                           (map #(re-find report-words-re %))
+                           (remove nil?))]
+             ;; New action against a known patch/bug/request
+             (let [done (atom nil)]
+               (doseq [w watched :while (nil? @done)]
+                 (doseq [body-report body-reports]
+                   (when-let [{:keys [upstream-report-eid status]}
+                              (is-report-update? w body-report references)]
+                     (reset! done
+                             (report! {:report-type    w
+                                       :report-eid     upstream-report-eid
+                                       :status-trigger body-report
+                                       status          (add-mail! msg)})))))))))))))
 
 ;;; Inbox monitoring
 (defn read-and-process-mail [mails]
