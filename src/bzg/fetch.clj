@@ -1,7 +1,8 @@
 (ns bzg.fetch
   (:require [bzg.db :as db]
             [clojure.string :as string]
-            [datalevin.core :as d]))
+            [datalevin.core :as d]
+            [java-time.api :as jt]))
 
 (defn- add-role [e]
   (let [roles (count (select-keys
@@ -55,7 +56,8 @@
 
 ;; FIXME: Use fulltext search for reports?
 (defn reports [{:keys [source-id report-type search closed? as-mail]}]
-  (let [s-el (parse-search-string search)
+  (let [s-el            (parse-search-string search)
+        report-type-cfg (-> db/config :watch report-type)
         reports
         (->> (d/q
               (if source-id
@@ -74,7 +76,12 @@
              (map #(assoc % :status (compute-status %)))
              (map #(assoc % :priority (compute-priority %)))
              (map #(assoc % :vote (compute-vote %)))
-             (take (or (-> db/config :watch report-type :display-max) 100)))]
+             (filter (if-let [newer-than (:display-newer-than report-type-cfg)]
+                       #(let [d (jt/instant (:date (report-type %)))]
+                          (jt/before? (jt/instant)
+                                      (jt/plus d (jt/days newer-than))))
+                       seq))
+             (take (or (:display-max report-type-cfg) 100)))]
     (if as-mail
       (->> reports
            (map #(assoc (get % report-type)

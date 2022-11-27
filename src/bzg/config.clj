@@ -9,10 +9,11 @@
    :log      [:db :file :mail]
 
    ;; FIXME: Document for easier configuration
-   :watch {:change       {:subject-prefix ["CHANGE"]
-                          :subject-match  []
-                          :doc            ""
-                          :triggers       {:closed ["Canceled"]}}
+   :watch {:change       {:subject-prefix     ["CHANGE"]
+                          :subject-match      []
+                          :doc                ""
+                          :display-newer-than 100
+                          :triggers           {:closed ["Canceled"]}}
            :release      {:subject-prefix ["RELEASE"]
                           :subject-match  []
                           :doc            ""
