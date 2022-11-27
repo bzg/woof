@@ -68,10 +68,12 @@
                         (:sources db/config))}
          m))
 
+(def emails-re (re-pattern (str "(?:" core/email-re "[;,]?)+")))
+
 (defn- parse-search-string [s]
   (when s
     (let [
-          ;; FIXME: Can we safely use email-re for msgid?
+          ;; FIXME: Could we safely use email-re as msgid-re?
           msgid-re   #"[^\s]+"
           version-re #"([<>=]*)([^\s]+)"
           re-find-in-search
@@ -79,7 +81,7 @@
             (-> (re-find
                  (re-pattern
                   (format "(?:^|\\s)%s(?:%s)?:(%s)"
-                          (first s) (subs s 1) (or re core/email-re)))
+                          (first s) (subs s 1) (or re emails-re)))
                  search)
                 (as-> r (if pre (take-last 2 r) (peek r)))))
           from       (re-find-in-search "from" s)
@@ -92,7 +94,7 @@
                          (string/replace
                           (re-pattern
                            (format "(?:^|\\s)[faoc](rom|cked|wned|losed)?:%s"
-                                   core/email-re)) "")
+                                   emails-re)) "")
                          (string/replace #"(?:^|\s)v(ersion)?:[^\s]+" "")
                          (string/replace #"(?:^|\s)m(sg)?:[^\s]+" "")
                          string/trim)]

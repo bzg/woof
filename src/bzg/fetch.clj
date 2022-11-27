@@ -1,5 +1,6 @@
 (ns bzg.fetch
-  (:require [bzg.db :as db]
+  (:require [clojure.string :as string]
+            [bzg.db :as db]
             [datalevin.core :as d]
             [java-time.api :as jt]
             [version-clj.core :as v]))
@@ -42,6 +43,11 @@
 ;; FIXME: Use fulltext search for reports?
 (defn reports [{:keys [source-id report-type search closed? as-mail]}]
   (let [report-type-cfg (-> db/config :watch report-type)
+        m-any           (fn [to-split cmp]
+                          (if to-split
+                            (when-let [f (string/split to-split #"[;,]")]
+                              (some (into #{} f) (list cmp)))
+                            true))
         reports
         (->> (d/q
               (if source-id
@@ -55,11 +61,11 @@
              (filter (if-let [[cp v] (:version search)]
                        #(version-search-true? cp v (:version %))
                        seq))
-             (filter (if-let [f (:from search)] #(= (:from (report-type %)) f) seq))
-             (filter (if-let [f (:msg-id search)] #(= (:message-id (report-type %)) f) seq))
-             (filter (if-let [f (:acked-by search)] #(= (:from (:acked %)) f) seq))
-             (filter (if-let [f (:owned-by search)] #(= (:from (:owned %)) f) seq))
-             (filter (if-let [f (:closed-by search)] #(= (:from (:closed %)) f) seq))
+             (filter #(m-any (:from search) (:from (report-type %))))
+             (filter #(m-any (:msg-id search) (:message-id (report-type %))))
+             (filter #(m-any (:acked-by search) (:from (:acked %))))
+             (filter #(m-any (:owned-by search) (:from (:owned %))))
+             (filter #(m-any (:closed-by search) (:from (:closed %))))
              (map #(assoc % :status (compute-status %)))
              (map #(assoc % :priority (compute-priority %)))
              (map #(assoc % :vote (compute-vote %)))
