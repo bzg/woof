@@ -6,6 +6,7 @@
             [bzg.data :as data]
             [bzg.fetch :as fetch]
             [bzg.db :as db]
+            [clojure.string :as string]
             ;; FIXME: Remove in production
             [ring.middleware.reload :as reload]
             [ring.middleware.params :as params]
@@ -67,12 +68,49 @@
                         (:sources db/config))}
          m))
 
+(defn- parse-search-string [s]
+  (when s
+    (let [
+          ;; FIXME: Can we safely use email-re for msgid?
+          msgid-re   #"[^\s]+"
+          version-re #"([<>=]*)([^\s]+)"
+          re-find-in-search
+          (fn [s search & [re pre]]
+            (-> (re-find
+                 (re-pattern
+                  (format "(?:^|\\s)%s(?:%s)?:(%s)"
+                          (first s) (subs s 1) (or re core/email-re)))
+                 search)
+                (as-> r (if pre (take-last 2 r) (peek r)))))
+          from       (re-find-in-search "from" s)
+          acked      (re-find-in-search "acked" s)
+          owned      (re-find-in-search "owned" s)
+          closed     (re-find-in-search "closed" s)
+          version    (re-find-in-search "version" s version-re :prefix)
+          msg        (re-find-in-search "msg" s msgid-re)
+          raw        (-> s
+                         (string/replace
+                          (re-pattern
+                           (format "(?:^|\\s)[faoc](rom|cked|wned|losed)?:%s"
+                                   core/email-re)) "")
+                         (string/replace #"(?:^|\s)v(ersion)?:[^\s]+" "")
+                         (string/replace #"(?:^|\s)m(sg)?:[^\s]+" "")
+                         string/trim)]
+      {:from      from
+       :acked-by  acked
+       :owned-by  owned
+       :closed-by closed
+       :version   (not-empty (replace {"" "="} version))
+       :msg-id    msg
+       :raw       raw})))
+
 (defn- page-index [page source-id slug-end format-params config-defaults]
-  (let [search  (:search format-params)
-        closed? (:closed? format-params)
-        source  (when source-id
-                  {:source-id source-id
-                   :slug      (:slug (get (:sources db/config) source-id))})]
+  (let [search     (:search format-params)
+        search-els (parse-search-string search)
+        closed?    (:closed? format-params)
+        source     (when source-id
+                     {:source-id source-id
+                      :slug      (:slug (get (:sources db/config) source-id))})]
     (with-html-defaults config-defaults
       {:source   source
        :search   search
@@ -85,11 +123,11 @@
         (merge {:entries
                 (map #(assoc % :source-slug (core/source-id-to-slug (:source-id %)))
                      (condp = page
-                       :index   (fetch/index source-id search closed?)
-                       :news    (fetch/news source-id search closed?)
-                       :bug     (fetch/bugs source-id search closed?)
-                       :patch   (fetch/patches source-id search closed?)
-                       :request (fetch/requests source-id search closed?)))}
+                       :index   (fetch/index source-id search-els closed?)
+                       :news    (fetch/news source-id search-els closed?)
+                       :bug     (fetch/bugs source-id search-els closed?)
+                       :patch   (fetch/patches source-id search-els closed?)
+                       :request (fetch/requests source-id search-els closed?)))}
                format-params))})))
 
 (defn- page-sources [_ source-id _ _ config-defaults]

@@ -1,6 +1,5 @@
 (ns bzg.fetch
   (:require [bzg.db :as db]
-            [clojure.string :as string]
             [datalevin.core :as d]
             [java-time.api :as jt]
             [version-clj.core :as v]))
@@ -29,42 +28,6 @@
       (str (/ up (+ up down)))
       "N/A")))
 
-(def email-re #"[^<@\s;,]+@[^>@\s;,]+\.[^>@\s;,]+")
-;; FIXME: Can we safely use email-re for msgid?
-(def msgid-re #"[^\s]+")
-(def version-re #"([<>=]*)([^\s]+)")
-
-(defn- parse-search-string [s]
-  (when s
-    (let [re-find-in-search
-          (fn [s search & [re pre]]
-            (-> (re-find
-                 (re-pattern
-                  (format "(?:^|\\s)%s(?:%s)?:(%s)"
-                          (first s) (subs s 1) (or re email-re)))
-                 search)
-                (as-> r (if pre (take-last 2 r) (peek r)))))
-          from    (re-find-in-search "from" s)
-          acked   (re-find-in-search "acked" s)
-          owned   (re-find-in-search "owned" s)
-          closed  (re-find-in-search "closed" s)
-          version (re-find-in-search "version" s version-re :prefix)
-          msg     (re-find-in-search "msg" s msgid-re)
-          raw     (-> s
-                      (string/replace
-                       (re-pattern
-                        (format "(?:^|\\s)[faoc](rom|cked|wned|losed)?:%s" email-re)) "")
-                      (string/replace #"(?:^|\s)v(ersion)?:[^\s]+" "")
-                      (string/replace #"(?:^|\s)m(sg)?:[^\s]+" "")
-                      string/trim)]
-      {:from      from
-       :acked-by  acked
-       :owned-by  owned
-       :closed-by closed
-       :version   (not-empty (replace {"" "="} version))
-       :msg-id    msg
-       :raw       raw})))
-
 (defn version-search-true? [cp-name v-searched version]
   (if-not version
     false
@@ -78,8 +41,7 @@
 
 ;; FIXME: Use fulltext search for reports?
 (defn reports [{:keys [source-id report-type search closed? as-mail]}]
-  (let [s-el            (parse-search-string search)
-        report-type-cfg (-> db/config :watch report-type)
+  (let [report-type-cfg (-> db/config :watch report-type)
         reports
         (->> (d/q
               (if source-id
@@ -88,16 +50,16 @@
               db/db)
              (map #(d/entity db/db (first %)))
              (remove (if-not (= closed? "on") :closed false?))
-             (filter #(re-find (re-pattern (or (:raw s-el) ""))
+             (filter #(re-find (re-pattern (or (:raw search) ""))
                                (:subject (report-type %))))
-             (filter (if-let [[cp v] (:version s-el)]
+             (filter (if-let [[cp v] (:version search)]
                        #(version-search-true? cp v (:version %))
                        seq))
-             (filter (if-let [f (:from s-el)] #(= (:from (report-type %)) f) seq))
-             (filter (if-let [f (:msg-id s-el)] #(= (:message-id (report-type %)) f) seq))
-             (filter (if-let [f (:acked-by s-el)] #(= (:from (:acked %)) f) seq))
-             (filter (if-let [f (:owned-by s-el)] #(= (:from (:owned %)) f) seq))
-             (filter (if-let [f (:closed-by s-el)] #(= (:from (:closed %)) f) seq))
+             (filter (if-let [f (:from search)] #(= (:from (report-type %)) f) seq))
+             (filter (if-let [f (:msg-id search)] #(= (:message-id (report-type %)) f) seq))
+             (filter (if-let [f (:acked-by search)] #(= (:from (:acked %)) f) seq))
+             (filter (if-let [f (:owned-by search)] #(= (:from (:owned %)) f) seq))
+             (filter (if-let [f (:closed-by search)] #(= (:from (:closed %)) f) seq))
              (map #(assoc % :status (compute-status %)))
              (map #(assoc % :priority (compute-priority %)))
              (map #(assoc % :vote (compute-vote %)))
