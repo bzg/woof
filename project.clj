@@ -25,7 +25,8 @@
                  [com.cognitect/transit-clj "1.0.329"]
                  [medley/medley             "1.4.0"]
                  [aero/aero                 "1.1.6"]
-                 [clojure.java-time/clojure.java-time "1.1.0"]]
+                 [clojure.java-time/clojure.java-time "1.1.0"]
+                 [version-clj/version-clj "2.0.2"]]
 
   :jvm-opts  ["--add-opens=java.base/java.nio=ALL-UNNAMED"
               "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]

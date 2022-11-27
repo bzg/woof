@@ -2,7 +2,8 @@
   (:require [bzg.db :as db]
             [clojure.string :as string]
             [datalevin.core :as d]
-            [java-time.api :as jt]))
+            [java-time.api :as jt]
+            [version-clj.core :as v]))
 
 (defn- add-role [e]
   (let [roles (count (select-keys
@@ -29,30 +30,51 @@
       "N/A")))
 
 (def email-re #"[^<@\s;,]+@[^>@\s;,]+\.[^>@\s;,]+")
+;; FIXME: Can we safely use email-re for msgid?
+(def msgid-re #"[^\s]+")
+(def version-re #"([<>=]*)([^\s]+)")
 
 (defn- parse-search-string [s]
   (when s
     (let [re-find-in-search
-          (fn [s search]
-            (peek (re-find
-                   (re-pattern
-                    (format "(^|\\s)%s(?:%s)?:(%s)" (first s) (subs s 1) email-re))
-                   search)))
-          from   (re-find-in-search "from" s)
-          acked  (re-find-in-search "acked" s)
-          owned  (re-find-in-search "owned" s)
-          closed (re-find-in-search "closed" s)
-          msg    (peek (re-find #"(^|\s)m(?:sg)?:([^\s-]+)" s))
-          raw    (-> s
-                     (string/replace (re-pattern (format "(^|\\s)[faoc](rom|cked|wned|losed)?:(%s)" email-re)) "")
-                     (string/replace #"(^|\s)m(sg)?:([^\s]+)" "")
-                     string/trim)]
+          (fn [s search & [re pre]]
+            (-> (re-find
+                 (re-pattern
+                  (format "(?:^|\\s)%s(?:%s)?:(%s)"
+                          (first s) (subs s 1) (or re email-re)))
+                 search)
+                (as-> r (if pre (take-last 2 r) (peek r)))))
+          from    (re-find-in-search "from" s)
+          acked   (re-find-in-search "acked" s)
+          owned   (re-find-in-search "owned" s)
+          closed  (re-find-in-search "closed" s)
+          version (re-find-in-search "version" s version-re :prefix)
+          msg     (re-find-in-search "msg" s msgid-re)
+          raw     (-> s
+                      (string/replace
+                       (re-pattern
+                        (format "(?:^|\\s)[faoc](rom|cked|wned|losed)?:%s" email-re)) "")
+                      (string/replace #"(?:^|\s)v(ersion)?:[^\s]+" "")
+                      (string/replace #"(?:^|\s)m(sg)?:[^\s]+" "")
+                      string/trim)]
       {:from      from
        :acked-by  acked
        :owned-by  owned
        :closed-by closed
+       :version   (not-empty (replace {"" "="} version))
        :msg-id    msg
        :raw       raw})))
+
+(defn version-search-true? [cp-name v-searched version]
+  (if-not version
+    false
+    (let [cp-fn (condp = cp-name
+                  "="  (fn [v1 v2] (= (v/version-compare v1 v2) 0))
+                  "<"  v/older?
+                  "<=" v/older-or-equal?
+                  ">"  v/newer?
+                  ">=" v/newer-or-equal?)]
+      (cp-fn version v-searched))))
 
 ;; FIXME: Use fulltext search for reports?
 (defn reports [{:keys [source-id report-type search closed? as-mail]}]
@@ -68,6 +90,9 @@
              (remove (if-not (= closed? "on") :closed false?))
              (filter #(re-find (re-pattern (or (:raw s-el) ""))
                                (:subject (report-type %))))
+             (filter (if-let [[cp v] (:version s-el)]
+                       #(version-search-true? cp v (:version %))
+                       seq))
              (filter (if-let [f (:from s-el)] #(= (:from (report-type %)) f) seq))
              (filter (if-let [f (:msg-id s-el)] #(= (:message-id (report-type %)) f) seq))
              (filter (if-let [f (:acked-by s-el)] #(= (:from (:acked %)) f) seq))
