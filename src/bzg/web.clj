@@ -42,6 +42,8 @@
                 "status"   :status
                 "priority" :priority
                 "refs"     :refs-count
+                ;; See comment in `compute-vote` on why `read-string`
+                "vote"     #(read-string (:vote %))
                 "related"  #(count (:related-refs %))
                 :priority))
      reverse

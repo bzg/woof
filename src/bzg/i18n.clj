@@ -60,6 +60,7 @@
         :under-maintenance    "Under maintenance, sorry."
         :unimportant          "not important"
         :urgent               "urgent"
+        :vote                 "vote"
         :with-closed?         "With closed?"
         }
    :fr {
@@ -121,6 +122,7 @@
         :under-maintenance    "En maintenance, désolé."
         :unimportant          "pas important"
         :urgent               "urgent"
+        :vote                 "vote"
         :with-closed?         "Inclure tout ?"
         }}
   )

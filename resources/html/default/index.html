@@ -42,7 +42,7 @@
 		<tr>
 		  <th class="has-text-centered" width="3%"><a href="?sorting-by=priority" title="{{config.i18n.sort-entries-by}} {{config.i18n.priority}}">{{config.i18n.Priority}}</a></th>
 		  {% if page = "request" %}
-		  <th>{{config.i18n.Vote}}</th>
+		  <th><a href="?sorting-by=vote" title="{{config.i18n.sort-entries-by}} {{config.i18n.vote}}">{{config.i18n.Vote}}</a></th>
 		  {% endif %}
 		  <th>{{config.i18n.subject}}</th>
 		  {% if not source %}

@@ -25,9 +25,10 @@
 (defn- compute-vote [r]
   (let [up   (count (:up r))
         down (count (:down r))]
-    (if-not (zero? (+ up down))
-      (str (/ up (+ up down)))
-      "N/A")))
+    ;; We are using strings here to be able to display "3/3"
+    (cond (zero? (+ up down)) "0"
+          (zero? down)        (str up "/" up)
+          :else               (str up "/" (+ up down)))))
 
 (defn version-search-true? [cp-name v-searched version]
   (if-not version
