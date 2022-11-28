@@ -141,10 +141,33 @@
        (map string/trim)
        (filter not-empty)))
 
+(defn- mails-from-refs [references]
+  (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db/db)) references))
+
+(defn- update-related-refs [message-id references]
+  (let [related-mails (mails-from-refs references)
+        updated-mails (atom #{message-id})]
+    (doseq [m related-mails]
+      (let [e          (d/entity db/db [:message-id m])
+            e-msg-id   (:message-id e)
+            e-rel-refs (:related-refs e)]
+        (swap! updated-mails conj e-msg-id)
+        (d/transact! db/conn [{:message-id m :related-refs (conj e-rel-refs message-id)}])))
+    (d/transact! db/conn [{:message-id message-id :related-refs @updated-mails}])))
+
+(defn- parse-refs [^String s]
+  (if (not-empty s)
+    (->> (string/split s #"\s")
+         (keep not-empty)
+         (map true-id)
+         (into #{}))
+    #{}))
+
 (defn- add-mail! [{:keys [id from subject source-id] :as msg} & [with-body? config-mail?]]
   (let [{:keys [References Archived-At]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         id          (true-id id)
+        references  (parse-refs References)
         archived-at (archived-message {:source-id   source-id
                                        :message-id  id
                                        :archived-at Archived-At})
@@ -152,9 +175,7 @@
                      :source-id   source-id
                      :subject     (trim-subject-prefix subject)
                      :archived-at archived-at
-                     :references  (if-let [rs (not-empty References)]
-                                    (into #{} (string/split rs #"\s"))
-                                    #{})
+                     :references  references
                      :config      (or config-mail? false)
                      :from        (:address (first from))
                      :username    (:name (first from))
@@ -165,6 +186,8 @@
                       mail-data)]
     ;; Add the email
     (d/transact! db/conn [mail-data])
+    ;; Update related references for relevant emails
+    (update-related-refs id references)
     ;; Return the added mail eid
     (:db/id (d/entity db/db [:message-id id]))))
 
@@ -226,8 +249,7 @@
 
 ;; Check whether a report is an action against a known entity
 (defn- is-in-a-known-thread? [references]
-  (doseq [i (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db/db))
-                    references)]
+  (doseq [i (mails-from-refs references)]
     (let [refs (:refs-count (d/entity db/db [:message-id i]))]
       (d/transact! db/conn [{:message-id i :refs-count (inc refs)}]))))
 
@@ -684,10 +706,7 @@
 (defn process-mail [{:keys [from to] :as msg}]
   (let [{:keys [References List-Post X-BeenThere]}
         (walk/keywordize-keys (apply conj (:headers msg)))
-        references     (when (not-empty References)
-                         (->> (string/split References #"\s")
-                              (keep not-empty)
-                              (map true-id)))
+        references     (parse-refs References)
         tos            (map :address to)
         to-all         (->> (concat tos (list List-Post X-BeenThere))
                             (map true-email-address)
@@ -726,13 +745,15 @@
                             from version))
                    (let [report-eid (add-mail! msg)]
                      (reset! done
-                             (report! {:report-type w
-                                       ;; Don't store version for patches, blog and announcement
-                                       :version     (if-not (some #{:patch :blog :announcement} (list w))
-                                                      version)
-                                       :report-eid  report-eid}))
+                             (report!
+                              {:report-type w
+                               ;; Don't store version for patches, blog and announcement
+                               :version     (when-not (some #{:patch :blog :announcement} (list w))
+                                              version)
+                               :report-eid  report-eid}))
                      (when (= w :release)
-                       (release-changes! source-id version report-eid)))))))))
+                       (release-changes! source-id version report-eid))))))))
+         @done)
 
        ;; Or a command or new actions against known reports
        (let [body-seq (get-mail-body-as-seq msg)]
@@ -740,8 +761,7 @@
            ;; This is a configuration command
            (when-let [cmds
                       (->> body-seq
-                           (map #(when-let [m (re-matches config-strings-re %)]
-                                   (rest m)))
+                           (map #(when-let [m (re-matches config-strings-re %)] (rest m)))
                            (remove nil?))]
              (config! {:commands cmds :msg msg}))
            ;; Or a report against a known patch, bug, etc

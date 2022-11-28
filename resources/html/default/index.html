@@ -52,6 +52,7 @@
 		  {% endif %}
 		  <th width="15%"><a href="?sorting-by=user" title="{{config.i18n.sort-entries-by}} {{config.i18n.role}}">{{config.i18n.from}}<a></th>
 		    <th width="15%"><a href="?sorting-by=date" title="{{config.i18n.sort-entries-by}} {{config.i18n.date}}">{{config.i18n.Date}}</a></th>
+		    <th class="has-text-centered" width="5%"><a href="?sorting-by=related" title="{{config.i18n.sort-entries-by}} {{config.i18n.number-of-related}}">{{config.i18n.related-refs}}</a></th>
 		    <th class="has-text-centered" width="5%"><a href="?sorting-by=refs" title="{{config.i18n.sort-entries-by}} {{config.i18n.number-of-references}}">{{config.i18n.refs}}</a></th>
 		    <th class="has-text-centered" width="3%"><a href="?sorting-by=status" title="{{config.i18n.sort-entries-by}} {{config.i18n.status}}">{{config.i18n.Status}}</a></th>
 		</tr>
@@ -113,6 +114,7 @@
 		    {% endifequal %}
 		  </td>
 		  <td>{{entry.date|date:shortDate}}</td>
+		  <td class="has-text-centered"><a href=".?search=m:{{entry.related-refs|concat}}">{{entry.related-refs|count}}</a></td>
 		  <td class="has-text-centered">{{entry.refs-count}}</td>
 		  <td class="has-text-centered">
 		    {% ifequal entry.status 3 %}

@@ -15,11 +15,14 @@
             [integrant.core :as ig]
             [tea-time.core :as tt]
             [selmer.parser :as html]
+            [selmer.filters :as filters]
             [markdown.core :as md]
             [clojure.java.io :as io]
             [datalevin.core :as d]
             [taoensso.timbre :as timbre])
   (:gen-class))
+
+(filters/add-filter! :concat #(string/join "," %))
 
 (defn- entries-format [{:keys [source-id entries sorting-by]}]
   (let [message-format
@@ -39,6 +42,7 @@
                 "status"   :status
                 "priority" :priority
                 "refs"     :refs-count
+                "related"  #(count (:related-refs %))
                 :priority))
      reverse
      (remove nil?)
