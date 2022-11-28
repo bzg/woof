@@ -38,7 +38,7 @@
                 "user"     :role
                 "status"   :status
                 "priority" :priority
-                "refs"     :refs
+                "refs"     :refs-count
                 :priority))
      reverse
      (remove nil?)

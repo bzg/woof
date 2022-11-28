@@ -20,16 +20,20 @@
    :important {:db/valueType :db.type/ref}
    :last-vote {:db/valueType :db.type/ref}
 
-   :message-id {:db/valueType :db.type/string
-                :db/unique    :db.unique/identity}
-   :subject    {:db/valueType :db.type/string
-                :db/fulltext  true}
-   :body       {:db/valueType :db.type/string
-                :db/fulltext  true}
-   :email      {:db/valueType :db.type/string
-                :db/unique    :db.unique/identity}
-   :references {:db/valueType   :db.type/string
-                :db/cardinality :db.cardinality/many}
+   :message-id   {:db/valueType :db.type/string
+                  :db/unique    :db.unique/identity}
+   :subject      {:db/valueType :db.type/string
+                  :db/fulltext  true}
+   :body         {:db/valueType :db.type/string
+                  :db/fulltext  true}
+   :email        {:db/valueType :db.type/string
+                  :db/unique    :db.unique/identity}
+   :refs-count   {:db/valueType :db.type/long}
+   ;; FIXME: We store references but don't use them (yet)
+   :references   {:db/valueType   :db.type/string
+                  :db/cardinality :db.cardinality/many}
+   :related-refs {:db/valueType   :db.type/string
+                  :db/cardinality :db.cardinality/many}
 
    :bug          {:db/valueType :db.type/ref
                   :db/unique    :db.unique/identity}

@@ -152,14 +152,14 @@
                      :source-id   source-id
                      :subject     (trim-subject-prefix subject)
                      :archived-at archived-at
-                     :references  (if-let [refs (not-empty References)]
-                                    (into #{} (string/split refs #"\s"))
+                     :references  (if-let [rs (not-empty References)]
+                                    (into #{} (string/split rs #"\s"))
                                     #{})
                      :config      (or config-mail? false)
                      :from        (:address (first from))
                      :username    (:name (first from))
                      :date        (java.util.Date.)
-                     :refs        1}
+                     :refs-count  1}
         mail-data   (if with-body?
                       (conj mail-data {:body (get-mail-body msg)})
                       mail-data)]
@@ -228,8 +228,8 @@
 (defn- is-in-a-known-thread? [references]
   (doseq [i (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db/db))
                     references)]
-    (let [refs (:refs (d/entity db/db [:message-id i]))]
-      (d/transact! db/conn [{:message-id i :refs (inc refs)}]))))
+    (let [refs (:refs-count (d/entity db/db [:message-id i]))]
+      (d/transact! db/conn [{:message-id i :refs-count (inc refs)}]))))
 
 (defn- is-report-update? [report-type body-report references]
   ;; Is there a known trigger (e.g. "Canceled") for this report type
@@ -240,7 +240,8 @@
     (when (or priority-word?
               vote?
               (some (report-words report-type) (list body-report)))
-      ;; Is this trigger against a known report, and if so, which one?
+      ;; Does this email triggers an action against a known report,
+      ;; and if so, which one?
       (when-let [e (-> #(ffirst (d/q `[:find ?e
                                        :where
                                        [?e ~report-type ?ref]
@@ -708,7 +709,7 @@
            ;; Process mails sent to an identified source or to Woof inbox
            (or source-id to-woof-inbox?))
 
-      ;; Possibly increment refs count in known emails
+      ;; Possibly increment refs-count in known reports
       (is-in-a-known-thread? references)
 
       (or

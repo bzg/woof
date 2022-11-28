@@ -113,7 +113,7 @@
 		    {% endifequal %}
 		  </td>
 		  <td>{{entry.date|date:shortDate}}</td>
-		  <td class="has-text-centered">{{entry.refs}}</td>
+		  <td class="has-text-centered">{{entry.refs-count}}</td>
 		  <td class="has-text-centered">
 		    {% ifequal entry.status 3 %}
 		    <span title="{{config.i18n.Acked}} {{config.i18n.and}} {{config.i18n.owned}}">🟩</span>
