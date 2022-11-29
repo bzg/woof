@@ -737,7 +737,7 @@
          (doseq [w watched :while (nil? @done)]
            (when (user-allowed? user w)
              (when-let [new-info (new? w source-id msg)]
-               (let [version (peek new-info)]
+               (let [version (when-not (= w :patch) (peek new-info))]
                  (if (and (some (into #{w}) [:change :release])
                           (some (fetch/released-versions source-id) (list version)))
                    (timbre/error
