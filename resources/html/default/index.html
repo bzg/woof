@@ -111,9 +111,9 @@
 		    <strong title="{{entry.from}}">{{entry.username}}</strong>
 		    {% else %}
 		    {% ifequal entry.role 1 %}
-		    <em>{{entry.username}}</em>
+		    <em title="{{entry.from}}">{{entry.username}}</em>
 		    {% else %}
-		    {{entry.username}}
+		    <span title="{{entry.from}}">{{entry.username}}</span>
 		    {% endifequal %}
 		    {% endifequal %}
 		  </td>
