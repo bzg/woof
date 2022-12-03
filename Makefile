@@ -1,7 +1,9 @@
 .PHONY: clean-log clean-db
 
 clean-log:
-	rm log.txt
+	rm -f log.txt
 
 clean-db:
-	rm -r .db
+	rm -rf .db
+
+clean: clean-log clean-db
