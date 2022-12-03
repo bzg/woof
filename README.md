@@ -93,5 +93,5 @@ donating to [clojuriststogether.org](https://www.clojuriststogether.org).
 
 © Bastien Guerry 2020-2022
 
-Woof is released under [the EPL 2.0 license](LICENSE).
+Woof is released under [the EPL 2.0 license](LICENSES/EPL-2.0.txt).
 
