@@ -1,3 +1,7 @@
+;; Copyright (c) 2022 Bastien Guerry <bzg@gnu.org>
+;; SPDX-License-Identifier: EPL-2.0
+;; License-Filename: LICENSES/EPL-2.0.txt
+
 (ns bzg.config)
 
 (def defaults

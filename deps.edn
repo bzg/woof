@@ -1,3 +1,7 @@
+;; Copyright (c) 2022 Bastien Guerry <bzg@gnu.org>
+;; SPDX-License-Identifier: EPL-2.0
+;; License-Filename: LICENSES/EPL-2.0.txt
+
 {:version     "0.2.3"
  :description "Watch Over Our Folders"
  :url         "https://github.com/bzg/woof"

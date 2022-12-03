@@ -1,3 +1,7 @@
+;; Copyright (c) 2022 Bastien Guerry <bzg@gnu.org>
+;; SPDX-License-Identifier: EPL-2.0
+;; License-Filename: LICENSES/EPL-2.0.txt
+
 (ns bzg.config-test
   (:require [aero.core :refer (read-config)]
             [bzg.config :as config]
