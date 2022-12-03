@@ -84,7 +84,7 @@
 		  {% endif %}
 		  <td>
 		    {% if entry.link %}
-		    <a href="{{entry.link}}" target="_blank" title="{{config.i18n.sent-by}} {{entry.from}} - {{entry.date}}">{{entry.subject}}</a>
+		    <a href="{{entry.link}}" target="_blank" title="{{config.i18n.read-mail}} {{config.i18n.sent-by}} {{entry.from}} - {{entry.date}}">{{entry.subject}}</a>
 		    {% else %}
 		    {{entry.subject}}
 		    {% endif %}
@@ -118,7 +118,7 @@
 		    {% endifequal %}
 		  </td>
 		  <td>{{entry.date|date:shortDate}}</td>
-		  <td class="has-text-centered"><a href=".?search=m:{{entry.related-refs|concat}}">{{entry.related-refs|count}}</a></td>
+		  <td class="has-text-centered"><a title="{{config.i18n.Display-the}} {{config.i18n.related-reports}}" href=".?search=m:{{entry.related-refs|concat}}">{{entry.related-refs|count}}</a></td>
 		  <td class="has-text-centered">{{entry.refs-count}}</td>
 		  <td class="has-text-centered">
 		    {% ifequal entry.status 3 %}
