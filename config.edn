@@ -31,7 +31,7 @@
           :project-name "Wooff"
           :project-url  "https://bzg.fr"
           :data-formats {:rss true}}}
-  "~bzg/wooff2@lists.sr.ht" {:slug "wooff2"}
+  "~bzg/wooff2@lists.sr.ht" {:slug "wooff2" :hidden true}
   "woof-test@bzg.fr"        {:slug "woof-test"}
   }
 
@@ -57,10 +57,9 @@
                        :org  true
                        :md   true}
       :pages
-      {:index    {:columns #{:priority :vote :from :date :related-refs :refs-count :status}}
+      {;; :index {:columns #{:priority :vote :from :date :related-refs :refs-count :status}}
        :news
-       {:columns #{:priority :vote :from :date :related-refs :refs-count :status}
-        :reports
+       {:reports
         ;; :unreleased-changes :releases :latest-released-changes :announcements :blogs
         #{:unreleased-changes
           :releases
@@ -76,8 +75,7 @@
        ;; - :canceled-bugs :closed-bugs
        ;; - :unfixed-bugs :unclosed-bugs
        ;; - :uncanceled-bugs :unclosed-bugs
-       {:columns #{:priority :vote :from :date :related-refs :refs-count :status}
-        :reports #{:unconfirmed-bugs :confirmed-bugs :handled-bugs}}
+       {:reports #{:unconfirmed-bugs :confirmed-bugs :handled-bugs}}
        :patch
        ;; - :approved-patches :unacked-patches
        ;; - :unapproved-patches :unacked-patches
@@ -87,8 +85,7 @@
        ;; - :canceled-patches :closed-patches
        ;; - :unapplied-patches :unclosed-patches
        ;; - :uncanceled-patches :unclosed-patches
-       {:columns #{:priority :vote :from :date :related-refs :refs-count :status}
-        :reports #{:unapproved-patches :approved-patches :handled-patches}}
+       {:reports #{:unapproved-patches :approved-patches :handled-patches}}
        :request
        ;; - :approved-requests :acked-requests
        ;; - :unapproved-requests :unacked-requests
@@ -98,7 +95,6 @@
        ;; - :canceled-requests :closed-requests
        ;; - :uncanceled-requests :unclosed-requests
        ;; - :undone-requests :unclosed-requests
-       {:columns #{:priority :vote :from :date :related-refs :refs-count :status}
-        :reports #{:unapproved-requests :approved-requests :handled-requests}}
+       {:reports #{:unapproved-requests :approved-requests :handled-requests}}
        :overview false}}
  }

@@ -62,10 +62,13 @@
 (defn- with-html-defaults [config-defaults {:keys [source] :as m}]
   (merge (html-defaults (:source-id source))
          {:config config-defaults}
-         {:sources (map (fn [[k v]] {:source-id k
-                                     :slug      (:slug v)
-                                     :doc       (:doc v)})
-                        (:sources db/config))}
+         {:sources (->> (:sources db/config)
+                        (map (fn [[k v]]
+                               (when-not (:hidden v)
+                                 {:source-id k
+                                  :slug      (:slug v)
+                                  :doc       (:doc v)})))
+                        (remove nil?))}
          m))
 
 (def emails-re (re-pattern (str "(?:" core/email-re "[;,]?)+")))
@@ -121,7 +124,8 @@
        :search   search
        :closed?  closed?
        :page     (name page)
-       :columns  (:columns (page (:pages ui-config)))
+       :columns  (or (:columns (page (:pages ui-config)))
+                     #{:priority :vote :from :date :related-refs :refs-count :status})
        :slug-end (or (not-empty slug-end) "index")
        :entries
        ;; FIXME: Confusing use of entries twice?
@@ -237,6 +241,5 @@
        %
        :access-control-allow-origin [#"^*$"]
        :access-control-allow-methods [:get])]}))
-
 
 ;; (-main)

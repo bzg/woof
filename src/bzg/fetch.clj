@@ -81,12 +81,15 @@
                        seq))
              (take (or (:display-max report-type-cfg) 100)))]
     (if as-mail
-      (->> reports
-           (map #(assoc (get % report-type)
-                        :vote (get % :vote)
-                        :status (get % :status)
-                        :priority (get % :priority)))
-           (map add-role))
+      (let [mails (->> reports
+                       (map #(assoc (get % report-type)
+                                    :vote (get % :vote)
+                                    :status (get % :status)
+                                    :priority (get % :priority)))
+                       (map add-role))]
+        (if (empty? source-id)
+          (remove #(:hidden (get (:sources db/config) (:source-id %))) mails)
+          mails))
       reports)))
 
 (defn- reports-as-mail [report-type & [source-id search closed?]]
