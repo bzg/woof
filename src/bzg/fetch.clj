@@ -226,6 +226,7 @@
        (map :version)
        (into #{})))
 
+;; FIXME: remove?
 ;; (defn releases [& [source-id search closed]]
 ;;   (->> (d/q (if source-id
 ;;               `[:find ?e :where

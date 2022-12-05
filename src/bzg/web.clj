@@ -62,11 +62,7 @@
     (-> (merge (:ui db/config)
                (:ui source-cfg)
                {:display (or (:show (:ui source-cfg))
-                             (:show (:ui db/config))
-                             ;; FIXME: Remove below?
-                             ;; (:watch source-cfg)
-                             ;; (:watch db/config)
-                             )})
+                             (:show (:ui db/config)))})
         (dissoc :show))))
 
 (defn- with-html-defaults [config-defaults {:keys [source] :as m}]
