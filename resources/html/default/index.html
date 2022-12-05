@@ -40,13 +40,18 @@
 	      {% if data-formats.md %}<a class="tag is-warning is-light" href="{{slug-end}}.md">MD</a>{% endif %}
 	    </span>
 	  </h1>
+
 	  <div class="table-container">
 	    <table class="table is-hoverable is-fullwidth">
 	      <thead>
 		<tr>
+		  {% if columns.priority %}
 		  <th class="has-text-centered" width="3%"><a href="?sorting-by=priority" title="{{config.i18n.sort-entries-by}} {{config.i18n.priority}}">{{config.i18n.Priority}}</a></th>
+		  {% endif %}
+		  {% if columns.vote %}
 		  {% if page = "request" %}
 		  <th><a href="?sorting-by=vote" title="{{config.i18n.sort-entries-by}} {{config.i18n.vote}}">{{config.i18n.Vote}}</a></th>
+		  {% endif %}
 		  {% endif %}
 		  <th>{{config.i18n.subject}}</th>
 		  {% if not source %}
@@ -54,16 +59,27 @@
 		  <th>{{config.i18n.source}}</th>
 		  {% endif %}
 		  {% endif %}
+		  {% if columns.from %}
 		  <th width="15%"><a href="?sorting-by=user" title="{{config.i18n.sort-entries-by}} {{config.i18n.role}}">{{config.i18n.from}}<a></th>
-		    <th width="15%"><a href="?sorting-by=date" title="{{config.i18n.sort-entries-by}} {{config.i18n.date}}">{{config.i18n.Date}}</a></th>
-		    <th class="has-text-centered" width="5%"><a href="?sorting-by=related" title="{{config.i18n.sort-entries-by}} {{config.i18n.number-of-related}}">{{config.i18n.related-refs}}</a></th>
-		    <th class="has-text-centered" width="5%"><a href="?sorting-by=refs" title="{{config.i18n.sort-entries-by}} {{config.i18n.number-of-references}}">{{config.i18n.refs}}</a></th>
-		    <th class="has-text-centered" width="3%"><a href="?sorting-by=status" title="{{config.i18n.sort-entries-by}} {{config.i18n.status}}">{{config.i18n.Status}}</a></th>
+		  {% endif %}
+		  {% if columns.date %}
+		  <th width="15%"><a href="?sorting-by=date" title="{{config.i18n.sort-entries-by}} {{config.i18n.date}}">{{config.i18n.Date}}</a></th>
+		  {% endif %}
+		  {% if columns.related-refs %}
+		  <th class="has-text-centered" width="5%"><a href="?sorting-by=related" title="{{config.i18n.sort-entries-by}} {{config.i18n.number-of-related}}">{{config.i18n.related-refs}}</a></th>
+		  {% endif %}
+		  {% if columns.refs-count %}
+		  <th class="has-text-centered" width="5%"><a href="?sorting-by=refs" title="{{config.i18n.sort-entries-by}} {{config.i18n.number-of-references}}">{{config.i18n.refs}}</a></th>
+		  {% endif %}
+		  {% if columns.status %}
+		  <th class="has-text-centered" width="3%"><a href="?sorting-by=status" title="{{config.i18n.sort-entries-by}} {{config.i18n.status}}">{{config.i18n.Status}}</a></th>
+		  {% endif %}
 		</tr>
 	      </thead>
 	      <tbody>
 		{% for entry in entries %}
 		<tr>
+		  {% if columns.priority %}
 		  <td class="has-text-centered">
 		    {% ifequal entry.priority 3 %}
 		    <span title="{{config.i18n.Urgent}} {{config.i18n.and}} {{config.i18n.important}}">🟥</span>
@@ -79,8 +95,11 @@
 		    {% endifequal %}
 		    {% endifequal %}
 		  </td>
+		  {% endif %}
+		  {% if columns.vote %}
 		  {% if page = "request" %}
 		  <td>{{entry.vote}}</td>
+		  {% endif %}
 		  {% endif %}
 		  <td>
 		    {% if entry.link %}
@@ -106,6 +125,7 @@
 		  </td>
 		  {% endif %}
 		  {% endif %}
+		  {% if columns.from %}
 		  <td>
 		    {% ifequal entry.role 2 %}
 		    <strong title="{{entry.from}}">{{entry.username}}</strong>
@@ -117,9 +137,17 @@
 		    {% endifequal %}
 		    {% endifequal %}
 		  </td>
+		  {% endif %}
+		  {% if columns.date %}
 		  <td>{{entry.date|date:shortDate}}</td>
+		  {% endif %}
+		  {% if columns.related-refs %}
 		  <td class="has-text-centered"><a title="{{config.i18n.Display-the}} {{config.i18n.related-reports}}" href=".?search=m:{{entry.related-refs|concat}}">{{entry.related-refs|count}}</a></td>
+		  {% endif %}
+		  {% if columns.refs-count %}
 		  <td class="has-text-centered">{{entry.refs-count}}</td>
+		  {% endif %}
+		  {% if columns.status %}
 		  <td class="has-text-centered">
 		    {% ifequal entry.status 3 %}
 		    <span title="{{config.i18n.Acked}} {{config.i18n.and}} {{config.i18n.owned}}">🟩</span>
@@ -139,6 +167,7 @@
 		    {% endifequal %}
 		    {% endifequal %}
 		  </td>
+		  {% endif %}
 		</tr>
 		{% endfor %}
 	      </tbody>

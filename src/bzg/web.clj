@@ -112,12 +112,16 @@
         closed?    (:closed? format-params)
         source     (when source-id
                      {:source-id source-id
-                      :slug      (:slug (get (:sources db/config) source-id))})]
+                      :slug      (:slug (get (:sources db/config) source-id))})
+        ui-config  (if source-id
+                     (:ui (get (:sources db/config) source-id))
+                     (:ui db/config))]
     (with-html-defaults config-defaults
       {:source   source
        :search   search
        :closed?  closed?
        :page     (name page)
+       :columns  (:columns (page (:pages ui-config)))
        :slug-end (or (not-empty slug-end) "index")
        :entries
        ;; FIXME: Confusing use of entries twice?

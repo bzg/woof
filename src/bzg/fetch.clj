@@ -274,18 +274,18 @@
          flatten)))
 
 (defn news [& [source-id search closed?]]
-  (let [search    (or search "")
-        news-show (:news (:pages (:ui db/config)))]
+  (let [search       (or search "")
+        news-reports (-> db/config :ui :pages :news :reports)]
     (->> (list
-          (when (:announcements news-show)
+          (when (:announcements news-reports)
             (announcements source-id search closed?))
-          (when (:blogs news-show)
+          (when (:blogs news-reports)
             (blogs source-id search closed?))
-          (when (:releases news-show)
+          (when (:releases news-reports)
             (releases source-id search closed?))
-          (when (:unreleased-changes news-show)
+          (when (:unreleased-changes news-reports)
             (unreleased-changes source-id search closed?))
-          (when (:latest-released-changes news-show)
+          (when (:latest-released-changes news-reports)
             (latest-released-changes source-id search closed?)))
          (remove nil?)
          flatten)))
