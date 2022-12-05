@@ -275,7 +275,7 @@
 
 (defn news [& [source-id search closed?]]
   (let [search    (or search "")
-        news-show (:news (:show (:ui db/config)))]
+        news-show (:news (:pages (:ui db/config)))]
     (->> (list
           (when (:announcements news-show)
             (announcements source-id search closed?))

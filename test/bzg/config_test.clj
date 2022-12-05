@@ -42,7 +42,7 @@
 (spec/def ::maintenance boolean?)
 (spec/def ::notifications boolean?)
 (spec/def ::watch map?) ;; FIXME
-(spec/def ::show map?) ;; FIXME
+(spec/def ::pages map?) ;; FIXME
 (spec/def ::display-max map?) ;; FIXME
 (spec/def ::data-formats map?) ;; FIXME
 
@@ -80,7 +80,7 @@
    :opt-un [::project-url
             ::contribute-url
             ::support-url
-            ::show]))
+            ::pages]))
 
 (spec/def ::config
   (spec/keys
@@ -123,5 +123,5 @@
     (is (spec/valid? ::project-url (:ui (:project-url config))))
     (is (spec/valid? ::sources (:sources config)))
     (is (spec/valid? ::watch (:watch config)))
-    (is (spec/valid? ::show (:show (:ui config))))
+    (is (spec/valid? ::pages (:pages (:ui config))))
     (is (spec/valid? ::config config))))

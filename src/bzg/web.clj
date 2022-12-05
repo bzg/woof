@@ -55,9 +55,9 @@
                             (val (first sources))))]
     (-> (merge (:ui db/config)
                (:ui source-cfg)
-               {:display (or (:show (:ui source-cfg))
-                             (:show (:ui db/config)))})
-        (dissoc :show))))
+               {:display (or (:pages (:ui source-cfg))
+                             (:pages (:ui db/config)))})
+        (dissoc :pages))))
 
 (defn- with-html-defaults [config-defaults {:keys [source] :as m}]
   (merge (html-defaults (:source-id source))

@@ -56,7 +56,7 @@
                        :json true
                        :org  true
                        :md   true}
-      :show
+      :pages
       {:news
        ;; :unreleased-changes :releases :latest-released-changes :announcements :blogs
        #{:unreleased-changes
