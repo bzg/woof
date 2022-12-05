@@ -38,7 +38,7 @@
  ;; Default application state
  :defaults
  {:maintenance   false
-  :notifications true}
+  :notifications false}
 
  ;; :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
 
