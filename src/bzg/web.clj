@@ -178,12 +178,15 @@
                           :overview {:html "/overview.html" :fn page-overview}
                           {:html "/index.html" :fn page-index})
         slug-end        (peek (re-find #"/([^/]+)$" (or uri "")))
-        source-id       (core/slug-to-source-id (:source-slug path-params))]
+        source-id       (core/slug-to-source-id (:source-slug path-params))
+        theme           (if (re-find #"Emacs" (get headers "user-agent"))
+                          "plain"
+                          (:theme db/config))]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" (:theme db/config) (:html html-page)))
+      (io/resource (str "html/" theme (:html html-page)))
       ((:fn html-page) page source-id slug-end format-params config-defaults))}))
 
 (def handler
