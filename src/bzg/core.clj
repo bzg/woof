@@ -11,7 +11,6 @@
             [clojure.walk :as walk]
             [bzg.fetch :as fetch]
             [bzg.db :as db]
-            ;; [integrant.core :as ig]
             [tea-time.core :as tt]
             [postal.core :as postal]
             [postal.support]

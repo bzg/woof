@@ -3,8 +3,7 @@
 ;; License-Filename: LICENSES/EPL-2.0.txt
 
 (ns bzg.web
-  (:require [org.httpkit.server :as server]
-            [reitit.ring :as ring]
+  (:require [reitit.ring :as ring]
             [bzg.core :as core]
             [bzg.i18n :as i18n]
             [bzg.data :as data]
@@ -12,19 +11,14 @@
             [bzg.db :as db]
             [clojure.string :as string]
             ;; FIXME: Remove in production
-            [ring.middleware.reload :as reload]
             [ring.middleware.params :as params]
             [reitit.ring.middleware.parameters :as parameters]
             [ring.middleware.cors :refer [wrap-cors]]
-            [integrant.core :as ig]
-            [tea-time.core :as tt]
             [selmer.parser :as html]
             [selmer.filters :as filters]
             [markdown.core :as md]
             [clojure.java.io :as io]
-            [datalevin.core :as d]
-            [taoensso.timbre :as timbre])
-  (:gen-class))
+            [datalevin.core :as d]))
 
 (filters/add-filter! :concat #(string/join "," %))
 
@@ -240,46 +234,5 @@
        :access-control-allow-origin [#"^*$"]
        :access-control-allow-methods [:get])]}))
 
-(def components-config
-  (let [server       (:inbox-server db/config)
-        user         (:inbox-user db/config)
-        password     (:inbox-password db/config)
-        folder       (:inbox-folder db/config)
-        monitor-opts {:server   server
-                      :user     user
-                      :password password
-                      :folder   folder}]
-    {:inbox/monitor  monitor-opts
-     :reload/monitor monitor-opts
-     :http/service   {:port     (:port db/config)
-                      :hostname (:hostname db/config)}}))
-
-(defmethod ig/init-key :http/service [_ {:keys [port hostname]}]
-  (server/run-server
-   (reload/wrap-reload handler {:dirs ["src" "resources"]})
-   {:port port}
-   (timbre/info
-    (format "Web server started on %s (port %s)" hostname port))))
-
-(defmethod ig/init-key :inbox/monitor [_ opts]
-  (core/start-inbox-monitor! opts)
-  (timbre/info
-   (format "Inbox monitoring started on %s" (:user opts))))
-
-(defmethod ig/init-key :reload/monitor [_ opts]
-  (core/reload-monitor! opts))
-
-(defn -main []
-  (let [admin-address (:admin-address db/config)]
-    (tt/start!)
-    (core/set-defaults)
-    (core/update-person! {:email    admin-address
-                          :username (or (:admin-username db/config)
-                                        admin-address)
-                          :role     :admin}
-                         ;; The root admin cannot be removed
-                         {:root true})
-    (core/start-mail-loop!)
-    (ig/init components-config)))
 
 ;; (-main)

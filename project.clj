@@ -40,4 +40,4 @@
   :profiles {:uberjar {:omit-source  true
                        :aot          :all
                        :uberjar-name "woof.jar"}}
-  :main bzg.web)
+  :main bzg.init)
