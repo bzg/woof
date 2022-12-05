@@ -3,19 +3,19 @@
 ;; License-Filename: LICENSES/EPL-2.0.txt
 
 {
- ;; Information on the mail server for sending emails
- :smtp-host     #env WOOF_SMTP_HOST
- :smtp-port     #long #env WOOF_SMTP_PORT
- :smtp-login    #env WOOF_SMTP_LOGIN
- :smtp-password #env WOOF_SMTP_PASSWORD
- :smtp-use-tls  #env WOOF_SMTP_USE_TLS
-
  ;; Information on the mailbox to monitor
  ;; FIXME: Use aero secrets? env variables?
  :inbox-user     #env WOOF_INBOX_USER
  :inbox-server   #env WOOF_INBOX_SERVER
  :inbox-password #env WOOF_INBOX_PASSWORD
  :inbox-folder   #env WOOF_INBOX_FOLDER
+
+ ;; Information on the mail server for sending emails
+ :smtp-host     #env WOOF_SMTP_HOST
+ :smtp-port     #long #env WOOF_SMTP_PORT
+ :smtp-login    #env WOOF_SMTP_LOGIN
+ :smtp-password #env WOOF_SMTP_PASSWORD
+ :smtp-use-tls  #env WOOF_SMTP_USE_TLS
 
  ;; General information on the application
  :hostname #or [#env WOOF_HOSTNAME "localhost"]
@@ -46,7 +46,8 @@
  :admin-address  "bzg@bzg.fr"
  :admin-username "Big Bad Woof"
 
- :ui {:title          "Example woof instance"
+ :ui {:enabled        true
+      :title          "Example woof instance"
       :project-name   "Example project name"
       :project-url    "http://localhost:3000"
       :contribute-url "https://bzg.fr"
