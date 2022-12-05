@@ -173,4 +173,3 @@ you can check reports by using their =json= export: it will give you the
 =Message-Id= of each report, allowing to find the corresponding email.
 
 #+html: </div>
-

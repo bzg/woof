@@ -1,7 +1,3 @@
-<!-- Copyright (c) 2022 Bastien Guerry <bzg@gnu.org> -->
-<!-- SPDX-License-Identifier: EPL-2.0 -->
-<!-- License-Filename: LICENSES/EPL-2.0.txt -->
-
 <div class="container">
 
 **NOTE: Do not deploy this version as it is still a work in progress.**
