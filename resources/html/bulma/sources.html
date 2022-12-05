@@ -1,0 +1,46 @@
+<!-- Copyright (c) 2022 Bastien Guerry <bzg@gnu.org> -->
+<!-- SPDX-License-Identifier: EPL-2.0 -->
+<!-- License-Filename: LICENSES/EPL-2.0.txt -->
+
+<!DOCTYPE html>
+<html lang="{{config.i18n.lang}}" class="has-navbar-fixed-top">
+  {% include "html/bulma/head.html" %}
+  <body>
+    {% include "html/bulma/hero.html"%}
+    <div class="container">
+      {% if config.maintenance %}
+      <div class="content colum is-size-1 is-offset-4 is-4 has-text-centered">
+	<p class="button is-size-4 is-info is-light">
+	  <a title="Send an email to the admin" href="mailto:{{config.admin}}">
+	    {{config.i18n.under-maintenance}}
+	  </a>
+	</p>
+      </div>
+      {% else %}
+      <section class="section" style="padding: 1.5rem 1.0rem">
+	<div class="container">
+	  <div class="table-container">
+	  <table class="table is-hoverable is-bordered is-fullwidth">
+	    <thead>
+	      <th>{{config.i18n.link}}</th>
+	      <th>{{config.i18n.list}}</th>
+	      <th>{{config.i18n.documentation}}</th>
+	    </thead>
+	    <tbody>
+	      {% for source in sources %}
+	      <tr>
+		<td><a href="/source/{{source.slug}}/">{{source.slug}}</a></td>
+		<td><code>{{source.source-id}}</code></td>
+		<td>{{source.doc}}</td>
+	      </tr>
+	      {% endfor %}
+	    </tbody>
+	  </table>	      
+	  </div>
+	</div>
+      </section>
+      {% endif %}
+    </div>
+    {% include "html/bulma/footer.html" %}
+  </body>
+</html>

@@ -4,11 +4,11 @@
 
 <!DOCTYPE html>
 <html lang="{{config.i18n.lang}}" class="has-navbar-fixed-top">
-  {% include "html/default/head.html" %}
+  {% include "html/bulma/head.html" %}
   <body>
-    {% include "html/default/hero.html"%}
+    {% include "html/bulma/hero.html"%}
     <div class="container">
-      {% include "html/default/tabs.html" with active="overview" %}
+      {% include "html/bulma/tabs.html" with active="overview" %}
       {% if display.overview %}
       <section class="section" style="padding: 1.5rem 1.0rem">
 	<div class="container">
@@ -18,9 +18,9 @@
 	</div>
       </section>
       {% else %}
-      {% include "html/default/feature-not-enabled.html" %}
+      {% include "html/bulma/feature-not-enabled.html" %}
       {% endif %}
     </div>
-    {% include "html/default/footer.html" %}
+    {% include "html/bulma/footer.html" %}
   </body>
 </html>

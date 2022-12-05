@@ -1,0 +1,46 @@
+<!-- Copyright (c) 2022 Bastien Guerry <bzg@gnu.org> -->
+<!-- SPDX-License-Identifier: EPL-2.0 -->
+<!-- License-Filename: LICENSES/EPL-2.0.txt -->
+
+<section>
+  <div>
+    <h1>{{title}}</h1>
+    <h2>
+      <a href="/">{{config.i18n.home}}</a>
+      — <a title="{{config.i18n.go-to-project-page}}" href="{{project-url}}">{{project-name}}</a>
+      {% ifunequal sources|count 1 %}
+      — <a title="{{config.i18n.list-sources}}" href="/sources">{{config.i18n.sources}}</a>
+      {% endifunequal %}
+      {% if contribute-url %}
+      — <a title="{{config.i18n.contribute-project}}" href="{{contribute-url}}">{{config.i18n.Contribute}}</a>
+      {% endif %}
+      {% if support-url %}
+      — <a title="{{config.i18n.support-project}}" href="{{support-url}}">{{config.i18n.Support}}</a>
+      {% endif %}
+      — <a href="howto" title="{{config.i18n.how-to-woof}}">{{config.i18n.howto}}</a>
+    </h2>
+
+    {% ifunequal page "sources" %}
+    {% ifunequal page "overview" %}
+    {% ifunequal page "howto" %}
+
+    <div style="display:flex;">
+      <form>
+      <label>
+	<input type="checkbox" name="closed"
+	       {% ifequal closed? "on" %}checked{% endifequal %}> {{config.i18n.with-closed?}}
+      </label>
+      <input type="text" name="search" value="{{search}}"
+	     placeHolder="Plain text search">
+      <button type="submit">{{config.i18n.filter}}</button>
+      </form>
+      <form style="margin-left: 1rem;">
+	<button type="submit">❌</button>
+      </form>
+    </div>
+
+    {% endifunequal %}
+    {% endifunequal %}
+    {% endifunequal %}
+  </div>
+</section>

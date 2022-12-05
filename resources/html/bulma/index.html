@@ -4,9 +4,9 @@
 
 <!DOCTYPE html>
 <html lang="{{config.i18n.lang}}" class="has-navbar-fixed-top">
-  {% include "html/default/head.html" %}
+  {% include "html/bulma/head.html" %}
   <body>
-    {% include "html/default/hero.html"%}
+    {% include "html/bulma/hero.html"%}
     <div class="container">
       {% if howto %}
       {% safe %}
@@ -24,7 +24,7 @@
       </div>
       {% else %}
 
-      {% include "html/default/tabs.html" with page %}
+      {% include "html/bulma/tabs.html" with page %}
 
       <section class="section" style="padding: 0rem .5rem 1.5rem .5rem">
 	<div class="container">
@@ -181,6 +181,6 @@
       {% endif %}
       {% endif %}
     </div>
-    {% include "html/default/footer.html" %}
+    {% include "html/bulma/footer.html" %}
   </body>
 </html>

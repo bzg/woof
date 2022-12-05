@@ -1,0 +1,27 @@
+<!-- Copyright (c) 2022 Bastien Guerry <bzg@gnu.org> -->
+<!-- SPDX-License-Identifier: EPL-2.0 -->
+<!-- License-Filename: LICENSES/EPL-2.0.txt -->
+
+<!DOCTYPE html>
+<html lang="{{config.i18n.lang}}">
+  {% include "html/default/head.html" %}
+  <body style="margin: 2% 10%; max-width: 80%; font-family: sans-serif;">
+    {% include "html/default/hero.html"%}
+    <div>
+      {% if config.maintenance %}
+      <div>
+	<p>
+	  <a title="Send an email to the admin" href="mailto:{{config.admin}}">
+	    {{config.i18n.maintenance}}
+	  </a>
+	</p>
+      </div>
+      {% else %}
+      <section>
+	<p>{{config.i18n.404-error}}</p>
+      </section>
+      {% endif %}
+    </div>
+    {% include "html/default/footer.html" %}
+  </body>
+</html>

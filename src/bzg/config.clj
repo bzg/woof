@@ -7,7 +7,7 @@
 (def defaults
   {:db-dir   ".db"
    :log-file "log.txt"
-   :theme    "default"
+   :theme    "bulma"
    :lang     "en" ;; Accepted: en, fr
    ;; FIXME: Check why mail here?
    :log      [:db :file :mail]

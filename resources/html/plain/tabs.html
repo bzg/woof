@@ -1,0 +1,43 @@
+<!-- Copyright (c) 2022 Bastien Guerry <bzg@gnu.org> -->
+<!-- SPDX-License-Identifier: EPL-2.0 -->
+<!-- License-Filename: LICENSES/EPL-2.0.txt -->
+
+<div>
+  <ul>
+
+    <li {% ifequal page "index" %}{% endifequal %}>
+      <a href=".">{{config.i18n.all}}</a>
+    </li>
+
+    {% if display.news %}
+    <li {% ifequal page "news" %}{% endifequal %}>
+      <a href="news">{{config.i18n.news}}</a>
+    </li>
+    {% endif %}
+
+    {% if display.bug %}
+    <li {% ifequal page "bug" %}{% endifequal %}>
+      <a href="bugs">{{config.i18n.bugs}}</a>
+    </li>
+    {% endif %}
+
+    {% if display.patch %}
+    <li {% ifequal page "patch" %}{% endifequal %}>
+      <a href="patches">{{config.i18n.patches}}</a>
+    </li>
+    {% endif %}
+
+    {% if display.request %}
+    <li {% ifequal page "request" %}{% endifequal %}>
+      <a href="requests">{{config.i18n.requests}}</a>
+    </li>
+    {% endif %}
+
+    {% if display.overview %}
+    <li {% ifequal page "overview" %}{% endifequal %}>
+      <a href="overview">{{config.i18n.overview}}</a>
+    </li>
+    {% endif %}
+
+  </ul>
+</div>

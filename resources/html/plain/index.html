@@ -1,0 +1,188 @@
+<!-- Copyright (c) 2022 Bastien Guerry <bzg@gnu.org> -->
+<!-- SPDX-License-Identifier: EPL-2.0 -->
+<!-- License-Filename: LICENSES/EPL-2.0.txt -->
+
+<!DOCTYPE html>
+<html lang="{{config.i18n.lang}}">
+  {% include "html/plain/head.html" %}
+  <body style="margin: 2% 10%; max-width: 80%; font-family: sans-serif;">
+    {% include "html/plain/hero.html"%}
+    <div>
+      {% if howto %}
+      {% safe %}
+      <div>{{howto}}</div>
+      {% endsafe %}
+      {% else %}
+
+      {% if config.maintenance %}
+      <div>
+	<p>
+	  <a title="Send an email to the admin" href="mailto:{{config.admin}}">
+	    {{config.i18n.under-maintenance}}
+	  </a>
+	</p>
+      </div>
+      {% else %}
+
+      {% include "html/plain/tabs.html" with page %}
+
+      <h1>{{page|capitalize}}</h1>
+
+      <section>
+	<div>
+
+	  {% ifequal entries|count 0 %}
+	  <h3 id="entries">{{config.i18n.no-result}}.</h3>
+	  {% else %}
+	  <h3 id="entries">
+	    <span>
+	      {% if data-formats.rss %}<a href="{{slug-end}}.rss">RSS</a>{% endif %}
+	      {% if data-formats.json %}<a href="{{slug-end}}.json">JSON</a>{% endif %}
+	      {% if data-formats.org %}<a href="{{slug-end}}.org">ORG</a>{% endif %}
+	      {% if data-formats.md %}<a href="{{slug-end}}.md">MD</a>{% endif %}
+	    </span>
+	  </h3>
+
+	  <div>
+	    <table>
+	      <thead>
+		<tr>
+		  {% if columns.priority %}
+		  <th width="3%"><a href="?sorting-by=priority" title="{{config.i18n.sort-entries-by}} {{config.i18n.priority}}">{{config.i18n.Priority}}</a></th>
+		  {% endif %}
+		  {% if columns.vote %}
+		  {% if page = "request" %}
+		  <th><a href="?sorting-by=vote" title="{{config.i18n.sort-entries-by}} {{config.i18n.vote}}">{{config.i18n.Vote}}</a></th>
+		  {% endif %}
+		  {% endif %}
+		  <th>{{config.i18n.subject}}</th>
+		  {% if not source %}
+		  {% if 1 < sources|length %}
+		  <th>{{config.i18n.source}}</th>
+		  {% endif %}
+		  {% endif %}
+		  {% if columns.from %}
+		  <th width="15%"><a href="?sorting-by=user" title="{{config.i18n.sort-entries-by}} {{config.i18n.role}}">{{config.i18n.from}}<a></th>
+		  {% endif %}
+		  {% if columns.date %}
+		  <th width="15%"><a href="?sorting-by=date" title="{{config.i18n.sort-entries-by}} {{config.i18n.date}}">{{config.i18n.Date}}</a></th>
+		  {% endif %}
+		  {% if columns.related-refs %}
+		  <th width="5%"><a href="?sorting-by=related" title="{{config.i18n.sort-entries-by}} {{config.i18n.number-of-related}}">{{config.i18n.related-refs}}</a></th>
+		  {% endif %}
+		  {% if columns.refs-count %}
+		  <th width="5%"><a href="?sorting-by=refs" title="{{config.i18n.sort-entries-by}} {{config.i18n.number-of-references}}">{{config.i18n.refs}}</a></th>
+		  {% endif %}
+		  {% if columns.status %}
+		  <th width="3%"><a href="?sorting-by=status" title="{{config.i18n.sort-entries-by}} {{config.i18n.status}}">{{config.i18n.Status}}</a></th>
+		  {% endif %}
+		</tr>
+	      </thead>
+	      <tbody>
+		{% for entry in entries %}
+		<tr>
+		  {% if columns.priority %}
+		  <td>
+		    {% ifequal entry.priority 3 %}
+		    <span title="{{config.i18n.Urgent}} {{config.i18n.and}} {{config.i18n.important}}">🟥</span>
+		    {% else %}
+		    {% ifequal entry.priority 2 %}
+		    <span title="{{config.i18n.Urgent}}">🟧</span>
+		    {% else %}
+		    {% ifequal entry.priority 1 %}
+		    <span title="Important">🟨</span>
+		    {% else %}
+		    <span title="{{config.i18n.Unurgent}} {{config.i18n.and}} {{config.i18n.unimportant}}">⬜</span>
+		    {% endifequal %}
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
+		  {% endif %}
+		  {% if columns.vote %}
+		  {% if page = "request" %}
+		  <td>{{entry.vote}}</td>
+		  {% endif %}
+		  {% endif %}
+		  <td>
+		    {% if entry.link %}
+		    <a href="{{entry.link}}" target="_blank" title="{{config.i18n.read-mail}} {{config.i18n.sent-by}} {{entry.from}} - {{entry.date}}">{{entry.subject}}</a>
+		    {% else %}
+		    {{entry.subject}}
+		    {% endif %}
+		  </td>
+		  {% if not source %}
+		  {% if 1 < sources|length %}
+		  <td>
+		    {% ifequal slug-end "index" %}
+		    <a href="/source/{{entry.source-slug}}/"
+		       title="{{config.i18n.Display-page-for}} {{entry.source-id}}">
+		      {{entry.source-slug}}
+		    </a>
+		    {% else %}
+		    <a href="/source/{{entry.source-slug}}/{{slug-end}}"
+		       title="{{config.i18n.Display-page-for}} {{entry.source-id}}">
+		      {{entry.source-slug}}
+		    </a>
+		    {% endifequal %}
+		  </td>
+		  {% endif %}
+		  {% endif %}
+		  {% if columns.from %}
+		  <td>
+		    {% ifequal entry.role 2 %}
+		    <strong title="{{entry.from}}">{{entry.username}}</strong>
+		    {% else %}
+		    {% ifequal entry.role 1 %}
+		    <em title="{{entry.from}}">{{entry.username}}</em>
+		    {% else %}
+		    <span title="{{entry.from}}">{{entry.username}}</span>
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
+		  {% endif %}
+		  {% if columns.date %}
+		  <td>{{entry.date|date:shortDate}}</td>
+		  {% endif %}
+		  {% if columns.related-refs %}
+		  <td><a title="{{config.i18n.Display-the}} {{config.i18n.related-reports}}" href=".?search=m:{{entry.related-refs|concat}}">{{entry.related-refs|count}}</a></td>
+		  {% endif %}
+		  {% if columns.refs-count %}
+		  <td>{{entry.refs-count}}</td>
+		  {% endif %}
+		  {% if columns.status %}
+		  <td>
+		    {% ifequal entry.status 3 %}
+		    <span title="{{config.i18n.Acked}} {{config.i18n.and}} {{config.i18n.owned}}">🟩</span>
+		    {% else %}
+		    {% ifequal entry.status 2 %}
+		    <span title="{{config.i18n.Owned}}">🟦</span>
+		    {% else %}
+		    {% ifequal entry.status 1 %}
+		    <span title="{{config.i18n.Acked}}">🟨</span>
+		    {% else %}
+		    {% if entry.status < 0 %}
+		    <span title="{{config.i18n.Closed}}">🟥</span>
+		    {% else %}
+		    <span title="{{config.i18n.Unacked}}">⬜</span>
+		    {% endif %}
+		    {% endifequal %}
+		    {% endifequal %}
+		    {% endifequal %}
+		  </td>
+		  {% endif %}
+		</tr>
+		{% endfor %}
+	      </tbody>
+	    </table>
+	  </div>
+	  {% endifequal %}
+
+	</div>
+      </section>
+
+      {% endif %}
+      {% endif %}
+    </div>
+    {% include "html/plain/footer.html" %}
+  </body>
+</html>

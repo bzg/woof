@@ -1,0 +1,24 @@
+<!-- Copyright (c) 2022 Bastien Guerry <bzg@gnu.org> -->
+<!-- SPDX-License-Identifier: EPL-2.0 -->
+<!-- License-Filename: LICENSES/EPL-2.0.txt -->
+
+<!DOCTYPE html>
+<html lang="{{config.i18n.lang}}">
+  {% include "html/plain/head.html" %}
+  <body style="margin: 2% 10%; max-width: 80%; font-family: sans-serif;">
+    {% include "html/plain/hero.html"%}
+    <div>
+      {% include "html/plain/tabs.html" with active="overview" %}
+      {% if display.overview %}
+      <section>
+	<div>
+	  <p>{{config.i18n.overview-tmp-message}}</p>
+	</div>
+      </section>
+      {% else %}
+      {% include "html/plain/feature-not-enabled.html" %}
+      {% endif %}
+    </div>
+    {% include "html/plain/footer.html" %}
+  </body>
+</html>
