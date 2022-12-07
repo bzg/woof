@@ -186,7 +186,7 @@
      :headers {"Content-Type" "text/html"}
      :body
      (html/render-file
-      (io/resource (str "html/" theme (:html html-page)))
+      (io/resource (str "themes/" theme (:html html-page)))
       ((:fn html-page) page source-id slug-end format-params config-defaults))}))
 
 (def handler
@@ -235,7 +235,7 @@
        {:status  200
         :headers {"Content-Type" "text/html"}
         :body    (html/render-file
-                  (io/resource (str "html/" (:theme db/config) "/404.html"))
+                  (io/resource (str "themes/" (:theme db/config) "/404.html"))
                   (merge (into {} (d/entity db/db [:defaults "init"]))
                          (html-defaults) query-params path-params))})})
    {:middleware

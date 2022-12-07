@@ -4,14 +4,14 @@
 
 <!DOCTYPE html>
 <html lang="{{config.i18n.lang}}" class="has-navbar-fixed-top">
-  {% include "html/bulma/head.html" %}
+  {% include "themes/bulma/head.html" %}
   <body>
-    {% include "html/bulma/hero.html"%}
+    {% include "themes/bulma/hero.html"%}
     <div class="container">
       {% safe %}
       <div class="content">{{howto}}</div>
       {% endsafe %}
     </div>
-    {% include "html/bulma/footer.html" %}
+    {% include "themes/bulma/footer.html" %}
   </body>
 </html>
