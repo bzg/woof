@@ -23,9 +23,9 @@
                integrant/integrant                 {:mvn/version "0.8.0"}
                tea-time/tea-time                   {:mvn/version "1.0.1"}
                com.draines/postal                  {:mvn/version "2.0.5"}
-               com.taoensso/timbre                 {:mvn/version "6.0.2"}
+               com.taoensso/timbre                 {:mvn/version "6.0.4"}
                selmer/selmer                       {:mvn/version "1.12.55"}
-               datalevin/datalevin                 {:mvn/version "0.6.29"}
+               datalevin/datalevin                 {:mvn/version "0.7.0"}
                com.cognitect/transit-clj           {:mvn/version "1.0.329"}
                medley/medley                       {:mvn/version "1.4.0"}
                aero/aero                           {:mvn/version "1.1.6"}
