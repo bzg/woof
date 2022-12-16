@@ -25,7 +25,7 @@
                  [com.draines/postal        "2.0.5"]
                  [com.taoensso/timbre       "6.0.4"]
                  [selmer/selmer             "1.12.55"]
-                 [datalevin/datalevin       "0.7.0"]
+                 [datalevin/datalevin       "0.7.3"]
                  [com.cognitect/transit-clj "1.0.329"]
                  [medley/medley             "1.4.0"]
                  [aero/aero                 "1.1.6"]
