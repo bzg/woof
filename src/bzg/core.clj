@@ -145,7 +145,13 @@
        (filter not-empty)))
 
 (defn- mails-from-refs [references]
-  (filter #(seq (d/q `[:find ?e :where [?e :message-id ~%]] db/db)) references))
+  (->> (d/q '[:find ?mid :where
+              [?e :message-id ?mid]
+              [?e :vote false]
+              [?e :config false]]
+            db/db)
+       (map first)
+       (filter #(some references (list %)))))
 
 (defn- update-related-refs [message-id references]
   (let [related-mails (mails-from-refs references)
@@ -166,7 +172,8 @@
          (into #{}))
     #{}))
 
-(defn- add-mail! [{:keys [id from subject source-id] :as msg} & [with-body? config-mail?]]
+(defn- add-mail! [{:keys [id from subject source-id] :as msg}
+                  & [with-body? config-mail? vote-mail?]]
   (let [{:keys [References Archived-At]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         id          (true-id id)
@@ -180,6 +187,7 @@
                      :archived-at archived-at
                      :references  references
                      :config      (or config-mail? false)
+                     :vote        (or vote-mail? false)
                      :from        (:address (first from))
                      :username    (:name (first from))
                      :date        (java.util.Date.)
@@ -190,7 +198,8 @@
     ;; Add the email
     (d/transact! db/conn [mail-data])
     ;; Update related references for relevant emails
-    (update-related-refs id references)
+    (when-not vote-mail?
+      (update-related-refs id references))
     ;; Return the added mail eid
     (:db/id (d/entity db/db [:message-id id]))))
 
@@ -604,8 +613,7 @@
                                  (keyword (string/replace status-name #"^un" ""))]])
           ;; Status is about voting, update :up or :down set with the email address
           (= status-name "last-vote")
-          (d/transact! db/conn [(merge {:db/id report-eid
-                                        status status-report-eid}
+          (d/transact! db/conn [(merge {:db/id report-eid status status-report-eid}
                                        (let [eid (d/entity db/db report-eid)]
                                          (if (re-matches #"^-1" status-trigger)
                                            {:down (into #{} (conj (:down eid) from))}
@@ -714,7 +722,9 @@
                              (report! {:report-type    w
                                        :report-eid     upstream-report-eid
                                        :status-trigger body-report
-                                       status          (add-mail! msg)})))))))))))))
+                                       status          (add-mail!
+                                                        msg nil nil
+                                                        (some #{"-1" "+1"} (list body-report)))})))))))))))))
 
 ;;; Inbox monitoring
 (defn read-and-process-mail [mails]
