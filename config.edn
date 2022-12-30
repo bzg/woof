@@ -31,9 +31,26 @@
           :project-name "Wooff"
           :project-url  "https://bzg.fr"
           :data-formats {:rss true}}}
-  "~bzg/wooff2@lists.sr.ht" {:slug "wooff2" :hidden true}
-  "woof-test@bzg.fr"        {:slug "woof-test"}
-  }
+  "~bzg/wooff2@lists.sr.ht" {:slug "wooff2" :hidden false}
+  "woof-test@bzg.fr"
+  {:slug   "woof-test"
+   ;; This will not be listed in the sources page
+   :hidden true
+   :watch  {;; Only watch for request-type reports
+            :request {:subject-prefix ["FR"]
+                      :triggers       {:acked  ["Approved"]
+                                       :owned  ["Handled"]
+                                       :closed ["Done" "Canceled"]}}}
+   :ui     {:data-formats {:org true}
+            :pages        {:index
+                           ;; Only display the date column in the index page
+                           ;; Note that the vote column is never displayed in the index page
+                           {:columns #{:date}}
+                           :request
+                           {:columns #{:priority :date :vote :refs-count :status}
+                            :reports #{:unapproved-requests :approved-requests :handled-requests}}
+                           :overview false}}
+   }}
 
  ;; Default application state
  :defaults
@@ -46,7 +63,7 @@
  :admin-address  "bzg@bzg.fr"
  :admin-username "Big Bad Woof"
 
- :ui {:enabled        true
+ :ui {:enabled        true ; When false, don't start https service
       :title          "Example woof instance"
       :project-name   "Example project name"
       :project-url    "http://localhost:3000"
