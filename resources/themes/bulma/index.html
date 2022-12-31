@@ -145,7 +145,7 @@
 		  <td>{{entry.date|date:shortDate}}</td>
 		  {% endif %}
 		  {% if columns.related-refs %}
-		  <td class="has-text-centered"><a title="{{config.i18n.Display-the}} {{config.i18n.related-reports}}" href=".?search=m:{{entry.related-refs|concat}}">{{entry.related-refs|count}}</a></td>
+		  <td class="has-text-centered"><a title="{{config.i18n.Display-the}} {{config.i18n.related-reports}}" href=".?closed=on&search=m:{{entry.related-refs|concat}}">{{entry.related-refs|count}}</a></td>
 		  {% endif %}
 		  {% if columns.refs-count %}
 		  <td class="has-text-centered">{{entry.refs-count}}</td>
