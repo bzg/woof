@@ -725,12 +725,14 @@
        ;; Or a command or new actions against known reports
        (let [body-seq (get-mail-body-as-seq msg)]
          (if (empty? references)
-           ;; This is a configuration command
-           (when-let [cmds
-                      (->> body-seq
-                           (map #(when-let [m (re-matches config-strings-re %)] (rest m)))
-                           (remove nil?))]
-             (config! {:commands cmds :msg msg}))
+           ;; Maybe a configuration command sent to the Woof inbox
+           (when to-woof-inbox?
+             (when-let
+                 [cmds
+                  (->> body-seq
+                       (map #(when-let [m (re-matches config-strings-re %)] (rest m)))
+                       (remove nil?))]
+               (config! {:commands cmds :msg msg})))
            ;; Or a report against a known patch, bug, etc
            (when-let [body-reports
                       (->> body-seq
