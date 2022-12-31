@@ -41,6 +41,8 @@
 
 (spec/def ::maintenance boolean?)
 (spec/def ::notifications boolean?)
+(spec/def ::hidden boolean?)
+(spec/def ::doc string?)
 (spec/def ::watch map?) ;; FIXME
 (spec/def ::pages map?) ;; FIXME
 (spec/def ::display-max map?) ;; FIXME
@@ -60,6 +62,8 @@
    :req-un [::slug]
    :opt-un [::archived-message-format
             ::ui
+            ::doc
+            ::hidden
             ::watch]))
 
 (spec/def ::sources
@@ -75,11 +79,12 @@
 
 (spec/def ::ui
   (spec/keys
-   :req-un [::title
-            ::project-name]
-   :opt-un [::project-url
+   :opt-un [::title
+            ::project-name
+            ::project-url
             ::contribute-url
             ::support-url
+            ::data-formats
             ::pages]))
 
 (spec/def ::config
