@@ -3,7 +3,7 @@
 <!-- License-Filename: LICENSES/EPL-2.0.txt -->
 
 <!DOCTYPE html>
-<html lang="{{config.i18n.lang}}" class="has-navbar-fixed-top">
+<html lang="{{config.i18n.lang}}">
   {% include "themes/bulma/head.html" %}
   <body>
     {% include "themes/bulma/hero.html"%}
@@ -105,7 +105,7 @@
 		    {% if entry.link %}
 		    <a href="{{entry.link}}" target="_blank" title="{{config.i18n.read-mail}} {{config.i18n.sent-by}} {{entry.from}} - {{entry.date}}">{{entry.subject}}</a>
 		    {% if entry.patch-url %}
-		    &nbsp;(<a href="{{entry.patch-url}}" target="_blank">{{config.i18n.see}}</a>)
+		    &nbsp;(<a href="{{entry.patch-url}}" target="_blank">{{config.i18n.patch}}</a>)
 		    {% endif %}
 		    {% else %}
 		    {{entry.subject}}

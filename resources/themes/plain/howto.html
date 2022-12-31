@@ -4,14 +4,32 @@
 
 <!DOCTYPE html>
 <html lang="{{config.i18n.lang}}">
-  {% include "themes/plain/head.html" %}
-  <body style="margin: 2% 10%; max-width: 80%; font-family: sans-serif;">
-    {% include "themes/plain/hero.html"%}
+  {% include "themes/bulma/head.html" %}
+  <body>
+    {% include "themes/bulma/hero.html"%}
+
     <div>
+      {% if source.source-id %}
+      
+      {% for watch in source.watch %}
+      <h1>{{watch.report|capitalize}}</h1>
+      {% if watch.doc %}<h2>{{watch.doc}}</h2>{% endif %}
+      <ul>
+	{% if watch.prefix %}<li>{{config.i18n.subject-prefixes}}: <tt>[{{watch.prefix}}]</tt></li>{% endif %}
+	{% if watch.match %}<li>{{config.i18n.subject-matches}}: <tt>{{watch.match}}</tt></li>{% endif %}
+	{% if watch.triggers %}<li>{{config.i18n.update-triggers}}: <tt>{{watch.triggers}}</tt></li>{% endif %}
+      </ul>
+      {% endfor %}
+
+      <a href="/howto">{{config.i18n.see}} Woof! {{config.i18n.documentation}}</a>
+      {% else %}
+
       {% safe %}
       <div>{{howto}}</div>
       {% endsafe %}
+      {% endif %}
+
     </div>
-    {% include "themes/plain/footer.html" %}
+    {% include "themes/bulma/footer.html" %}
   </body>
 </html>

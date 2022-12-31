@@ -157,10 +157,20 @@
 
 (defn- page-howto [_ source-id _ _ config-defaults]
   (with-html-defaults config-defaults
-    {:source (when source-id
-               {:source-id source-id
-                :slug      (:slug (get (:sources db/config) source-id))})
-     :page   "howto"
+    {:page   "howto"
+     :source (when source-id
+               (let [src-cfg (get (:sources db/config) source-id)
+                     strj    (fn [m] (string/join ", " m))]
+                 {:source-id source-id
+                  :slug      (:slug src-cfg)
+                  :watch
+                  (->> (or (:watch src-cfg) (:watch db/config))
+                       (map (fn [[k v]]
+                              {:report   (name k)
+                               :prefix   (strj (:subject-prefix v))
+                               :match    (strj (:subject-match v))
+                               :doc      (:doc v)
+                               :triggers (strj (flatten (vals (:triggers v))))})))}))
      :howto  (md/md-to-html-string
               (slurp (io/resource "md/howto.md")))}))
 

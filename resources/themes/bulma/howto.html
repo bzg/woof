@@ -3,14 +3,32 @@
 <!-- License-Filename: LICENSES/EPL-2.0.txt -->
 
 <!DOCTYPE html>
-<html lang="{{config.i18n.lang}}" class="has-navbar-fixed-top">
+<html lang="{{config.i18n.lang}}">
   {% include "themes/bulma/head.html" %}
   <body>
     {% include "themes/bulma/hero.html"%}
-    <div class="container">
+
+    <div class="container content">
+      {% if source.source-id %}
+
+      {% for watch in source.watch %}
+      <h1 class="title is-size-3">{{watch.report|capitalize}}</h1>
+      {% if watch.doc %}<h2 class="subtitle is-size-5">{{watch.doc}}</h2>{% endif %}
+      <ul class="list">
+	{% if watch.prefix %}<li class="list-item">{{config.i18n.subject-prefixes}}: <tt>[{{watch.prefix}}]</tt></li>{% endif %}
+	{% if watch.match %}<li class="list-item">{{config.i18n.subject-matches}}: <tt>{{watch.match}}</tt></li>{% endif %}
+	{% if watch.triggers %}<li class="list-item">{{config.i18n.update-triggers}}: <tt>{{watch.triggers}}</tt></li>{% endif %}
+      </ul>
+      {% endfor %}
+
+      <a href="/howto">{{config.i18n.see}} Woof! {{config.i18n.documentation}}</a>
+      {% else %}
+
       {% safe %}
       <div class="content">{{howto}}</div>
       {% endsafe %}
+      {% endif %}
+
     </div>
     {% include "themes/bulma/footer.html" %}
   </body>
