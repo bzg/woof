@@ -504,9 +504,9 @@
     (doseq [email emails]
       (let [reports
             (->> (map
-                  #(d/q `[:find ?mail-id :where
-                          [?report-id ~% ?mail-id]
-                          [?mail-id :from ~email]]
+                  #(d/q `[:find ?mid :where
+                          [?report-id ~% ?mid]
+                          [?mid :from ~email]]
                         db/db)
                   ;; Delete all but changes and releases, even if the
                   ;; email being deleted is from a maintainer
@@ -523,11 +523,11 @@
     (doseq [email emails]
       (let [reports
             (->> (map
-                  #(d/q `[:find ?mail-id
+                  #(d/q `[:find ?mid
                           :where
-                          [?report-id ~% ?mail-id]
-                          [?mail-id :deleted _]
-                          [?mail-id :from ~email]]
+                          [?report-id ~% ?mid]
+                          [?mid :deleted _]
+                          [?mid :from ~email]]
                         db/db)
                   [:bug :patch :request :announcement :blog])
                  (map concat) flatten)]
