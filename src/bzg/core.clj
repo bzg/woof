@@ -588,25 +588,22 @@
                        (filter (fn [[_ v]] (= v cmd)))
                        first key))
         (condp = cmd
-          "Home"                 (update-person! {:email from} [:home cmd-val])
-          "Support"              (update-person! {:email from} [:support cmd-val])
-          "Notifications"        (update-person! {:email from} [:notifications cmd-val])
-          "Add maintainer"       (add-maintainer! cmd-val from)
-          "Delete"               (delete! cmd-val)
-          "Ignore"               (ignore! cmd-val)
-          "Add admin"            (add-admin! cmd-val from)
-          "Add maintainer"       (add-maintainer! cmd-val from)
-          "Delete"               (delete! cmd-val)
+          ;; Global commands for admins
           "Global notifications" (config-notifications! (edn/read-string cmd-val))
-          "Home"                 (update-person! {:email from} [:home cmd-val])
-          "Ignore"               (ignore! cmd-val)
           "Maintenance"          (config-maintenance! (edn/read-string cmd-val))
-          "Notifications"        (update-person! {:email from} [:notifications cmd-val])
+          "Add admin"            (add-admin! cmd-val from)
           "Remove admin"         (remove-admin! cmd-val)
           "Remove maintainer"    (remove-maintainer! cmd-val)
-          "Support"              (update-person! {:email from} [:support cmd-val])
           "Undelete"             (undelete! cmd-val)
-          "Unignore"             (unignore! cmd-val))))
+          "Unignore"             (unignore! cmd-val)
+          ;; Global commands also for maintainers
+          "Add maintainer"       (add-maintainer! cmd-val from)
+          "Delete"               (delete! cmd-val)
+          "Ignore"               (ignore! cmd-val)
+          ;; Global commands also for contributors
+          "Home"                 (update-person! {:email from} [:home cmd-val])
+          "Support"              (update-person! {:email from} [:support cmd-val])
+          "Notifications"        (update-person! {:email from} [:notifications cmd-val]))))
     (add-config-mail! msg)))
 
 ;; Main reports functions
