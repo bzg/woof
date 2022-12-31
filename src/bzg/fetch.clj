@@ -57,7 +57,7 @@
         (->> (d/q
               (if source-id
                 `[:find ?e :where [?e ~report-type ?m] [?m :source-id ~source-id]]
-                `[:find ?e :where [?e ~report-type ?m]])
+                `[:find ?e :where [?e ~report-type]])
               db/db)
              (map #(d/entity db/db (first %)))
              (remove (if-not (= closed? "on") :closed false?))

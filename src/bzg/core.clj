@@ -164,13 +164,10 @@
        (filter not-empty)))
 
 (defn- mails-from-refs [references]
-  (->> (d/q '[:find ?mid :where
-              [?e :message-id ?mid]
-              [?e :vote false]
-              [?e :config false]]
-            db/db)
-       (map first)
-       (filter #(some references (list %)))))
+  (->> (fetch/index)
+       (filter #(some references (list (:message-id %))))
+       (map :message-id)
+       (into #{})))
 
 (defn- update-related-refs [message-id references]
   (let [related-mails (mails-from-refs references)
@@ -192,7 +189,7 @@
     #{}))
 
 (defn- add-mail! [{:keys [id from subject source-id] :as msg}
-                  & [with-body? config-mail? vote-mail?]]
+                  & [with-body? config-mail? vote-mail? update-related?]]
   (let [{:keys [References Archived-At X-Mailer]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         id              (true-id id)
@@ -229,8 +226,7 @@
                                :patch-body patch
                                :patch-url  patch-url}])))
     ;; Update related references for relevant emails
-    (when-not vote-mail?
-      (update-related-refs id references))
+    (when update-related? (update-related-refs id references))
     ;; Return the added mail eid
     (:db/id (d/entity db/db [:message-id id]))))
 
@@ -714,7 +710,7 @@
                    (timbre/error
                     (format "%s tried to announce a change/release against an existing version %s"
                             from version))
-                   (let [report-eid (add-mail! msg)]
+                   (let [report-eid (add-mail! msg nil nil nil :update-related)]
                      (reset! done
                              (report!
                               {:report-type w

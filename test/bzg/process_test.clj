@@ -46,11 +46,18 @@
 (def change1-canceled (read-mail "change1-canceled"))
 (def change1-uncanceled (read-mail "change1-uncanceled"))
 (def release1 (read-mail "release1"))
+(def patch2-bug1 (read-mail "patch2-bug1"))
+
+(defn- count-bug1-related []
+  (count (map first (d/q '[:find ?r :where
+                           [?e :message-id "bug1@woof.io"]
+                           [?e :related-refs ?r]] db/db))))
 
 ;; Run tests
 (deftest processes
   (testing "Adding bug1"
     (do (core/read-and-process-mail (list bug1))
+        (is (= 1 (count-bug1-related)))
         (is (= 1 (count (fetch/unconfirmed-bugs "test@list.io"))))
         (is (= 1 (count (fetch/unclosed-bugs "test@list.io"))))))
   (testing "Adding bug2"
@@ -59,6 +66,8 @@
         (is (= 2 (count (fetch/unclosed-bugs "test@list.io"))))))
   (testing "Confirming bug1"
     (do (core/read-and-process-mail (list bug1-confirmed))
+        ;; Confirming does not update related references
+        (is (= 1 (count-bug1-related)))
         (is (= 1 (count (fetch/unconfirmed-bugs "test@list.io"))))
         (is (= 2 (count (fetch/unclosed-bugs "test@list.io"))))))
   (testing "Declaring bug1 as urgent"
@@ -73,17 +82,22 @@
         (is (= 1 (count (fetch/unclosed-bugs "test@list.io"))))))
   (testing "Effective bug reports"
     (is (= 0 (count (fetch/effective-bugs "test@list.io")))))
+  (testing "Adding a patch against bug1"
+    (do (core/read-and-process-mail (list patch2-bug1))
+        ;; Creating a patch while replying to a bug updates related refs
+        (is (= 2 (count-bug1-related)))
+        (is (= 1 (count (fetch/unapproved-patches "test@list.io"))))))
   (testing "Fixing bug1"
     (do (core/read-and-process-mail (list bug1-fixed))
         (is (= 0 (count (fetch/unclosed-bugs "test@list.io"))))
         (is (= 1 (count (fetch/effective-bugs "test@list.io"))))))
   (testing "Adding a patch"
     (do (core/read-and-process-mail (list patch1))
-        (is (= 1 (count (fetch/unapproved-patches "test@list.io"))))))
-  (testing "Approving a patch"
+        (is (= 2 (count (fetch/unapproved-patches "test@list.io"))))))
+  (testing "Approving this patch"
     (do (core/read-and-process-mail (list patch1-approved))
         (is (= 1 (count (fetch/approved-patches "test@list.io"))))
-        (is (= 0 (count (fetch/unapproved-patches "test@list.io"))))))
+        (is (= 1 (count (fetch/unapproved-patches "test@list.io"))))))
   (testing "Adding a request"
     (do (core/read-and-process-mail (list request1))
         (is (= 1 (count (fetch/requests "test@list.io"))))))
