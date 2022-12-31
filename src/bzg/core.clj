@@ -3,7 +3,8 @@
 ;; License-Filename: LICENSES/EPL-2.0.txt
 
 (ns bzg.core
-  (:require [clojure-mail.core :as mail]
+  (:require [clojure.java.io :as io]
+            [clojure-mail.core :as mail]
             [clojure-mail.message :as message]
             [clojure-mail.events :as events]
             [clojure-mail.parser :as parser]
@@ -114,9 +115,18 @@
                   (:archived-message-format
                    (get (:sources db/config) source-id)))]
       (format fmt message-id)
-      (if-let [fmt (:archived-list-message-format db/config)]
+      (if-let [fmt (:archived-message-format db/config)]
         (format fmt source-id message-id)
         ""))))
+
+(defn archived-message-raw [{:keys [source-id message-id archived-at]}]
+  (let [fmt         (not-empty
+                     (:archived-message-raw-format
+                      (get (:sources db/config) source-id)))
+        default-fmt (:archived-list-message-raw-format db/config)]
+    (cond fmt         (format fmt message-id)
+          default-fmt (format default-fmt source-id message-id)
+          archived-at (str (trim-url-brackets archived-at) "/raw"))))
 
 (def email-re #"[^<@\s;,]+@[^>@\s;,]+\.[^>@\s;,]+")
 
@@ -137,6 +147,15 @@
                "plain" (:body %)
                "html"  (parser/html->text (:body %))))
        (string/join "\n")))
+
+(defn- get-mail-patch [msg]
+  (let [patch (atom nil)]
+    (when (:multipart? msg)
+      (doseq [part (:body msg) :while (nil? @patch)]
+        (when (re-matches #"^text/x-(diff|patch).*" (:content-type part))
+          (with-open [r (io/reader (:body part))]
+            (reset! patch (slurp r)))))
+      (string/replace @patch #"^>" ""))))
 
 (defn- get-mail-body-as-seq [msg]
   (->> msg get-mail-body
@@ -174,29 +193,41 @@
 
 (defn- add-mail! [{:keys [id from subject source-id] :as msg}
                   & [with-body? config-mail? vote-mail?]]
-  (let [{:keys [References Archived-At]}
+  (let [{:keys [References Archived-At X-Mailer]}
         (walk/keywordize-keys (apply conj (:headers msg)))
-        id          (true-id id)
-        references  (parse-refs References)
-        archived-at (archived-message {:source-id   source-id
-                                       :message-id  id
-                                       :archived-at Archived-At})
-        mail-data   {:message-id  id
-                     :source-id   source-id
-                     :subject     (trim-subject-prefix subject)
-                     :archived-at archived-at
-                     :references  references
-                     :config      (or config-mail? false)
-                     :vote        (or vote-mail? false)
-                     :from        (:address (first from))
-                     :username    (:name (first from))
-                     :date        (java.util.Date.)
-                     :refs-count  1}
-        mail-data   (if with-body?
-                      (conj mail-data {:body (get-mail-body msg)})
-                      mail-data)]
+        id              (true-id id)
+        now             (java.util.Date.)
+        msg-infos       {:source-id   source-id
+                         :message-id  id
+                         :archived-at Archived-At}
+        references      (parse-refs References)
+        archived-at-url (archived-message msg-infos)
+        trimmed-subject (trim-subject-prefix subject)]
     ;; Add the email
-    (d/transact! db/conn [mail-data])
+    (d/transact! db/conn [{:message-id  id
+                           :source-id   source-id
+                           :subject     trimmed-subject
+                           :archived-at archived-at-url
+                           :references  references
+                           :config      (or config-mail? false)
+                           :vote        (or vote-mail? false)
+                           :from        (:address (first from))
+                           :username    (:name (first from))
+                           :date        now
+                           :refs-count  1}])
+    ;; Possibly add body
+    (when-let [body (and with-body? (get-mail-body msg))]
+      (d/transact! db/conn [{:message-id id :body body}]))
+    ;; Possibly add patch/patch-url
+    (let [patch (get-mail-patch msg)
+          patch-url
+          (cond (re-matches #"^git-send-email.*" (or X-Mailer ""))
+                (str archived-message-raw msg-infos)
+                patch (str (:baseurl db/config) "/patch/" id))]
+      (when patch-url
+        (d/transact! db/conn [{:message-id id
+                               :patch-body patch
+                               :patch-url  patch-url}])))
     ;; Update related references for relevant emails
     (when-not vote-mail?
       (update-related-refs id references))
@@ -355,7 +386,7 @@
                  :pass (:smtp-password db/config)}
                 (merge
                  {:from       (:smtp-login db/config)
-                  :message-id #(postal.support/message-id (:hostname db/config))
+                  :message-id #(postal.support/message-id (:baseurl db/config))
                   :reply-to   (or reply-to (make-to (:admin-username db/config)
                                                     (:admin-address db/config)))
                   :to         to
@@ -426,7 +457,7 @@
 \nSee this page on how to use Woof! as an admin:\n%s/howto\n\nThanks!"
                             (:username person)
                             from
-                            (:hostname db/config))
+                            (:baseurl db/config))
                 :add-admin
                 (format "[%s] You are now a Woof! admin"
                         (:project-name db/config))
@@ -455,7 +486,7 @@
 \nSee this page on how to use Woof! as an maintainer:\n%s/howto\n\nThanks!"
                             (:username person)
                             from
-                            (:hostname db/config))
+                            (:baseurl db/config))
                 :add-maintainer
                 (format "[%s] You are now a Woof! maintainer"
                         (:project-name db/config))

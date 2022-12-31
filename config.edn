@@ -18,19 +18,21 @@
  :smtp-use-tls  #env WOOF_SMTP_USE_TLS
 
  ;; General information on the application
- :hostname #or [#env WOOF_HOSTNAME "localhost"]
- :port     #long #or [#env WOOF_PORT 3000]
+ :baseurl #or [#env WOOF_BASEURL "http://localhost:3000"]
+ :port    #long #or [#env WOOF_PORT 3000]
 
  ;; Sources
  ;; FIXME: Document how to configure it
  :sources
  {"~bzg/wooff@lists.sr.ht"
-  {:slug "wooff"
-   :doc  "Allow to document source"
-   :ui   {:title        "Liste ~bzg/wooff"
-          :project-name "Wooff"
-          :project-url  "https://bzg.fr"
-          :data-formats {:rss true}}}
+  {:slug                        "wooff"
+   :doc                         "Allow to document source"
+   :archived-message-format     "lists.sr.ht/~bzg/wooff/<%s>"
+   :archived-message-format-raw "lists.sr.ht/~bzg/wooff/<%s>/raw"
+   :ui                          {:title        "Liste ~bzg/wooff"
+                                 :project-name "Wooff"
+                                 :project-url  "https://bzg.fr"
+                                 :data-formats {:rss true}}}
   "~bzg/wooff2@lists.sr.ht" {:slug "wooff2" :hidden false}
   "woof-test@bzg.fr"
   {:slug   "woof-test"
@@ -57,18 +59,19 @@
  {:maintenance   false
   :notifications false}
 
- ;; :archived-list-message-format "https://public-list-archive.org/%s/<%s>"
+ ;; :archived-list-message-raw-format "https://public-list-archive.org/%s/<%s>/raw"
+ ;; :archived-list-message-format     "https://public-list-archive.org/%s/<%s>"
 
  ;; Default application admin
  :admin-address  "bzg@bzg.fr"
  :admin-username "Big Bad Woof"
 
- :ui {:enabled        true ; When false, don't start https service
+ :ui {:enabled        true ;; When false, don't start https service
       :title          "Example woof instance"
       :project-name   "Example project name"
-      :project-url    "http://localhost:3000"
-      :contribute-url "https://bzg.fr"
-      :support-url    "https://localhost:3000"
+      :project-url    "https://project.org"
+      :contribute-url "https://project.org/contribute"
+      :support-url    "https://project.org/support"
       :data-formats   {:rss  true
                        :json true
                        :org  true

@@ -27,15 +27,15 @@
      {:inbox/monitor  monitor-opts
       :reload/monitor monitor-opts}
      (when (:enabled (:ui db/config))
-       {:http/service {:port     (:port db/config)
-                       :hostname (:hostname db/config)}}))))
+       {:http/service {:port    (:port db/config)
+                       :baseurl (:baseurl db/config)}}))))
 
-(defmethod ig/init-key :http/service [_ {:keys [port hostname]}]
+(defmethod ig/init-key :http/service [_ {:keys [port baseurl]}]
   (server/run-server
    (reload/wrap-reload web/handler {:dirs ["src" "resources"]})
    {:port port}
    (timbre/info
-    (format "Web server started on %s (port %s)" hostname port))))
+    (format "Web server started on %s (port %s)" baseurl port))))
 
 (defmethod ig/init-key :inbox/monitor [_ opts]
   (core/start-inbox-monitor! opts)

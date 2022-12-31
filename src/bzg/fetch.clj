@@ -80,7 +80,8 @@
                                       (jt/plus d (jt/days newer-than))))
                        seq))
              (take (or (:display-max report-type-cfg) 100)))]
-    (if as-mail
+    (if-not as-mail
+      reports
       (let [mails (->> reports
                        (map #(assoc (get % report-type)
                                     :vote (get % :vote)
@@ -89,8 +90,7 @@
                        (map add-role))]
         (if (empty? source-id)
           (remove #(:hidden (get (:sources db/config) (:source-id %))) mails)
-          mails))
-      reports)))
+          mails)))))
 
 (defn- reports-as-mail [report-type & [source-id search closed?]]
   (reports {:source-id   source-id

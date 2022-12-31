@@ -21,7 +21,7 @@
 (spec/def ::inbox-password string?)
 (spec/def ::inbox-folder string?)
 
-(spec/def ::hostname string?)
+(spec/def ::baseurl string?)
 (spec/def ::port integer?)
 (spec/def ::db-dir string?)
 (spec/def ::log-file string?)
@@ -35,8 +35,11 @@
 
 (spec/def ::archived-message-format
   (spec/and string? #(re-matches #".*%s.*" %)))
-
 (spec/def ::archived-list-message-format
+  (spec/and string? #(re-matches #".*%s.*%s.*" %)))
+(spec/def ::archived-message-raw-format
+  (spec/and string? #(re-matches #".*%s.*" %)))
+(spec/def ::archived-list-message-raw-format
   (spec/and string? #(re-matches #".*%s.*%s.*" %)))
 
 (spec/def ::maintenance boolean?)
@@ -61,6 +64,7 @@
   (spec/keys
    :req-un [::slug]
    :opt-un [::archived-message-format
+            ::archived-message-format-raw
             ::ui
             ::doc
             ::hidden
@@ -106,7 +110,8 @@
             ::log-file
             ::watch
             ::sources]
-   :opt-un [::archived-list-message-format
+   :opt-un [::archived-list-message-raw-format
+            ::archived-list-message-format
             ::defaults
             ::data-formats]))
 

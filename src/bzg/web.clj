@@ -164,6 +164,16 @@
      :howto  (md/md-to-html-string
               (slurp (io/resource "md/howto.md")))}))
 
+(defn- get-patch-body [{:keys [msgid]}]
+  (let [msg        (ffirst (d/q `[:find ?e :where
+                                  [?e :message-id ~msgid]
+                                  [?e :patch-body]]
+                                db/db))
+        patch-body (not-empty (:patch-body (d/entity db/db msg)))]
+    {:status  200
+     :headers {"Content-Type" "text/plain"}
+     :body    (or patch-body "Error")}))
+
 (defn- get-page [page {:keys [query-params path-params uri headers]}]
   (let [format-params   {:search     (or (get query-params "search") "")
                          :closed?    (or (get query-params "closed") "")
@@ -210,6 +220,9 @@
       ["requests"
        ["" {:get #(get-page :request %)}]
        [":format" {:get #(data/get-requests-data %)}]]
+      ;; Patch body
+      ["patch/:msgid"
+       ["" {:get #(get-patch-body %)}]]
       ;; List per source
       ["source/:source-slug/"
        ["" {:get #(get-page :index %)}]
@@ -244,5 +257,3 @@
        %
        :access-control-allow-origin [#"^*$"]
        :access-control-allow-methods [:get])]}))
-
-;; (-main)

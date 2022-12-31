@@ -104,6 +104,9 @@
 		  <td>
 		    {% if entry.link %}
 		    <a href="{{entry.link}}" target="_blank" title="{{config.i18n.read-mail}} {{config.i18n.sent-by}} {{entry.from}} - {{entry.date}}">{{entry.subject}}</a>
+		    {% if entry.patch-url %}
+		    &nbsp;(<a href="{{entry.patch-url}}" target="_blank">{{config.i18n.see}}</a>)
+		    {% endif %}
 		    {% else %}
 		    {{entry.subject}}
 		    {% endif %}
