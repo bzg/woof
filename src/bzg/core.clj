@@ -84,22 +84,32 @@
         (flatten (vals (:triggers (report-type (:watch db/config)))))]
     (into #{} (un-ify original-report-triggers))))
 
-(defn make-to [^String username ^String address]
+(defn make-to
+  "Make a \"Name <email>\" string suitable for a To: header."
+  [^String username ^String address]
   (str username " <" address ">"))
 
-(defn- true-id [^String id]
-  (peek (re-matches #"^<?(.+[^>])>?$" id)))
+(defn- true-id
+  "Remove brackets around `s`."
+  [^String s]
+  (peek (re-matches #"^<?(.+[^>])>?$" s)))
 
-(defn- trim-subject [^String s]
+(defn- trim-subject
+  "Trim subject `s` from \"Re\" and labels."
+  [^String s]
   (-> s
       (string/replace #"^(R[Ee] ?: ?)+" "")
       (string/replace #" *\([^)]+\)" "")
       (string/trim)))
 
-(defn- trim-url-brackets [^String s]
+(defn- trim-url-brackets
+  "Trim brackets from the url `s`."
+  [^String s]
   (-> s (string/replace #"^<?([^>]+)>?$" "$1")))
 
-(defn- trim-subject-prefix [^String s]
+(defn- trim-subject-prefix
+  "Trim subject prefixes from string `s`."
+  [^String s]
   (let [p (re-pattern
            (format "^\\[(?:%s).*\\] .*$"
                    (string/join "|" action-prefixes)))]
@@ -107,16 +117,24 @@
       s
       (string/replace s #"^\[[^]]+\] " ""))))
 
-(defn slug-to-source-id [^String slug]
+(defn slug-to-source-id
+  "Given `slug`, return the corresponding source id.
+  See also `source-id-to-slug`."
+  [^String slug]
   (when (not-empty slug)
     (key (first (filter #(= (:slug (val %)) slug)
                         (:sources db/config))))))
 
-(defn source-id-to-slug [^String source-id]
+(defn source-id-to-slug
+  "Given `source-id`, return the corresponding slug.
+  See also `slug-to-source-id`."
+  [^String source-id]
   (when (not-empty source-id)
     (-> db/config :sources (get source-id) :slug)))
 
-(defn archived-message [{:keys [source-id message-id archived-at]}]
+(defn archived-message
+  "Return the archived message URL."
+  [{:keys [source-id message-id archived-at]}]
   (if archived-at
     (trim-url-brackets archived-at)
     (if-let [fmt (not-empty
@@ -127,7 +145,9 @@
         (format fmt source-id message-id)
         ""))))
 
-(defn archived-message-raw [{:keys [source-id message-id archived-at]}]
+(defn archived-message-raw
+  "Return the raw archived message URL."
+  [{:keys [source-id message-id archived-at]}]
   (let [fmt         (not-empty
                      (:archived-message-raw-format
                       (get (:sources db/config) source-id)))
@@ -138,7 +158,9 @@
 
 (def email-re #"[^<@\s;,]+@[^>@\s;,]+\.[^>@\s;,]+")
 
-(defn- true-email-address [^String s]
+(defn- true-email-address
+  "From string `s`, return the first email."
+  [^String s]
   (when s (re-find email-re (string/replace s #"mailto:" ""))))
 
 ;; Core db functions to add and update entities
@@ -146,7 +168,9 @@
 (defn- add-log! [date msg]
   (d/transact! db/conn [{:log date :msg msg}]))
 
-(defn- get-mail-body [msg]
+(defn- get-mail-body
+  "Return the body of `msg` as a string."
+  [msg]
   (->> (if (:multipart? msg) (:body msg) (list (:body msg)))
        (map #(condp (fn [a b]
                       (re-matches
@@ -156,7 +180,9 @@
                "html"  (parser/html->text (:body %))))
        (string/join "\n")))
 
-(defn- get-mail-patch [msg]
+(defn- get-mail-patch
+  "Return the first patch in `msg` as a string."
+  [msg]
   (let [patch (atom nil)]
     (when (:multipart? msg)
       (doseq [part (:body msg) :while (nil? @patch)]
@@ -166,19 +192,26 @@
       (string/replace @patch #"^>" ""))))
 
 (defn- get-mail-body-as-seq [msg]
-  (->> msg get-mail-body
+  (->> msg
+       get-mail-body
        string/split-lines
        (map string/trim)
        (filter not-empty)))
 
-(defn- mails-from-refs [references]
+(defn- mails-from-refs
+  "Given `refs` (a set), find related reports and return their
+  message-ids."
+  [refs]
   (->> (fetch/index nil nil "on")
-       (filter #(some references (list (:message-id %))))
+       (filter #(some refs (list (:message-id %))))
        (map :message-id)
        (into #{})))
 
-(defn- update-related-refs [message-id references]
-  (let [related-mails (mails-from-refs references)
+(defn- update-related-refs
+  "Given `refs` (a set), find related reports and update :related-refs in
+  the report with `message-id`."
+  [message-id refs]
+  (let [related-mails (mails-from-refs refs)
         updated-mails (atom #{message-id})]
     (doseq [m related-mails]
       (let [e          (d/entity db/db [:message-id m])
@@ -188,7 +221,9 @@
         (d/transact! db/conn [{:message-id m :related-refs (conj e-rel-refs message-id)}])))
     (d/transact! db/conn [{:message-id message-id :related-refs @updated-mails}])))
 
-(defn- parse-refs [^String s]
+(defn- parse-refs
+  "Return all references in string `s`."
+  [^String s]
   (if (not-empty s)
     (->> (string/split s #"\s")
          (keep not-empty)
@@ -196,8 +231,10 @@
          (into #{}))
     #{}))
 
-(defn- add-mail! [{:keys [id from subject source-id] :as msg}
-                  & [with-body? config-mail? vote-mail? update-related?]]
+(defn- add-mail!
+  "Add a mail to the database."
+  [{:keys [id from subject source-id] :as msg}
+   & [with-body? config-mail? vote-mail? update-related?]]
   (let [{:keys [References Archived-At X-Mailer]}
         (walk/keywordize-keys (apply conj (:headers msg)))
         id              (true-id id)
@@ -238,7 +275,9 @@
     ;; Return the added mail eid
     (:db/id (d/entity db/db [:message-id id]))))
 
-(defn- add-config-mail! [msg]
+(defn- add-config-mail!
+  "Add a configuration mail to the database."
+  [msg]
   (add-mail! msg nil (java.util.Date.)))
 
 (defn update-person! [{:keys [email username role]} & [action]]
@@ -295,8 +334,11 @@
          re-pattern)))
 
 ;; Check whether a report is an action against a known entity
-(defn- is-in-a-known-thread? [references]
-  (doseq [i (mails-from-refs references)]
+(defn- is-in-a-known-thread?
+  "Given `refs` (a set), if one of them refers to an existing message id
+  in the database, increase refs count."
+  [refs]
+  (doseq [i (mails-from-refs refs)]
     (let [refs (:refs-count (d/entity db/db [:message-id i]))]
       (d/transact! db/conn [{:message-id i :refs-count (inc refs)}]))))
 
@@ -337,7 +379,7 @@
              status)
            :upstream-report-eid e})))))
 
-;; Setup logging
+;;; Setup logging
 
 (defn- datalevin-appender []
   {:enabled?   true
@@ -374,7 +416,7 @@
     :output-fn (partial timbre/default-output-fn {:stacktrace-fonts {}})
     :appenders appenders}))
 
-;; Email notifications
+;;; Email notifications
 
 (defn- send-email [{:keys [msg body purpose new-subject reply-to]}]
   (let  [{:keys [id from subject references]}
