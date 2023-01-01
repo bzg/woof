@@ -5,14 +5,39 @@
 (ns bzg.config)
 
 (def defaults
-  {:db-dir   ".db"
-   :log-file "log.txt"
+  { ;; Default relative directory where to store the database
+   :db-dir   ".db"
+   ;; Default theme for the web interface
    :theme    "bulma"
-   :lang     "en" ;; Accepted: en, fr
-   ;; FIXME: Check why mail here?
-   :log      [:db :file :mail]
+   ;; UI accepted languages so far: en, fr
+   :lang     "en"
+   ;; Default log file name
+   :log-file "log.txt"
+   ;; Where to store logs?
+   ;; :file means to store in :log-file
+   ;; :db means to store in the database
+   ;; :mail means to enable sending emails on log errors
+   :log      [:file :mail]
 
-   ;; FIXME: Document for easier configuration
+   ;; What reports should Woof watch?
+   ;;
+   ;; Available: :change :release :announcement :blog :bug :patch :request
+   ;;
+   ;; Each report entry is a map with
+   ;; :subject-prefix : accepted subject prefixes
+   ;; :subject-match : a string in the subject to trigger a report
+   ;; :doc : the documentation for this report type
+   ;; :display-newer-than : Don't display reports if older than (in days)
+   ;; :display-max : Don't display more than X reports
+   ;; :triggers : a map of possible "triggers", i.e. terms in the body
+   ;; of an email that trigger a report update.
+   ;;
+   ;; :triggers is a map of:
+   ;;  :acked : array of terms to "ack" a report
+   ;;  :owned : array of terms to "own" (i.e. assign to yourself) a report
+   ;; :closed : array of terms to "close" a report (fixed, done, canceled, etc.)
+   ;;
+   ;; FIXME: You can help enhancing tests
    :watch {:change       {:subject-prefix     ["CHANGE"]
                           :subject-match      []
                           :doc                ""
@@ -51,10 +76,17 @@
                                            :owned  ["Handled"]
                                            :closed ["Done" "Canceled"]}}}
 
-   ;; FIXME: Document what is accepted here (Un/Not/Non)
+   ;; A set of priority words that trigger a report update
+   ;;
+   ;; Note that "Un" "Not " "Non " "Non-" "Not-" are prefixes for
+   ;; indicating opposite: Unimportant is the opposite of important.
+   ;;
+   ;; If you configure this, you need to
+   ;; use "Un" "Not " "Non " "Non-" "Not-" as indicating opposite.
    :priority-words-all #{"Important" "Not important" "Unimportant"
                          "Urgent" "Not urgent" "Non urgent" "Non-urgent"}
 
+   ;; Default permissions for admins, maintainers and contributor.
    :permissions
    {:admin       #{:add-admin :remove-admin
                    :add-feature :remove-feature
@@ -65,20 +97,20 @@
     :contributor #{:notifications :home :support
                    :bug :patch :request :blog}}
 
-   ;; FIXME: Document each admin word
+   ;; Configuration triggers
    :admin-report-words
-   {:notifications        "Notifications"
-    :home                 "Home"
-    :support              "Support"
-    :add-maintainer       "Add maintainer"
-    :delete               "Delete"
-    :ignore               "Ignore"
-    :add-admin            "Add admin"
-    :remove-admin         "Remove admin"
-    :remove-maintainer    "Remove maintainer"
-    :maintenance          "Maintenance"
-    :undelete             "Undelete"
-    :unignore             "Unignore"
-    :global-notifications "Global notifications"
+   {:notifications        "Notifications"         ; Receive email notifications?
+    :home                 "Home"                  ; Set your homepage
+    :support              "Support"               ; Set your support page
+    :add-maintainer       "Add maintainer"        ; Add maintainer bzg@woof.io
+    :delete               "Delete"                ; Delete past reports from a user
+    :undelete             "Undelete"              ; Undelete past reports from a user
+    :ignore               "Ignore"                ; Ignore future reports from a user
+    :unignore             "Unignore"              ; Don't ignore reports from a user
+    :add-admin            "Add admin"             ; Add admin bzg@woof.io
+    :remove-admin         "Remove admin"          ; Remove admin bzg@woof.io
+    :remove-maintainer    "Remove maintainer"     ; Remove maintainer bzg@woof.io
+    :maintenance          "Maintenance"           ; Put the application under maintenance
+    :global-notifications "Global notifications"  ; Turn notifications globally on/off
     }
    })
