@@ -43,11 +43,11 @@
                           :doc                ""
                           :display-newer-than 100
                           :triggers           {:closed ["Canceled"]}}
-           :release      {:subject-prefix ["RELEASE"]
+           :release      {:subject-prefix ["RELEASE" "REL"]
                           :subject-match  []
                           :doc            ""
                           :triggers       {:closed ["Canceled"]}}
-           :announcement {:subject-prefix ["ANN"]
+           :announcement {:subject-prefix ["ANNOUCEMENT" "ANN"]
                           :subject-match  []
                           :doc            ""
                           :triggers       {:closed ["Canceled"]}
