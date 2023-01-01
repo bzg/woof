@@ -98,7 +98,7 @@
                    :bug :patch :request :blog}}
 
    ;; Configuration triggers
-   :admin-report-words
+   :admin-report-triggers
    {:notifications        "Notifications"         ; Receive email notifications?
     :home                 "Home"                  ; Set your homepage
     :support              "Support"               ; Set your support page

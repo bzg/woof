@@ -25,9 +25,11 @@
 (defn set-defaults []
   (d/transact! db/conn [(merge {:defaults "init"} (:defaults db/config))]))
 
-;; Utility functions
+;;; Utility functions
 
-(defn- action-re [& [source-id]]
+(defn- subject-match-re
+  "Build regexps that match report subjects"
+  [& [source-id]]
   (let [watch          (or (:watch (get (:sources db/config) source-id))
                            (:watch db/config))
         subject-prefix #(:subject-prefix (% watch))
@@ -48,10 +50,13 @@
 (def action-prefixes
   (flatten (map :subject-prefix (vals (:watch db/config)))))
 
-(defn un-ify [l]
+(defn- un-ify
+  "For a list of strings `l`, complete the list with \"Un\" variants of each
+  item in the list."
+  [l]
   (concat l (map #(str "Un" (string/lower-case %)) l)))
 
-(def report-words-all
+(def report-triggers-all
   (->> db/config
        :watch
        vals
@@ -63,18 +68,21 @@
        un-ify
        (concat '("\\+1" "-1"))))
 
-(def report-words-re
+(def report-triggers-re
   (->> (concat
-        report-words-all
+        report-triggers-all
         (:priority-words-all db/config))
        (string/join "|")
        (str "^")
        re-pattern))
 
-(defn- report-words [report-type]
-  (let [original-report-words
+(defn- report-triggers
+  "For `report-type` (e.g. :patch), return the report
+  triggers (e.g. \"Confirmed\")."
+  [report-type]
+  (let [original-report-triggers
         (flatten (vals (:triggers (report-type (:watch db/config)))))]
-    (into #{} (un-ify original-report-words))))
+    (into #{} (un-ify original-report-triggers))))
 
 (defn make-to [^String username ^String address]
   (str username " <" address ">"))
@@ -280,7 +288,7 @@
 (def config-strings-re
   (let [{:keys [admin maintainer contributor]} (:permissions db/config)]
     (->> (concat admin maintainer contributor)
-         (map #(% (:admin-report-words db/config)))
+         (map #(% (:admin-report-triggers db/config)))
          (remove nil?)
          (string/join "|")
          (format "(%s): (.+)\\s*$")
@@ -300,7 +308,7 @@
         vote?            (some #{"-1" "+1"} body-report-list)]
     (when (or priority-word?
               vote?
-              (some (report-words report-type) (list body-report)))
+              (some (report-triggers report-type) (list body-report)))
       ;; Does this email triggers an action against a known report,
       ;; and if so, which one?
       (when-let [e (-> #(ffirst (d/q `[:find ?e
@@ -426,23 +434,23 @@
 ;;; Core functions to return db entries
 
 (defn- new? [what source-id msg]
-  (let [action-re (action-re source-id)
-        subject   (:subject msg)]
+  (let [subject-match-re (subject-match-re source-id)
+        subject          (:subject msg)]
     (condp = what
       :patch        (or
                      ;; New patches with a subject starting with "[PATCH..."
-                     (re-find (:patch action-re) subject)
+                     (re-find (:patch subject-match-re) subject)
                      ;; New patches with a text/x-diff or text/x-patch MIME part
                      (and (:multipart? msg)
                           (not-empty
                            (filter #(re-matches #"^text/x-(diff|patch).*" %)
                                    (map :content-type (:body msg))))))
-      :bug          (re-find (:bug action-re) subject)
-      :request      (re-find (:request action-re) subject)
-      :blog         (re-find (:blog action-re) subject)
-      :announcement (re-find (:announcement action-re) subject)
-      :change       (re-find (:change action-re) subject)
-      :release      (re-find (:release action-re) subject))))
+      :bug          (re-find (:bug subject-match-re) subject)
+      :request      (re-find (:request subject-match-re) subject)
+      :blog         (re-find (:blog subject-match-re) subject)
+      :announcement (re-find (:announcement subject-match-re) subject)
+      :change       (re-find (:change subject-match-re) subject)
+      :release      (re-find (:release subject-match-re) subject))))
 
 (defn- add-admin! [cmd-val from]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
@@ -580,7 +588,7 @@
         user (d/entity db/db [:email from])]
     (doseq [[cmd cmd-val] commands]
       (when (user-allowed?
-             user (->> (:admin-report-words db/config)
+             user (->> (:admin-report-triggers db/config)
                        (filter (fn [[_ v]] (= v cmd)))
                        first key))
         (condp = cmd
@@ -736,7 +744,7 @@
            ;; Or a report against a known patch, bug, etc
            (when-let [body-reports
                       (->> body-seq
-                           (map #(re-find report-words-re %))
+                           (map #(re-find report-triggers-re %))
                            (remove nil?))]
              ;; New action against a known patch/bug/request
              (let [done (atom nil)]

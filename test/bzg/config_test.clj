@@ -31,7 +31,7 @@
 
 (spec/def ::admin-address string?)
 (spec/def ::admin-username string?)
-(spec/def ::admin-report-words string?)
+(spec/def ::admin-report-triggers string?)
 
 (spec/def ::archived-message-format
   (spec/and string? #(re-matches #".*%s.*" %)))
