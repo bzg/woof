@@ -87,12 +87,23 @@ list of ideas for future versions.
 10. [ ] Start implementing the overview page
 
 * Setting up and running Woof!
-** Requisits
+** Requirements
 
-Woof! requires Clojure and Java:
+You will need a mailbox accessible via IMAP that Woof! will monitor.
 
-- Run =~$ apt install clojure= or see [[https://clojure.org/guides/getting_started][this guide]].
-- Run =~$ apt install default-jre= or refer to your distribution.
+This mailbox must receive mails sent to the mailing lists Woof! will
+monitor and must also be able to send emails.
+
+See the environment variables in [[file:config_example.edn]] for setting
+the email information.
+
+Woof! requires Clojure and Java.
+
+You can install clojure with =~$ apt install clojure= or see [[https://clojure.org/guides/getting_started][this guide]].
+
+You can install Java with =~$ apt install default-jre= or refer to your
+distribution instructions.
+
 ** Configure
 
 You need to copy =config_example.edn= as =config.edn= and to set
@@ -104,28 +115,29 @@ contains other configuration defaults.
 
 ** Test
 
-Once you're done configuring Woof!, check your configuration:
+Once you are done configuring Woof!, you can check your configuration
+with:
 
 : ~$ clj -M:test
 
-** Run with deps.edn
+** Run/build/deploy with deps.edn
 
 Run with:
 
 : ~$ clj -M:run
 
-Deploy with:
+Build and deploy with:
 
 : ~$ clj -M:uberdeps
 : ~$ java -cp target/woof.jar clojure.main -m bzg.init
 
-** Run with leiningen
+** Run/build/deploy with leiningen
 
 Run with:
 
 : ~$ lein run
 
-Deploy with:
+Build and deploy with:
 
 : ~$ lein uberjar
 : ~$ java -jar target/woof.jar
