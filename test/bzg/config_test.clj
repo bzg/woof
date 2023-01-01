@@ -42,19 +42,53 @@
 (spec/def ::archived-list-message-raw-format
   (spec/and string? #(re-matches #".*%s.*%s.*" %)))
 
-(spec/def ::maintenance boolean?)
-(spec/def ::notifications boolean?)
 (spec/def ::hidden boolean?)
 (spec/def ::doc string?)
-(spec/def ::watch map?) ;; FIXME
-(spec/def ::pages map?) ;; FIXME
-(spec/def ::display-max map?) ;; FIXME
-(spec/def ::data-formats map?) ;; FIXME
 
-(spec/def ::defaults
+(spec/def ::change map?)
+(spec/def ::release map?)
+(spec/def ::announcement map?)
+(spec/def ::blog map?)
+(spec/def ::bug map?)
+(spec/def ::patch map?)
+(spec/def ::request map?)
+(spec/def ::index map?)
+(spec/def ::overview boolean?)
+(spec/def ::watch
   (spec/keys
-   :opt-un [::maintenance
-            ::notifications]))
+   :opt-un [::change
+            ::release
+            ::announcement
+            ::blog
+            ::bug
+            ::patch
+            ::request]))
+
+(spec/def ::pages
+  (spec/keys
+   :opt-un [::index
+            ::overview
+            ::change
+            ::release
+            ::announcement
+            ::blog
+            ::bug
+            ::patch
+            ::request]))
+
+(spec/def ::display-max integer?)
+(spec/def ::display-newer-than integer?)
+(spec/def ::rss boolean?)
+(spec/def ::json boolean?)
+(spec/def ::org boolean?)
+(spec/def ::md boolean?)
+(spec/def ::data-formats
+  (spec/keys :opt-un [::rss ::json ::org ::md]))
+
+(spec/def ::maintenance boolean?)
+(spec/def ::notifications boolean?)
+(spec/def ::defaults
+  (spec/keys :opt-un [::maintenance ::notifications]))
 
 (spec/def ::address string?)
 (spec/def ::slug string?)
@@ -80,10 +114,12 @@
 (spec/def ::support-url (spec/nilable string?))
 (spec/def ::feed-title (spec/nilable string?))
 (spec/def ::feed-description (spec/nilable string?))
+(spec/def ::enabled boolean?)
 
 (spec/def ::ui
   (spec/keys
-   :opt-un [::title
+   :opt-un [::enabled
+            ::title
             ::project-name
             ::project-url
             ::contribute-url
