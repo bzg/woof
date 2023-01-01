@@ -9,35 +9,33 @@ important information exposed on a web page.
 
 [[file:woof.png]]
 
-* Howto for casual users
-
 See [[file:resources/md/howto.org][this howto]] for basic instructions on how to use Woof!.
 
-* What problem Woof! tries to address
+* Why Woof!?
 
 Developing software by discussing on public mailing lists and sharing
 patches by email works fine.
 
 At some point, you may need to track bug reports, patches, etc.
 
-If you are using [[https://sourcehut.org/][sourcehut.org]], perhaps you will set up a new [[https://todo.sr.ht/][tracker]]
-for your project.  If your software is part of the [[https://www.gnu.org/][GNU project]], then
-perhaps you'll set up https://debbugs.gnu.org for your package.  But
-these trackers create /new communication channels/, new "databases" that
-you will have to /maintain/---while what you really needed is precisely
-to maintain /less/ stuff.
+If you are using [[https://sourcehut.org/][sourcehut.org]], perhaps you will set up a new tracker
+for your project.  If your software is part of the GNU project, then
+perhaps you'll set up debbugs for your package.  But these trackers
+create /new communication channels/, new "databases" that you will have
+to /maintain/---and they are probably overkill for your needs.
 
-This is where Woof! might come in handy: when you plug it into your
-mailbox, it monitor emails sent to mailing lists this mailbox is
-subscribed to and extract useful information: bug reports, patches,
-chances, announcement, etc.
+*This is where Woof! comes in handy as a way to monitor mailing lists*.
+You plug Woof! into your mailbox, it monitors emails sent to mailing
+lists this mailbox is subscribed to and it extracts and exposes useful
+information: bug reports, patches, changes, announcements, etc.
 
-Woof! is not a full-fledged project management tool: e.g. it does not
-allow someone to assign tasks to someone else, to close reports, etc.
 
 Woof! has been developed to help with [[https://orgmode.org/][Emacs Org-mode]] development where
 there is a mailing list with a lot of useful interactions and the need
 to promote upcoming changes, bug reports, patches to review, etc.
+
+*Woof! is not a full-fledged project management tool*: e.g. it does not
+allow someone to assign tasks to someone else, to close reports, etc.
 
 * Design rationale
 
