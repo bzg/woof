@@ -144,7 +144,7 @@
         :unimportant          "pas important"
         :urgent               "urgent"
         :vote                 "vote"
-        :with-closed?         "Inclure tout ?"
+        :with-closed?         "Avec fermés ?"
         :read-mail            "Lire le message"
         }}
   )
