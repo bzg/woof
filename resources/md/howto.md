@@ -1,107 +1,112 @@
 <div class="container">
 
-**NOTE: Do not deploy this version as it is still a work in progress.**
+
+# About Woof!
+
+This website is an instance of [Woof!](https://sr.ht/~bzg/woof/), an application that tracks and
+exposes useful interactions on mailing lists.
+
+Woof! can typically be used for software development mailing lists
+when these lists serve as channels for reporting bugs, submitting
+patches, proposing feature requests, sharing tips, etc.
 
 
-# What is Woof! and how to use it?
-
-Woof! monitors updates sent to a mailbox and exposes them on the web.
-Typically, this mailbox is subscribed to a mailing list with a public
-online archive so that Woof! reports can link to it.
-
-Woof! tries to be **a good companion for free software maintainers** who
-work with mailing lists by allowing them to focus on *bugs* and *patches*.
-It also aims at **making life easier for users** by pointing at important
-news such as upcoming changes.
-
-Woof! does not change the way maintainers use a mailing list for the
-development of their projects: with a minimalistic set of conventions,
-Woof! will extract what's important for everyone.
+# Reports
 
 
-# Adding a report
+## Report types
 
-Woof! watches for triggers at the beginning of the subject line:
+The report types are: `bug`, `patch`, `request`, `release`, `change`, `blog`,
+`annoucement`.  Each report type is peculiar:
 
--   `[ANN]` : An annoucement
--   `[BUG]` : A bug report
--   `[HELP]` : A help request
-
-It also watches for patches:
-
--   `[PATCH]` : A single patch
--   `[PATCH n/m]` : A patch in a series
--   A multipart mail with a `text/x-diff` or `text/x-patch` MIME part
-
-Some triggers are special:
-
--   `[CHANGE x]` : Announce a change in the release `x`
--   `[RELEASE x]` : Announce the release `x`
-
-The `x` part is mandatory for changes and releases and it should not
-contain any whitespace.
-
-Announcing a release `x` moves changes for `x` from the *Upcoming changes*
-section to the *Latest released changes* one.  Canceling a release moves
-the changes back to the *Upcoming changes* section.
-
-Note that the `[...]` par ist case-sensitive.
+-   `bug` : Anyone, can specify a version number
+-   `patch` : Anyone, stores and exposes the patch itself when possible
+-   `request` : Anyone, can be voted upon
+-   `blog` : Anyone, the full body of the email is indexed/searched
+-   `annoucement` : Maintainers, the full body of the email is indexed/searched
+-   `release` : Maintainers, a new release closes the related changes
+-   `change` : Maintainers, to announce upcoming changes only
 
 
-# Updating a report
+## Adding a report
 
-After a bug, patch, announcement, change, release or request has been
-monitored, replies to the original mail can trigger actions.
+Adding a report to Woof! is done by using subject prefixes:
 
-Actions against a report are declared at the beginning of a line in
-the reply.
+-   `bug` : `[BUG]` or `[BUG x]` where x is a version number
+-   `release` : `[RELEASE x]` or `[REL x]` where x is a version number
+-   `change` : `[CHANGE x]` where x is a future (not released) version number
+-   `patch` : `[PATCH]` or `[PATCH n/m]`
+-   `request` : `[FR]` or one of `[FP, RFC, RFE, TODO, POLL]`
+-   `blog` : `[BLOG]` or `[TIP]`
+-   `annoucement` : `[ANNOUCEMENT]` or `[ANN]`
 
-For **bugs**:
 
--   `Confirmed.` : Confirm a bug.
--   `Handled`. : Take ownership for fixing the bug.
--   `Fixed.` : Mark a bug as fixed.
+## Report states
 
-For **patches**:
+All report types can be in a combination of these states: (un)acked,
+(un)owned and (un)closed.
 
--   `Approved.` : Approve a patch.
--   `Handled`. : Take ownership for editing and applying the patch.
--   `Applied.` : Mark a patch as applied.
+"Acked" means that someone took the first next sensical action on the
+report: for a bug, it is to confirm it and for a patch, to review it.
 
-For **requests** (feature requests or to-dos):
+"Owned" means someone claimed to "handle" this report.  (You can own a
+report that has not been acked.)
 
--   `Approved.` : Mark the request as approved.
--   `Handled.` : Take ownership for editing and applying the request.
--   `Done.` : Mark a request as done.
+"Closed" means the report is closed, either because it has been fixed
+(for a bug), or canceled, or done in any fashion.
 
-For bugs, patches, requests, announcements, changes and releases, you
-can also *cancel* them:
 
--   `Canceled.` : Mark the bug, patch, request, announcement, change or
-    release as canceled.
+## Triggering updates
+
+Some words at the beginning of a line in the body of a reply to a
+report will trigger updates of this report.
+
+E.g. if a line in your reply to a bug report starts with `Confirmed.`,
+the bug report will be updated as "Confirmed" in Woof!.
 
 **Note**: A punctuation mark among `;:,.` is *mandatory* for these reports and
 action words (`Confirmed`, `Approved`, etc.) are all case-sensitive.
 
+Here are the default "triggers", the terms you can use for trigger an
+update:
 
-# Notifications
-
-Users receive a mail notification when their original reports are
-detected (new bug, new request, etc.) and when these reports receive
-an important update (the bug get fixed, the request get handled, etc.)
-
-Every user can turn notifications on or off by writing to the Woof!
-mailbox with this command at the beginning of a line:
-
--   `Notifications: false` : To turn notifications off
--   `Notifications: true` : To turn notifications on
-
-Admins can turn notifications globally on and off with
-
--   `Global notifications: [true|false]`
+-   `bug` : `Confirmed`, `Handled`, `Fixed` or `Canceled`
+-   `blog` : `Canceled`
+-   `patch` : `Approved`, `Reviewed`, `Handled`, `Applied` or `Canceled`
+-   `request` : `Approved`, `Handled`, `Done` or `Canceled`
+-   `annoucement` : `Canceled`
+-   `release` : `Canceled`
+-   `change` : `Canceled`
 
 
-# Admins
+## Updating priority
+
+You cannot set the priority of a report directly: it is computed based
+on whether the report is important and urgent.
+
+To set a report as important, use "Important" in a reply.
+
+To set a report as unimportant, use "Unimportant" in a reply.
+
+To set a report as urgent, use "Urgent" in a reply.
+
+To set a report as not urgent, use "Not Urgent" in a reply.
+
+
+## Using multiple triggers
+
+You can use multiple triggers in the same email.  E.g. in a reply
+against a bug report:
+
+    Confirmed.
+    Urgent.
+    Important.
+
+will mark the bug report as confirmed, and set it as important and
+urgent, giving it the highest priority.
+
+
+# Admins and maintainers
 
 Each Woof! instance comes with a default admin.
 
@@ -109,36 +114,14 @@ Each Woof! instance comes with a default admin.
 
 -   `Global notifications: [true|false]` : Enable/disable mail notifications globally
 -   `Maintenance: [true|false]` : Put the website in maintenance mode
--   `Set theme: my_theme` : Use `my_theme` for the interface
--   `[Add|Remove] feature: feature` : Add or remove a feature
--   `[Add|Remove] export: format` : Add or remove an export format
-
-In these actions:
-
--   `feature` can be `bug`, `announcement`, `request`, `change`, `release` or `mail`.
--   `format` can be `rss`, `json`, `org` or `md`.
-
-They can also add or remove admins and maintainers:
-
 -   `[Add|Remove] admin: woof@woof.io` : Add or remove an admin
 -   `[Add|Remove] maintainer: woof@woof.io` : Add or remove a maintainer
+-   `[Delete|Undelete]: woof@woof.io` : Clean up past reports
+-   `[Ignore|Unignore]: woof@woof.io` : Ignore *future* reports
 
-Finally, admins can also *delete* past reports and *ignore* future mails:
-
--   `[Delete|Undelete]: woof@woof.io`
--   `[Ignore|Unignore]: woof@woof.io`
-
-Remember: deletion is for cleaning up past reports, ignoring is about
-future emails.  When plugging Woof! to a mailing list, first consider
-moderating users instead of ignoring them.
-
-`Add/Remove` commands and `(Un)Delete/(Un)Ignore` commands accept several
-arguments: you can use `Add feature: bug change` to add both the "bug"
-and "change" features, or `Ignore: user1@woof.io user2@woof.io` to
-ignore future messages from these users.
-
-
-# Maintainers
+`Add`, `Remove` and `(Un)Delete/(Un)Ignore` commands can accept several
+arguments: you can use `Ignore: user1@woof.io user2@woof.io` to ignore
+future messages from these two users.
 
 **Maintainers** can perform three actions:
 
@@ -146,33 +129,8 @@ ignore future messages from these users.
 -   `Delete: woof@woof.io`
 -   `Ignore: woof@woof.io`
 
-When contributors are promoted as maintainers, they receive a
-notification by email.
-
 Note that maintainers cannot remove admins or other maintainers and
 they cannot undelete mails or unignore contributors.
-
-
-# Sending multiple commands
-
-One can send several commands in a mail, with each command starting at
-the beginning of a line.  For example, an email with:
-
-    Set theme: my_theme
-    Add maintainer: my@friend.io myother@friend.io
-    Ignore: my@enemy.io
-
-will set the theme "my\_theme", add "my@friend.io" and
-"myother@friend.io" as maintainers and ignore future reports by
-"my@enemy.io".
-
-
-# Woof without a mailing list
-
-Woof! can monitor a mailbox that is not subscribed to a public list.
-In that case, the webpage exposes reports as texts with no links.  But
-you can check reports by using their `json` export: it will give you the
-`Message-Id` of each report, allowing to find the corresponding email.
 
 </div>
 
