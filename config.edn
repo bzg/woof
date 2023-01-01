@@ -4,7 +4,6 @@
 
 {
  ;; Information on the mailbox to monitor
- ;; FIXME: Use aero secrets? env variables?
  :inbox-user     #env WOOF_INBOX_USER
  :inbox-server   #env WOOF_INBOX_SERVER
  :inbox-password #env WOOF_INBOX_PASSWORD
@@ -21,29 +20,49 @@
  :baseurl #or [#env WOOF_BASEURL "http://localhost:3000"]
  :port    #long #or [#env WOOF_PORT 3000]
 
- ;; Sources
- ;; FIXME: Document how to configure it
+ ;; Default application state
+ :defaults
+ {:maintenance   false ;; Is the application under maintenance?
+  :notifications false ;; Shall the application send notification emails?
+  }
+
+ ;; Default application administrator
+ :admin-address  "bzg@bzg.fr"   ;; This address gets admin permissions
+ :admin-username "Big Bad Woof" ;; This name is not really mine
+
+ ;; Sources are typically public mailing lists or private mailboxes
+ ;; :source is a map of key-value with the key being a string (the
+ ;; email address) and the value being a map of parameters for this
+ ;; source.
  :sources
- {"~bzg/wooff@lists.sr.ht"
-  {:slug                        "wooff"
-   :doc                         "Allow to document source"
-   :archived-message-format     "lists.sr.ht/~bzg/wooff/<%s>"
-   :archived-message-format-raw "lists.sr.ht/~bzg/wooff/<%s>/raw"
-   :ui                          {:title        "Liste ~bzg/wooff"
-                                 :project-name "Wooff"
-                                 :project-url  "https://bzg.fr"
-                                 :data-formats {:rss true}}}
-  "~bzg/wooff2@lists.sr.ht" {:slug "wooff2" :hidden false}
-  "woof-test@bzg.fr"
-  {:slug   "woof-test"
-   ;; This will not be listed in the sources page
+ { ;; The email address of the list, here a public mailing list
+  "~bzg/woof@lists.sr.ht"
+  {:slug "woof-public"
+   :doc  "Documentation string for this source"
+   ;; Possibly set archive formatting strings
+   ;; :archived-message-format     "lists.sr.ht/~bzg/wooff/<%s>"
+   ;; :archived-message-format-raw "lists.sr.ht/~bzg/wooff/<%s>/raw"
+   ;;
+   ;; The UI for this source can be set independently
+   :ui   {:title        "Liste ~bzg/wooff"
+          :project-name "Wooff"
+          :project-url  "https://bzg.fr"
+          ;; E.g. you can restrict the formats for exposed data:
+          ;; :data-formats {:rss true}
+          }}
+
+  ;; The email address of the list, here a private mail alias
+  "woof-private@bzg.fr"
+  {:slug   "woof-private"
+   ;; This source will not be listed in the sources page
    :hidden true
-   :watch  {;; Only watch for request-type reports
+   :watch  { ;; Only watch request for this private source
             :request {:subject-prefix ["FR"]
                       :triggers       {:acked  ["Approved"]
                                        :owned  ["Handled"]
                                        :closed ["Done" "Canceled"]}}}
-   :ui     {:data-formats {:org true}
+   :ui     { ;; Only expose .org data
+            :data-formats {:org true}
             :pages        {:index
                            ;; Only display the date column in the index page
                            ;; Note that the vote column is never displayed in the index page
@@ -54,18 +73,14 @@
                            :overview false}}
    }}
 
- ;; Default application state
- :defaults
- {:maintenance   false
-  :notifications false}
-
+ ;; On top of per-source formatting string, you can define a fall-back
+ ;; formatting string for all sources -- note that both should contain
+ ;; two %s (one for the list, one for the email):
+ ;;
  ;; :archived-list-message-raw-format "https://public-list-archive.org/%s/<%s>/raw"
  ;; :archived-list-message-format     "https://public-list-archive.org/%s/<%s>"
 
- ;; Default application admin
- :admin-address  "bzg@bzg.fr"
- :admin-username "Big Bad Woof"
-
+ ;; Generic UI settings for all sources
  :ui {:enabled        true ;; When false, don't start https service
       :title          "Example woof instance"
       :project-name   "Example project name"
@@ -77,8 +92,11 @@
                        :org  true
                        :md   true}
       :pages
-      {;; :index {:columns #{:priority :vote :from :date :related-refs :refs-count :status}}
+      {;; The "index" is the default tab, displayed as "All".  You can
+       ;; set the columns for this default tab.
+       ;; :index    {:columns #{:priority :vote :from :date :related-refs :refs-count :status}}
        :news
+       ;; What kind of reports go in news?
        {:reports
         ;; :unreleased-changes :releases :latest-released-changes :announcements :blogs
         #{:unreleased-changes
@@ -87,6 +105,7 @@
           :announcements
           :blogs}}
        :bug
+       ;; Below is the list of aliases for what can count as "bug"
        ;; - :confirmed-bugs :acked-bugs
        ;; - :unconfirmed-bugs :unacked-bugs
        ;; - :handled-bugs :owned-bugs
@@ -97,6 +116,7 @@
        ;; - :uncanceled-bugs :unclosed-bugs
        {:reports #{:unconfirmed-bugs :confirmed-bugs :handled-bugs}}
        :patch
+       ;; Below is the list of aliases for what can count as "patch"
        ;; - :approved-patches :unacked-patches
        ;; - :unapproved-patches :unacked-patches
        ;; - :handled-patches :owned-patches
@@ -107,6 +127,7 @@
        ;; - :uncanceled-patches :unclosed-patches
        {:reports #{:unapproved-patches :approved-patches :handled-patches}}
        :request
+       ;; Below is the list of aliases for what can count as "request"
        ;; - :approved-requests :acked-requests
        ;; - :unapproved-requests :unacked-requests
        ;; - :handled-requests :owned-requests
@@ -116,5 +137,6 @@
        ;; - :uncanceled-requests :unclosed-requests
        ;; - :undone-requests :unclosed-requests
        {:reports #{:unapproved-requests :approved-requests :handled-requests}}
+       ;; Shall we provide a page with some insights?
        :overview false}}
  }
