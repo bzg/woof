@@ -342,15 +342,15 @@
 
 (let [appenders
       (cond-> {:println (appenders/println-appender {:stream :auto})}
-        ;; Shall we log in log-file?
+        ;; Shall we store log in a file?
         (and (some #{:file} (:log db/config)) (not-empty (:log-file db/config)))
         (conj {:spit (appenders/spit-appender {:fname (:log-file db/config)})})
-        ;; Shall we log in db too?
+        ;; Shall we store log in the db too?
         (some #{:db} (:log db/config))
         (conj {:datalevin-appender (datalevin-appender)})
-        ;; Shall we log as mails?
+        ;; Shall we send emails for errors?
         (some #{:mail} (:log db/config))
-        ( conj
+        (conj
          {:postal (merge (postal-appender/postal-appender ;; :min-level :warn
                           ^{:host (:smtp-host db/config)
                             :user (:smtp-login db/config)
@@ -681,7 +681,7 @@
                             (into #{}))
         source-id      (some to-all (keys (:sources db/config)))
         msg            (assoc msg :source-id source-id)
-        to-woof-inbox? (some (into #{} tos) (:inbox-user db/config))
+        to-woof-inbox? (some (into #{} tos) (list (:inbox-user db/config)))
         from           (:address (first from))
         user           (d/entity db/db [:email from])
         defaults       (d/entity db/db [:defaults "init"])
