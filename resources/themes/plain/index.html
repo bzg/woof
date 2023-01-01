@@ -18,7 +18,7 @@
       <div>
 	<p>
 	  <a title="Send an email to the admin" href="mailto:{{config.admin}}">
-	    {{config.i18n.under-maintenance}}
+	    {{config.i18n.Under-maintenance}}
 	  </a>
 	</p>
       </div>
@@ -32,7 +32,7 @@
 	<div>
 
 	  {% ifequal entries|count 0 %}
-	  <h3 id="entries">{{config.i18n.no-result}}.</h3>
+	  <h3 id="entries">{{config.i18n.No-result}}.</h3>
 	  {% else %}
 	  <h3 id="entries">
 	    <span>
@@ -48,33 +48,33 @@
 	      <thead>
 		<tr>
 		  {% if columns.priority %}
-		  <th width="3%"><a href="?sorting-by=priority" title="{{config.i18n.sort-entries-by}} {{config.i18n.priority}}">{{config.i18n.Priority}}</a></th>
+		  <th width="3%"><a href="?sorting-by=priority" title="{{config.i18n.Sort-entries-by}} {{config.i18n.priority}}">{{config.i18n.Priority}}</a></th>
 		  {% endif %}
 		  {% if columns.vote %}
 		  {% if page = "request" %}
-		  <th><a href="?sorting-by=vote" title="{{config.i18n.sort-entries-by}} {{config.i18n.vote}}">{{config.i18n.Vote}}</a></th>
+		  <th><a href="?sorting-by=vote" title="{{config.i18n.Sort-entries-by}} {{config.i18n.vote}}">{{config.i18n.Vote}}</a></th>
 		  {% endif %}
 		  {% endif %}
-		  <th>{{config.i18n.subject}}</th>
+		  <th>{{config.i18n.Subject}}</th>
 		  {% if not source %}
 		  {% if 1 < sources|length %}
-		  <th>{{config.i18n.source}}</th>
+		  <th>{{config.i18n.Source}}</th>
 		  {% endif %}
 		  {% endif %}
 		  {% if columns.from %}
-		  <th width="15%"><a href="?sorting-by=user" title="{{config.i18n.sort-entries-by}} {{config.i18n.role}}">{{config.i18n.from}}<a></th>
+		  <th width="15%"><a href="?sorting-by=user" title="{{config.i18n.Sort-entries-by}} {{config.i18n.role}}">{{config.i18n.From}}<a></th>
 		  {% endif %}
 		  {% if columns.date %}
-		  <th width="15%"><a href="?sorting-by=date" title="{{config.i18n.sort-entries-by}} {{config.i18n.date}}">{{config.i18n.Date}}</a></th>
+		  <th width="15%"><a href="?sorting-by=date" title="{{config.i18n.Sort-entries-by}} {{config.i18n.date}}">{{config.i18n.Date}}</a></th>
 		  {% endif %}
 		  {% if columns.related-refs %}
-		  <th width="5%"><a href="?sorting-by=related" title="{{config.i18n.sort-entries-by}} {{config.i18n.number-of-related}}">{{config.i18n.related-refs}}</a></th>
+		  <th width="5%"><a href="?sorting-by=related" title="{{config.i18n.Sort-entries-by}} {{config.i18n.number-of-related}}">{{config.i18n.Related-refs}}</a></th>
 		  {% endif %}
 		  {% if columns.refs-count %}
-		  <th width="5%"><a href="?sorting-by=refs" title="{{config.i18n.sort-entries-by}} {{config.i18n.number-of-references}}">{{config.i18n.refs}}</a></th>
+		  <th width="5%"><a href="?sorting-by=refs" title="{{config.i18n.Sort-entries-by}} {{config.i18n.number-of-references}}">{{config.i18n.Refs}}</a></th>
 		  {% endif %}
 		  {% if columns.status %}
-		  <th width="3%"><a href="?sorting-by=status" title="{{config.i18n.sort-entries-by}} {{config.i18n.status}}">{{config.i18n.Status}}</a></th>
+		  <th width="3%"><a href="?sorting-by=status" title="{{config.i18n.Sort-entries-by}} {{config.i18n.status}}">{{config.i18n.Status}}</a></th>
 		  {% endif %}
 		</tr>
 	      </thead>
@@ -105,7 +105,7 @@
 		  {% endif %}
 		  <td>
 		    {% if entry.link %}
-		    <a href="{{entry.link}}" target="_blank" title="{{config.i18n.read-mail}} {{config.i18n.sent-by}} {{entry.from}} - {{entry.date}}">{{entry.subject}}</a>
+		    <a href="{{entry.link}}" target="_blank" title="{{config.i18n.Read-mail}} {{config.i18n.sent-by}} {{entry.from}} - {{entry.date}}">{{entry.subject}}</a>
 		    {% if entry.patch-url %}
 		    &nbsp;(<a href="{{entry.patch-url}}" target="_blank">{{config.i18n.patch}}</a>)
 		    {% endif %}

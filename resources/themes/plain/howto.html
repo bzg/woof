@@ -15,13 +15,13 @@
       <h1>{{watch.report|capitalize}}</h1>
       {% if watch.doc %}<h2>{{watch.doc}}</h2>{% endif %}
       <ul>
-	{% if watch.prefix %}<li>{{config.i18n.subject-prefixes}}: <tt>[{{watch.prefix}}]</tt></li>{% endif %}
-	{% if watch.match %}<li>{{config.i18n.subject-matches}}: <tt>{{watch.match}}</tt></li>{% endif %}
-	{% if watch.triggers %}<li>{{config.i18n.update-triggers}}: <tt>{{watch.triggers}}</tt></li>{% endif %}
+	{% if watch.prefix %}<li>{{config.i18n.Subject-prefixes}}: <tt>[{{watch.prefix}}]</tt></li>{% endif %}
+	{% if watch.match %}<li>{{config.i18n.Subject-matches}}: <tt>{{watch.match}}</tt></li>{% endif %}
+	{% if watch.triggers %}<li>{{config.i18n.Update-triggers}}: <tt>{{watch.triggers}}</tt></li>{% endif %}
       </ul>
       {% endfor %}
 
-      <a href="/howto">{{config.i18n.see}} Woof! {{config.i18n.documentation}}</a>
+      <a href="/howto">{{config.i18n.See}} Woof! {{config.i18n.documentation}}</a>
       {% else %}
 
       {% safe %}
