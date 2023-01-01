@@ -61,7 +61,8 @@
 
 (defn- with-html-defaults [config-defaults {:keys [source] :as m}]
   (merge (html-defaults (:source-id source))
-         {:config config-defaults}
+         {:config (merge config-defaults
+                         {:admin-address (:admin-address db/config)})}
          {:sources (->> (:sources db/config)
                         (map (fn [[k v]]
                                (when-not (:hidden v)
