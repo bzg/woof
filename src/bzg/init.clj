@@ -7,7 +7,7 @@
             [bzg.core :as core]
             [bzg.web :as web]
             [bzg.db :as db]
-            ;; FIXME: Remove in production
+            ;; TODO: Remove in production?
             [ring.middleware.reload :as reload]
             [integrant.core :as ig]
             [tea-time.core :as tt]

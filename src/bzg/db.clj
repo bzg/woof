@@ -33,7 +33,7 @@
    :email        {:db/valueType :db.type/string
                   :db/unique    :db.unique/identity}
    :refs-count   {:db/valueType :db.type/long}
-   ;; FIXME: We store references but don't use them (yet)
+   ;; TODO: We store references but don't use them (yet)
    :references   {:db/valueType   :db.type/string
                   :db/cardinality :db.cardinality/many}
    :related-refs {:db/valueType   :db.type/string

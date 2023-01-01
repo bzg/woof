@@ -10,7 +10,6 @@
             [bzg.fetch :as fetch]
             [bzg.db :as db]
             [clojure.string :as string]
-            ;; FIXME: Remove in production
             [ring.middleware.params :as params]
             [reitit.ring.middleware.parameters :as parameters]
             [ring.middleware.cors :refer [wrap-cors]]
@@ -77,7 +76,7 @@
 (defn- parse-search-string [s]
   (when s
     (let [
-          ;; FIXME: Could we safely use email-re as msgid-re?
+          ;; TODO: Could we safely use email-re as msgid-re?
           msgid-re   #"[^\s]+"
           version-re #"([<>=]*)([^\s]+)"
           re-find-in-search
@@ -129,7 +128,6 @@
                      #{:priority :vote :from :date :related-refs :refs-count :status})
        :slug-end (or (not-empty slug-end) "index")
        :entries
-       ;; FIXME: Confusing use of entries twice?
        (entries-format
         (merge {:entries
                 (map #(assoc % :source-slug (core/source-id-to-slug (:source-id %)))

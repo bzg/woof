@@ -395,7 +395,7 @@
           (timbre/info
            (format
             (condp = purpose
-              ;; FIXME: check accuracy
+              ;; TODO: really test
               :ack-reporter    "Sent mail to %s to ack report against known report"
               :ack-op-reporter "Sent mail to %s to ack report against initial report"
               :ack-op          "Sent mail to %s to ack initial report"
@@ -661,7 +661,7 @@
     (doseq [r changes-reports]
       (d/transact! db/conn [{:db/id r :released release-id}]))))
 
-;; FIXME: where to use?
+;; FIXME: Remove?
 ;; (defn- unrelease-changes! [source-id release-id]
 ;;   (let [changes-to-unrelease
 ;;         (->> (filter #(= release-id (:released %))

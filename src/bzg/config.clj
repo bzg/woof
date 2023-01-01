@@ -37,7 +37,7 @@
    ;;  :owned : array of terms to "own" (i.e. assign to yourself) a report
    ;; :closed : array of terms to "close" a report (fixed, done, canceled, etc.)
    ;;
-   ;; FIXME: You can help enhancing tests
+   ;; TODO: You can help enhancing tests
    :watch {:change       {:subject-prefix     ["CHANGE"]
                           :subject-match      []
                           :doc                ""

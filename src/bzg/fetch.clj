@@ -45,7 +45,7 @@
                   ">=" v/newer-or-equal?)]
       (cp-fn version v-searched))))
 
-;; FIXME: Use fulltext search for reports?
+;; TODO: Use fulltext search for reports?
 (defn reports [{:keys [source-id report-type search closed? as-mail]}]
   (let [report-type-cfg (-> db/config :watch report-type)
         m-any           (fn [to-split cmp]
@@ -224,12 +224,11 @@
               [?m :source-id ~source-id]] db/db)
        (map first)
        (map #(d/entity db/db %))
-       ;; FIXME: conditionnally remove :closed?
        (remove :closed)
        (map :version)
        (into #{})))
 
-;; FIXME: remove?
+;; TODO: remove?
 ;; (defn releases [& [source-id search closed]]
 ;;   (->> (d/q (if source-id
 ;;               `[:find ?e :where
