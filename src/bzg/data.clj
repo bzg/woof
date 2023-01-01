@@ -34,7 +34,7 @@
                      (:date %)))
        (string/join "\n")))
 
-(defn feed-item [{:keys [message-id archived-at subject date username from body]} source-id]
+(defn- feed-item [{:keys [message-id archived-at subject date username from body]} source-id]
   (let [archived-at (core/archived-message
                      {:source-id   source-id
                       :archived-at archived-at
@@ -64,7 +64,7 @@
                         (when source-id  source-id-suffix))}
      (sort-by :pubDate (map #(feed-item % source-id) resources)))))
 
-(defn get-data [what {:keys [path-params query-params]}]
+(defn- get-data [what {:keys [path-params query-params]}]
   (let [source-id (core/slug-to-source-id (:source-slug path-params))
         format    (subs (:format path-params) 1)
         search    (or (:search query-params) "")
