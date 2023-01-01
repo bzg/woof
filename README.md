@@ -1,43 +1,94 @@
-Woof! monitors updates sent to a mailbox and exposes them on the web.
-Typically, this mailbox is subscribed to a mailing list with a public
-online archive so that Woof! reports can link to it.
+Woof! monitors a mailbox and extract/expose useful information from
+what this mailbox receives.  
 
-Woof! tries to be **a good companion for free software maintainers** who
-work with mailing lists by allowing them to focus on *bugs* and *patches*.
-It also aims at **making life easier for users** by pointing at important
-news such as upcoming changes.
-
-Woof! does not change the way maintainers use a mailing list for the
-development of their projects: with a minimalistic set of conventions,
-Woof! will extract what's important for everyone.
+E.g. if your email is subscribed to several free software development
+mailing lists and you want to monitor bug reports, patches, feature
+requests sent to these mailing lists, then you can run Woof! and have
+these lists monitored via your mailbox.
 
 ![img](woof.png)
 
-See [the howto](resources/md/howto.md) for further instructions on how to use it.
+
+# Howto for casual users
+
+See [the howto](resources/md/howto.md) for basic instructions on how to use Woof!.
 
 
-# Requisits
+# Design rationale
 
-You need Clojure and Java on the machine to deply this application.
+-   **Read only**: Woof! is not a database of issues you need to maintain.
+    Useful information is extracted from upstream email interactions,
+    emails are the sole source of truth.  So Woof! is read only: there
+    is no login, no way to update stuff from the website.
 
-Run `~$ apt install clojure` or see [this guide](https://clojure.org/guides/getting_started).
+-   **Decentralized**: Since Woof! is based on mailboxes and only reflects
+    upstream intereactions, you can have several Woof! instances for the
+    same mailing lists: each instance will reflect what is of interest
+    for the person who deployed it.
 
-Run `~$ apt install default-jre` or refer to your distribution.
+-   **Minimalistic conventions**: Woof! tries to rely on minimalistic and
+    realistic conventions for subject prefixes (e.g. [BUG]) and updates
+    "triggers" (e.g. "Confirmed.").
+
+-   **Configurable**: Woof! tries to be highly configurable.
 
 
-# Configure
+# When Woof! can be useful
 
-You need to set some environment variables to let the application run.
+Woof! is not a full-fledged project management tool: e.g. it does not
+allow someone to assign tasks to someone else, to close reports, etc.
 
-See <src/bzg/config.clj> for the list of environment variables and
-other configuration variables.
+Woof! has been developed to help with [Emacs Org-mode](https://orgmode.org/) development where
+there is a mailing list with a lot of useful interactions and the need
+to promote upcoming changes, bug reports, patches to review, etc.
 
-Run this to check your configuration:
+
+# Main features
+
+-   Track various report types: bugs, patches, requests, announcements,
+    blog posts, changes, releases.
+-   Support tracking multiple lists
+-   Expose reports as `rss`, `md`, `json` or `org`
+-   Expose raw patches when possible.
+-   Track related reports and allow to list them
+-   Track votes on requests (e.g. `[POLL]`)
+-   Allow complex searches
+-   Themes
+-   i18n
+
+
+# Upcoming
+
+
+# Setting up and running Woof!
+
+
+## Requisits
+
+Woof! requires Clojure and Java:
+
+-   Run `~$ apt install clojure` or see [this guide](https://clojure.org/guides/getting_started).
+-   Run `~$ apt install default-jre` or refer to your distribution.
+
+
+## Configure
+
+You need to copy `config_example.edn` as `config.edn` and to set
+environment variables: see <config_example.edn> for the list.
+
+`config_example.edn` also contains other configuration parameters that
+you need to set.  You can also refer to <src/bzg/config.clj> which
+contains other configuration defaults.
+
+
+## Test
+
+Once you're done configuring Woof!, check your configuration:
 
     ~$ clj -M:test
 
 
-# With deps.edn
+## Run with deps.edn
 
 Run with:
 
@@ -46,40 +97,31 @@ Run with:
 Deploy with:
 
     ~$ clj -M:uberdeps
-    ~$ java -cp target/woof.jar clojure.main -m bzg.web
+    ~$ java -cp target/woof.jar clojure.main -m bzg.init
 
 
-# With leiningen
+## Run with leiningen
 
 Run with:
 
     ~$ lein run
 
-Depuis with:
+Deploy with:
 
     ~$ lein uberjar
     ~$ java -jar target/woof.jar
 
 
-# Contribute
+# Contributing
 
-Contributions are welcome.
+Contributions are welcome!  See .
 
-You can send feedback, questions and patches to the Woof mailing list
-at `~bzg/woof@lists.sr.ht`.
+Suggested contributions:
 
-To subscribe to this list, see <https://lists.sr.ht/~bzg/woof> or just
-send an email to `~bzg/woof+subscribe@lists.sr.ht`.
-
-For patches, please configure your local copy of the repository to add
-a prefix to the subject line of your emails:
-
-    ~$ git config format.subjectPrefix 'PATCH woof'
-
-Some suggested contributions:
-
--   Write a HTML theme
--   Add more tests
+-   Write a new HTML theme
+-   Support new UI languages
+-   Enhance the documentation
+-   Add tests
 -   Report bugs
 
 
