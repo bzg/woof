@@ -164,7 +164,7 @@
        (filter not-empty)))
 
 (defn- mails-from-refs [references]
-  (->> (fetch/index nil nil true)
+  (->> (fetch/index nil nil "on")
        (filter #(some references (list (:message-id %))))
        (map :message-id)
        (into #{})))
