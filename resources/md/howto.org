@@ -103,6 +103,22 @@ against a bug report:
 will mark the bug report as confirmed, and set it as important and
 urgent, giving it the highest priority.
 
+* Searches
+
+Woof! web interface allow users to search reports.
+
+- =agenda= will find reports which subject matches =agenda=
+- =from:user@woof.io= will list reports from user@woof.io
+- =acked:user@woof.io= will list reports acked by user@woof.io
+- =owned:user@woof.io= will list reports acked by user@woof.io
+- =closed:user@woof.io= will list reports acked by user@woof.io
+
+You can use abbreviations (f[rom], a[cked], o[wned], c[losed]) and
+combine search parameters:
+
+- =f:user1@woof.io a:user2@woof.io= will list possible reports /from/
+  user1@woof.io and /acked/ by user2@woof.io.
+
 * Admins and maintainers
 
 Each Woof! instance comes with a default admin.
