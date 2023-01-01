@@ -73,16 +73,16 @@ allow someone to assign tasks to someone else, to close reports, etc.
 There is no roadmap as I develop Woof! in my spare time, but here is a
 list of ideas for future versions.
 
-1. [ ] Separate woof-server (api + webhook endpoint) from woof-web
-2. [ ] Expose data through GraphQL
-3. [ ] Better hero header search line
-4. [ ] Add pagination
-5. [ ] Add "events" as the last (?) report type
-6. [ ] Implement notifications and digests
-7. [ ] Allow to set individual notifications based on subject
-8. [ ] Complete the use of integrant (to stop)
-9. [ ] Allow webhook ?
-10. [ ] Start implementing the overview page
+- Separate woof-server (api + webhook endpoint) from woof-web
+- Expose data through GraphQL
+- Better hero header search line
+- Add pagination
+- Add "events" as the last (?) report type
+- Implement notifications and digests
+- Allow to set individual notifications based on subject
+- Complete the use of integrant (to stop)
+- Allow webhook ?
+- Start implementing the overview page
 
 * Setting up and running Woof!
 ** Requirements
