@@ -1,6 +1,6 @@
 #+title: 🐕 Woof!
 
-* Monitor a mailbox to extract and expose useful infos
+* Extract useful mailing lists interactions from your mailbox
 
 Woof! monitors a mailbox, capture useful email interactions and expose
 them on a web page.  Imagine, for example, that your email address is
@@ -76,9 +76,9 @@ There is no roadmap as I develop Woof! in my spare time, but here is a
 list of ideas for future versions.
 
 - Implement notifications
-- Enhance the hero header
-- Implementing the overview page
+- Implement the overview page
 - Separate woof-server/monitor from woof-web
+- Enhance the hero header
 - Expose data through GraphQL
 - Add pagination
 - Add "events" report type
@@ -149,11 +149,11 @@ Contributions are welcome!  See [[CONTRIBUTING.md][CONTRIBUTING.md]].
 Suggested contributions:
 
 - Write a new HTML theme
-- Support new UI languages
-- Enhance the documentation
+- Support new languages
+- Enhance documentation
+- Enhance performance and accessibility
 - Add tests
 - Report bugs
-- Enhance performance and accessibility
 
 * Support the Clojure(script) ecosystem
 
