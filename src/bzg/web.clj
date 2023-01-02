@@ -260,7 +260,7 @@
         [":format" {:get #(data/get-requests-data %)}]]]]]
     {:data {:middleware [params/wrap-params]}})
    (ring/create-default-handler
-    {:not-found #(get-page :404 nil)})
+    {:not-found (fn [_] (get-page :404 nil))})
    {:middleware
     [parameters/parameters-middleware
      #(wrap-cors
