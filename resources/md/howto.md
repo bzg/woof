@@ -38,21 +38,21 @@ patches, proposing feature requests, sharing tips, etc.
 <tr>
 <td class="org-left"><code>bug</code></td>
 <td class="org-left">Anyone</td>
-<td class="org-left">can specify a version number</td>
+<td class="org-left">Bug can have a version number as [BUG version]</td>
 </tr>
 
 
 <tr>
 <td class="org-left"><code>patch</code></td>
 <td class="org-left">Anyone</td>
-<td class="org-left">stores and exposes the patch itself when possible</td>
+<td class="org-left">Woof! stores and exposes the patch itself when possible</td>
 </tr>
 
 
 <tr>
 <td class="org-left"><code>request</code></td>
 <td class="org-left">Anyone</td>
-<td class="org-left">can be voted upon</td>
+<td class="org-left">Any request can be voted upon with +1 and -1</td>
 </tr>
 
 

@@ -19,15 +19,15 @@ patches, proposing feature requests, sharing tips, etc.
 
 ** Report types
 
-| Report        | Permission  | Specificity                                       |
-|---------------+-------------+---------------------------------------------------|
-| =bug=         | Anyone      | can specify a version number                      |
-| =patch=       | Anyone      | stores and exposes the patch itself when possible |
-| =request=     | Anyone      | can be voted upon                                 |
-| =blog=        | Anyone      | the full body of the email is indexed/searched    |
-| =annoucement= | Maintainers | the full body of the email is indexed/searched    |
-| =release=     | Maintainers | a new release closes the related changes          |
-| =change=      | Maintainers | to announce upcoming changes only                 |
+| Report      | Permission  | Specificity                                             |
+|-------------+-------------+---------------------------------------------------------|
+| =bug=         | Anyone      | Bug can have a version number as [BUG version]          |
+| =patch=       | Anyone      | Woof! stores and exposes the patch itself when possible |
+| =request=     | Anyone      | Any request can be voted upon with +1 and -1            |
+| =blog=        | Anyone      | the full body of the email is indexed/searched          |
+| =annoucement= | Maintainers | the full body of the email is indexed/searched          |
+| =release=     | Maintainers | a new release closes the related changes                |
+| =change=      | Maintainers | to announce upcoming changes only                       |
 
 ** Adding a report
 

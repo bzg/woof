@@ -64,6 +64,7 @@ allow someone to assign tasks to someone else, to close reports, etc.
 - Support tracking multiple lists
 - Expose reports as =rss=, =md=, =json= or =org=
 - Expose raw downloadable patches when possible
+- Support HTML and plain text emails
 - Track related reports and allow to list them
 - Track votes on requests (e.g. =[POLL]=)
 - Allow complex searches
