@@ -1,6 +1,6 @@
 
 
-# Woof! monitors a mailbox and extract/expose useful infos
+# Monitor a mailbox to extract and expose useful infos
 
 Woof! monitors a mailbox, capture useful email interactions and expose
 them on a web page.  Imagine, for example, that your email address is
@@ -16,7 +16,7 @@ See [this howto](resources/md/howto.md) for basic instructions on how to use Woo
 See [woof.bzg.fr](https://woof.bzg.fr) for a Woof! instance tracking the [Woof! mailing list](https://lists.sr.ht/~bzg/woof).
 
 
-# The problem Woof! is addressing: we don't want no issue tracker
+# We don't want no issue tracker
 
 Developing software by discussing on public mailing lists and sharing
 patches by email works fine.
