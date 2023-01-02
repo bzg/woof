@@ -19,16 +19,15 @@ patches, proposing feature requests, sharing tips, etc.
 
 ** Report types
 
-The report types are: =bug=, =patch=, =request=, =release=, =change=, =blog=,
-=annoucement=.  Each report type is peculiar:
-
-- =bug= : Anyone, can specify a version number
-- =patch= : Anyone, stores and exposes the patch itself when possible
-- =request= : Anyone, can be voted upon
-- =blog= : Anyone, the full body of the email is indexed/searched
-- =annoucement= : Maintainers, the full body of the email is indexed/searched
-- =release= : Maintainers, a new release closes the related changes
-- =change= : Maintainers, to announce upcoming changes only
+| Report        | Permission  | Specificity                                       |
+|---------------+-------------+---------------------------------------------------|
+| =bug=         | Anyone      | can specify a version number                      |
+| =patch=       | Anyone      | stores and exposes the patch itself when possible |
+| =request=     | Anyone      | can be voted upon                                 |
+| =blog=        | Anyone      | the full body of the email is indexed/searched    |
+| =annoucement= | Maintainers | the full body of the email is indexed/searched    |
+| =release=     | Maintainers | a new release closes the related changes          |
+| =change=      | Maintainers | to announce upcoming changes only                 |
 
 ** Adding a report
 

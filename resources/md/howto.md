@@ -16,16 +16,74 @@ patches, proposing feature requests, sharing tips, etc.
 
 ## Report types
 
-The report types are: `bug`, `patch`, `request`, `release`, `change`, `blog`,
-`annoucement`.  Each report type is peculiar:
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
--   `bug` : Anyone, can specify a version number
--   `patch` : Anyone, stores and exposes the patch itself when possible
--   `request` : Anyone, can be voted upon
--   `blog` : Anyone, the full body of the email is indexed/searched
--   `annoucement` : Maintainers, the full body of the email is indexed/searched
--   `release` : Maintainers, a new release closes the related changes
--   `change` : Maintainers, to announce upcoming changes only
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Report</th>
+<th scope="col" class="org-left">Permission</th>
+<th scope="col" class="org-left">Specificity</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td class="org-left"><code>bug</code></td>
+<td class="org-left">Anyone</td>
+<td class="org-left">can specify a version number</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>patch</code></td>
+<td class="org-left">Anyone</td>
+<td class="org-left">stores and exposes the patch itself when possible</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>request</code></td>
+<td class="org-left">Anyone</td>
+<td class="org-left">can be voted upon</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>blog</code></td>
+<td class="org-left">Anyone</td>
+<td class="org-left">the full body of the email is indexed/searched</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>annoucement</code></td>
+<td class="org-left">Maintainers</td>
+<td class="org-left">the full body of the email is indexed/searched</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>release</code></td>
+<td class="org-left">Maintainers</td>
+<td class="org-left">a new release closes the related changes</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>change</code></td>
+<td class="org-left">Maintainers</td>
+<td class="org-left">to announce upcoming changes only</td>
+</tr>
+</tbody>
+</table>
 
 
 ## Adding a report
