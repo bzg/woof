@@ -118,12 +118,13 @@
       (string/replace s #"^\[[^]]+\] " ""))))
 
 (defn slug-to-source-id
-  "Given `slug`, return the corresponding source id.
+  "Given `slug` (a string), return the corresponding source id.
   See also `source-id-to-slug`."
   [^String slug]
   (when (not-empty slug)
-    (key (first (filter #(= (:slug (val %)) slug)
-                        (:sources db/config))))))
+    (when-let [src-m (first (filter #(= (:slug (val %)) slug)
+                                    (:sources db/config)))]
+      (key src-m))))
 
 (defn source-id-to-slug
   "Given `source-id`, return the corresponding slug.
