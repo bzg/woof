@@ -46,14 +46,14 @@ Adding a report to Woof! is done by using subject prefixes:
 All report types can be in a combination of these states: (un)acked,
 (un)owned and (un)closed.
 
-"Acked" means that someone took the first next sensical action on the
-report: for a bug, it is to confirm it and for a patch, to review it.
+- =Acked= means that someone took the next sensical action: e.g. for a
+  bug, someone confirmed it; for a patch, someone reviewed it.
+- =Owned= means someone claimed to handle this report.  You can own a
+  report that has not been acked.
+- =Closed= means the report has been closed, either because it has been
+  fixed (for a bug), canceled or done in any fashion.
 
-"Owned" means someone claimed to "handle" this report.  (You can own a
-report that has not been acked.)
-
-"Closed" means the report is closed, either because it has been fixed
-(for a bug), or canceled, or done in any fashion.
+** STRT 
 
 ** Triggering updates
 
