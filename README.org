@@ -1,5 +1,7 @@
 #+title: 🐕 Woof!
 
+* Quick intro
+
 Woof! monitors a mailbox, capture useful email interactions and expose
 them on a web page.  Imagine, for example, that your email address is
 subscribed to numerous free software development lists and you want to
@@ -59,16 +61,15 @@ allow someone to assign tasks to someone else, to close reports, etc.
 
 * Main features
 
-- Track various report types: bugs, patches, requests, announcements,
-  blog posts, changes, releases.
+- Track various report types: bugs, patches, requests, etc.
 - Support tracking multiple lists
 - Expose reports as =rss=, =md=, =json= or =org=
-- Expose raw patches when possible.
+- Expose raw downloadable patches when possible
 - Track related reports and allow to list them
 - Track votes on requests (e.g. =[POLL]=)
 - Allow complex searches
-- Themes
-- i18n
+- Support theming
+- Support i18n
 
 * Upcoming
 
