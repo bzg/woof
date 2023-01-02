@@ -64,9 +64,6 @@ report will trigger updates of this report.
 E.g. if a line in your reply to a bug report starts with `Confirmed.`,
 the bug report will be updated as "Confirmed" in Woof!.
 
-**Note**: A punctuation mark among `;:,.` is *mandatory* for these reports and
-action words (`Confirmed`, `Approved`, etc.) are all case-sensitive.
-
 Here are the default "triggers", the terms you can use for trigger an
 update:
 
@@ -78,19 +75,19 @@ update:
 -   `release` : `Canceled`
 -   `change` : `Canceled`
 
+**Note**: A punctuation mark among `;:,.` is *mandatory* for these reports and
+action words (`Confirmed`, `Approved`, etc.) are all case-sensitive.
+
 
 ## Updating priority
 
 You cannot set the priority of a report directly: it is computed based
 on whether the report is important and urgent.
 
-To set a report as important, use "Important" in a reply.
-
-To set a report as unimportant, use "Unimportant" in a reply.
-
-To set a report as urgent, use "Urgent" in a reply.
-
-To set a report as not urgent, use "Not Urgent" in a reply.
+-   To set a report as important, use "Important" in a reply.
+-   To set a report as unimportant, use "Unimportant" in a reply.
+-   To set a report as urgent, use "Urgent" in a reply.
+-   To set a report as not urgent, use "Not Urgent" in a reply.
 
 
 ## Using multiple triggers
@@ -106,7 +103,7 @@ will mark the bug report as confirmed, and set it as important and
 urgent, giving it the highest priority.
 
 
-# Searches
+# Search
 
 Woof! web interface allow users to search reports.
 
