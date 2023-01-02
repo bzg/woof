@@ -2,7 +2,7 @@
 ;; SPDX-License-Identifier: EPL-2.0
 ;; License-Filename: LICENSES/EPL-2.0.txt
 
-{:version     "0.3.0"
+{:version     "0.3.1"
  :description "Watch Over Our Folders"
  :url         "https://github.com/bzg/woof"
  :license     {:name "Eclipse Public License - v 2.0"
