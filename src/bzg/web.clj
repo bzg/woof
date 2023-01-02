@@ -154,6 +154,13 @@
      ;; TODO: Implement overview features here
      }))
 
+(defn- page-404 [_ source-id _ _ config-defaults]
+  (with-html-defaults config-defaults
+    {:source (when source-id
+               {:source-id source-id
+                :slug      (:slug (get (:sources db/config) source-id))})
+     :page   "404"}))
+
 (defn- page-howto [_ source-id _ _ config-defaults]
   (with-html-defaults config-defaults
     {:page   "howto"
@@ -195,10 +202,11 @@
                           :sources  {:html "/sources.html" :fn page-sources}
                           :howto    {:html "/howto.html" :fn page-howto}
                           :overview {:html "/overview.html" :fn page-overview}
+                          :404      {:html "/404.html" :fn page-404}
                           {:html "/index.html" :fn page-index})
-        slug-end        (peek (re-find #"/([^/]+)$" (or uri "")))
+        slug-end        (or  (peek (re-find #"/([^/]+)$" (or uri ""))) "")
         source-id       (core/slug-to-source-id (:source-slug path-params))
-        theme           (if (re-find #"Emacs" (get headers "user-agent"))
+        theme           (if (re-find #"Emacs" (or (get headers "user-agent") ""))
                           "plain"
                           (:theme db/config))]
     {:status  200
@@ -254,12 +262,7 @@
    (ring/create-default-handler
     {:not-found
      (fn [{:keys [query-params path-params]}]
-       {:status  200
-        :headers {"Content-Type" "text/html"}
-        :body    (html/render-file
-                  (io/resource (str "themes/" (:theme db/config) "/404.html"))
-                  (merge (into {} (d/entity db/db [:defaults "init"]))
-                         (html-defaults) query-params path-params))})})
+       (get-page :404 nil))})
    {:middleware
     [parameters/parameters-middleware
      #(wrap-cors

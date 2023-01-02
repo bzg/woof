@@ -6,7 +6,6 @@
 
 (def langs
   {:en {
-        :404-error            "404 error."
         :Acked                "Acked"
         :All                  "All"
         :Bugs                 "Bugs"
@@ -35,6 +34,7 @@
         :Overview             "Overview"
         :Overview-tmp-message "The overview page is not implemented yet."
         :Owned                "Owned"
+        :Page-not-found       "Page not found, sorry."
         :Patches              "Patches"
         :Priority             "Priority"
         :Read-mail            "Read the mail"
@@ -77,7 +77,6 @@
         :vote                 "vote"
         }
    :fr {
-        :404-error            "Erreur 404."
         :Acked                "Acté"
         :All                  "Tout"
         :Bugs                 "Bogues"
@@ -106,6 +105,7 @@
         :Overview             "Survol"
         :Overview-tmp-message "La page de survol n'est pas encore implémentée."
         :Owned                "Assigné"
+        :Page-not-found       "Page introuvable, désolé."
         :Patches              "Correctifs"
         :Priority             "Priorité"
         :Read-mail            "Lire le message"
