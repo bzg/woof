@@ -80,6 +80,7 @@ allow someone to assign tasks to someone else, to close reports, etc.
 There is no roadmap as I develop Woof! in my spare time, but here is a
 list of ideas for future versions.
 
+-   An Emacs tool to keep track of various Woof! instances
 -   Implement notifications
 -   Implement the overview page
 -   Separate woof-server/monitor from woof-web
