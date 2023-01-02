@@ -11,6 +11,8 @@ important information exposed on a web page.
 
 See [[file:resources/md/howto.org][this howto]] for basic instructions on how to use Woof!.
 
+See [[https://woof.bzg.fr][woof.bzg.fr]] for a Woof! instance tracking the [[https://lists.sr.ht/~bzg/woof][Woof! mailing list]].
+
 * Why Woof!?
 
 Developing software by discussing on public mailing lists and sharing

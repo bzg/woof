@@ -9,6 +9,8 @@ important information exposed on a web page.
 
 See [this howto](resources/md/howto.md) for basic instructions on how to use Woof!.
 
+See [woof.bzg.fr](https://woof.bzg.fr) for a Woof! instance tracking the [Woof! mailing list](https://lists.sr.ht/~bzg/woof).
+
 
 # Why Woof!?
 
