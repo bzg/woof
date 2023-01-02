@@ -28,7 +28,7 @@
 	       {% ifequal closed? "on" %}checked{% endifequal %}> {{config.i18n.With-closed?}}
       </label>
       <input type="text" name="search" value="{{search}}"
-	     placeHolder="Plain text search">
+	     placeHolder="{{config.i18n.Search-form-placeholder}}">
       <button type="submit">{{config.i18n.Filter}}</button>
       </form>
       <form style="margin-left: 1rem;">

@@ -29,7 +29,7 @@
 		     {% ifequal closed? "on" %}checked{% endifequal %}> {{config.i18n.With-closed?}}
 	    </label>
 	    <input type="text" class="input mx-2" name="search" value="{{search}}"
-		   placeHolder="Plain text search">
+		   placeHolder="{{config.i18n.Search-form-placeholder}}">
 	    <button class="button is-success is-light" type="submit">{{config.i18n.Filter}}</button>
 	  </form>
 	  <form class="level-item">
