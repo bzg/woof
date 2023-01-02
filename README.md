@@ -1,6 +1,6 @@
 
 
-# Quick intro
+# Woof! monitors a mailbox and extract/expose useful infos
 
 Woof! monitors a mailbox, capture useful email interactions and expose
 them on a web page.  Imagine, for example, that your email address is
@@ -16,7 +16,7 @@ See [this howto](resources/md/howto.md) for basic instructions on how to use Woo
 See [woof.bzg.fr](https://woof.bzg.fr) for a Woof! instance tracking the [Woof! mailing list](https://lists.sr.ht/~bzg/woof).
 
 
-# Why Woof!?
+# The problem Woof! is addressing: we don't want no issue tracker
 
 Developing software by discussing on public mailing lists and sharing
 patches by email works fine.
@@ -61,7 +61,7 @@ allow someone to assign tasks to someone else, to close reports, etc.
 -   **Configurable**: Woof! tries to be highly configurable.
 
 
-# Main features
+# Features
 
 -   Track various report types: bugs, patches, requests, etc.
 -   Support tracking multiple lists
@@ -91,7 +91,7 @@ list of ideas for future versions.
 -   Start implementing the overview page
 
 
-# Setting up and running Woof!
+# Running Woof!
 
 
 ## Requirements
