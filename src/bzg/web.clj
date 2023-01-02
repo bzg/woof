@@ -181,7 +181,7 @@
         patch-body (not-empty (:patch-body (d/entity db/db msg)))]
     {:status  200
      :headers {"Content-Type" "text/plain"}
-     :body    (or patch-body "Error")}))
+     :body    (or patch-body "Can't find a patch here")}))
 
 (defn- get-page [page {:keys [query-params path-params uri headers]}]
   (let [format-params   {:search     (or (get query-params "search") "")
