@@ -84,6 +84,11 @@
         (flatten (vals (:triggers (report-type (:watch db/config)))))]
     (into #{} (un-ify original-report-triggers))))
 
+(defn- get-user
+  "Given `from`, an email address (a string), return the db user."
+  [^String from]
+  (d/entity db/db [:email from]))
+
 (defn make-to
   "Make a \"Name <email>\" string suitable for a To: header."
   [^String username ^String address]
@@ -422,7 +427,7 @@
 (defn- send-email [{:keys [msg body purpose new-subject reply-to]}]
   (let  [{:keys [id from subject references]}
          msg
-         to (make-to (:username (d/entity db/db [:email from])) from)]
+         to (make-to (:username (get-user from)) from)]
     (try
       (when-let
           [res (postal/send-message
@@ -628,7 +633,7 @@
 
 (defn- config! [{:keys [commands msg]}]
   (let [from (:address (first (:from msg)))
-        user (d/entity db/db [:email from])]
+        user (get-user from)]
     (doseq [[cmd cmd-val] commands]
       (when (user-allowed?
              user (->> (:admin-report-triggers db/config)
@@ -678,7 +683,7 @@
                               false))]
     ;; Possibly add a new person
     (update-person! {:email from :username username})
-    (let [user (d/entity db/db [:email from])]
+    (let [user (get-user from)]
       (if status-report-eid
         ;; This is a status update about an existing report
         (cond
@@ -734,13 +739,13 @@
         msg            (assoc msg :source-id source-id)
         to-woof-inbox? (some (into #{} tos) (list (:inbox-user db/config)))
         from           (:address (first from))
-        user           (d/entity db/db [:email from])
-        defaults       (d/entity db/db [:defaults "init"])
+        user           (get-user from)
+        maintenance?   (:maintenance (:defaults db/config))
         watched        (keys (:watch db/config))]
 
     (when (and
            ;; Don't process anything when under maintenance
-           (not (:maintenance defaults))
+           (not maintenance?)
            ;; Don't process emails from ignored users
            (not (:ignored user))
            ;; Process mails sent to an identified source or to Woof inbox
