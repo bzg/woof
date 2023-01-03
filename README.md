@@ -141,7 +141,7 @@ Run with:
 Build and deploy with:
 
     ~$ clj -M:uberdeps
-    ~$ java -cp target/woof.jar clojure.main -m bzg.init
+    ~$ java --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED -cp target/woof.jar clojure.main -m bzg.init
 
 
 ## Run/build/deploy with leiningen
@@ -153,7 +153,7 @@ Run with:
 Build and deploy with:
 
     ~$ lein uberjar
-    ~$ java -jar target/woof.jar
+    ~$ java --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED -jar target/woof.jar
 
 
 # Contributing
