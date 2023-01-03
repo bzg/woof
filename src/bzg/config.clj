@@ -74,7 +74,7 @@
                           :doc            ""
                           :triggers       {:acked  ["Approved"]
                                            :owned  ["Handled"]
-                                           :closed ["Done" "Canceled"]}}}
+                                           :closed ["Done" "Closed" "Canceled"]}}}
 
    ;; A set of priority words that trigger a report update
    ;;
