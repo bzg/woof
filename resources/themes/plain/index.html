@@ -84,15 +84,15 @@
 		  {% if columns.priority %}
 		  <td>
 		    {% ifequal entry.priority 3 %}
-		    <span title="{{config.i18n.Urgent}} {{config.i18n.and}} {{config.i18n.important}}">UI</span>
+		    <span>{{config.i18n.Urgent}} {{config.i18n.and}} {{config.i18n.important}}</span>
 		    {% else %}
 		    {% ifequal entry.priority 2 %}
-		    <span title="{{config.i18n.Urgent}}">U</span>
+		    <span>{{config.i18n.Urgent}}</span>
 		    {% else %}
 		    {% ifequal entry.priority 1 %}
-		    <span title="Important">I</span>
+		    <span>{{config.i18n.Important}}</span>
 		    {% else %}
-		    <span title="{{config.i18n.Unurgent}} {{config.i18n.and}} {{config.i18n.unimportant}}"> </span>
+		    <span>{{config.i18n.Unurgent}} {{config.i18n.and}} {{config.i18n.unimportant}}</span>
 		    {% endifequal %}
 		    {% endifequal %}
 		    {% endifequal %}
@@ -155,18 +155,18 @@
 		  {% if columns.status %}
 		  <td>
 		    {% ifequal entry.status 3 %}
-		    <span title="{{config.i18n.Acked}} {{config.i18n.and}} {{config.i18n.owned}}">AO</span>
+		    <span>{{config.i18n.Acked}} {{config.i18n.and}} {{config.i18n.owned}}</span>
 		    {% else %}
 		    {% ifequal entry.status 2 %}
-		    <span title="{{config.i18n.Owned}}">O</span>
+		    <span>{{config.i18n.Owned}}</span>
 		    {% else %}
 		    {% ifequal entry.status 1 %}
-		    <span title="{{config.i18n.Acked}}">A</span>
+		    <span>{{config.i18n.Acked}}</span>
 		    {% else %}
 		    {% if entry.status < 0 %}
-		    <span title="{{config.i18n.Closed}}">C</span>
+		    <span>{{config.i18n.Closed}}</span>
 		    {% else %}
-		    <span title="{{config.i18n.Unacked}}"> </span>
+		    <span>{{config.i18n.Unacked}}</span>
 		    {% endif %}
 		    {% endifequal %}
 		    {% endifequal %}
