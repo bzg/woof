@@ -27,8 +27,8 @@
 
 ;;; Utility functions
 
-(defn- subject-match-re
-  "Build regexps that match report subjects"
+(defn- get-subject-match-re
+  "Return regexps matching report subjects, possibly for `source-id`."
   [& [source-id]]
   (let [watch          (or (:watch (get (:sources db/config) source-id))
                            (:watch db/config))
@@ -353,48 +353,57 @@
     (let [refs (:refs-count (get-msg-from-id id))]
       (d/transact! db/conn [{:message-id id :refs-count (inc refs)}]))))
 
-(defn- get-reports-from-msg-id
-  "Given `report-type` (a keyword) and `id` (a string), return the report
-  id corresponding to this message id."
-  [report-type ^String id]
-  (ffirst (d/q `[:find ?e
-                 :where
-                 [?e ~report-type ?ref]
-                 [?ref :message-id ~id]]
-               db/db)))
+(defn- get-report-from-msg-id
+  "Given `id` (a string), return the report corresponding to this id."
+  [^String id]
+  (when-let
+      [msg-eid (ffirst (d/q `[:find ?eid :where [?eid :message-id ~id]] db/db))]
+    (let [report (atom nil)]
+      (doseq [w (keys (:watch db/config)) :while (nil? @report)]
+        (when-let [res (ffirst (d/q `[:find ?eid :where [?eid ~w ~msg-eid]] db/db))]
+          (reset! report [w res])))
+      @report)))
 
-(defn- is-report-update? [report-type body-report references]
+(defn- get-latest-msg-from-ids
+  "Given `ids` (a set of string), return the most recent message."
+  [ids]
+  (->> ids
+       (map #(ffirst (d/q `[:find ?eid :where [?eid :message-id ~%]] db/db)))
+       (map #(d/entity db/db %))
+       (sort-by :date)
+       first
+       :message-id))
+
+(defn- is-report-update? [body-report references]
   ;; Is there a known trigger (e.g. "Canceled") for this report type
   ;; in the body of the email?
-  (let [body-report-list (list body-report)
-        priority-word?   (some (:priority-words-all db/config) body-report-list)
-        vote?            (some #{"-1" "+1"} body-report-list)]
-    (when (or priority-word?
-              vote?
-              (some (report-triggers report-type) (list body-report)))
-      ;; Does this email triggers an action against a known report,
-      ;; and if so, which one?
-      (when-let [e (->>
-                    (map #(get-reports-from-msg-id report-type %) references)
-                    ;; FIXME: Is this below really needed?
-                    (remove nil?)
-                    first)]
-        (let [status ;; :important :urgent :acked, :owned or :closed ?
-              (cond priority-word?
-                    (if (re-find #"(?i)important" body-report) :important :urgent)
-                    vote?
-                    :last-vote
-                    :else
-                    (key (first (filter
-                                 #(some (into #{} (un-ify (val %)))
-                                        (list body-report))
-                                 (:triggers (report-type (:watch db/config)))))))]
-          {:status
-           (if (re-find #"(?i)Un|No[tn]-?" body-report)
-             ;; Maybe return :un-[status]
-             (keyword (str "un" (name status)))
-             status)
-           :upstream-report-eid e})))))
+  (let [body-report-list     (list body-report)
+        priority-word?       (some (:priority-words-all db/config) body-report-list)
+        vote?                (some #{"-1" "+1"} body-report-list)
+        latest-ref?          (get-latest-msg-from-ids references)
+        [report-type report] (get-report-from-msg-id latest-ref?)]
+    ;; Does this email triggers an action against a known report?
+    (when (and report
+               (or priority-word?
+                   vote?
+                   (some (report-triggers report-type) (list body-report))))
+      (let [status ;; :important :urgent :acked, :owned or :closed ?
+            (cond priority-word?
+                  (if (re-find #"(?i)important" body-report) :important :urgent)
+                  vote?
+                  :last-vote
+                  :else
+                  (key (first (filter
+                               #(some (into #{} (un-ify (val %)))
+                                      (list body-report))
+                               (:triggers (report-type (:watch db/config)))))))]
+        {:status
+         (if (re-find #"(?i)Un|No[tn]-?" body-report)
+           ;; Maybe return :un-[status]
+           (keyword (str "un" (name status)))
+           status)
+         :report-type         report-type
+         :upstream-report-eid report}))))
 
 ;;; Setup logging
 
@@ -492,24 +501,25 @@
 
 ;;; Core functions to return db entries
 
-(defn- new? [what source-id msg]
-  (let [subject-match-re (subject-match-re source-id)
+(defn- new? [source-id msg]
+  (let [subject-match-re (get-subject-match-re source-id)
         subject          (:subject msg)]
-    (condp = what
-      :patch        (or
-                     ;; New patches with a subject starting with "[PATCH..."
-                     (re-find (:patch subject-match-re) subject)
-                     ;; New patches with a text/x-diff or text/x-patch MIME part
-                     (and (:multipart? msg)
-                          (not-empty
-                           (filter #(re-matches #"^text/x-(diff|patch).*" %)
-                                   (map :content-type (:body msg))))))
-      :bug          (re-find (:bug subject-match-re) subject)
-      :request      (re-find (:request subject-match-re) subject)
-      :blog         (re-find (:blog subject-match-re) subject)
-      :announcement (re-find (:announcement subject-match-re) subject)
-      :change       (re-find (:change subject-match-re) subject)
-      :release      (re-find (:release subject-match-re) subject))))
+    (if (or
+         ;; New patches with a subject starting with "[PATCH..."
+         (re-find (:patch subject-match-re) subject)
+         ;; New patches with a text/x-diff or text/x-patch MIME part
+         (and (:multipart? msg)
+              (not-empty
+               (filter #(re-matches #"^text/x-(diff|patch).*" %)
+                       (map :content-type (:body msg))))))
+      [:patch nil]
+      (when-let
+          ;; Get [:report-type "version"], e.g. [:bug "0.3"]
+          [res (->> (map  (fn [k] [k (re-find (get subject-match-re k) subject)])
+                          (remove #(= :patch %) (keys (:watch db/config))))
+                    (into {})
+                    (filter val))]
+        ((fn [[k v]] [k (peek v)]) (first res))))))
 
 (defn- add-admin! [cmd-val from]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
@@ -751,8 +761,7 @@
         to-woof-inbox? (some (into #{} tos) (list (:inbox-user db/config)))
         from           (:address (first from))
         user           (get-user from)
-        maintenance?   (:maintenance (:defaults db/config))
-        watched        (keys (:watch db/config))]
+        maintenance?   (:maintenance (:defaults db/config))]
 
     (when (and
            ;; Don't process anything when under maintenance
@@ -767,27 +776,20 @@
 
       (or
        ;; Detect a new report
-       (let [done (atom nil)]
-         (doseq [w watched :while (nil? @done)]
-           (when (user-allowed? user w)
-             (when-let [new-info (new? w source-id msg)]
-               (let [version (when-not (= w :patch) (peek new-info))]
-                 (if (and (some (into #{w}) [:change :release])
-                          (some (fetch/released-versions source-id) (list version)))
-                   (timbre/error
-                    (format "%s tried to announce a change/release against an existing version %s"
-                            from version))
-                   (let [report-eid (add-mail! msg nil nil nil :update-related)]
-                     (reset! done
-                             (report!
-                              {:report-type w
-                               ;; Don't store version for patches, blog and announcement
-                               :version     (when-not (some #{:patch :blog :announcement} (list w))
-                                              version)
-                               :report-eid  report-eid}))
-                     (when (= w :release)
-                       (release-changes! source-id version report-eid))))))))
-         @done)
+       (when-let [[w version] (new? source-id msg)]
+         (when (user-allowed? user w)
+           (if (and (some (into #{w}) [:change :release])
+                    (some (fetch/released-versions source-id) (list version)))
+             (timbre/error
+              (format "%s tried to announce a change/release against an existing version %s"
+                      from version))
+             (let [report-eid (add-mail! msg nil nil nil :update-related)]
+               (when (= w :release) (release-changes! source-id version report-eid))
+               (report!
+                {:report-type w
+                 ;; Don't store version for patches, blog and announcement
+                 :version     (when-not (some #{:patch :blog :announcement} (list w)) version)
+                 :report-eid  report-eid})))))
 
        ;; Or a command or new actions against known reports
        (let [body-seq (get-mail-body-as-seq msg)]
@@ -806,18 +808,16 @@
                            (map #(re-find report-triggers-re %))
                            (remove nil?))]
              ;; New action against a known patch/bug/request
-             (let [done (atom nil)]
-               (doseq [w watched :while (nil? @done)]
-                 (doseq [body-report body-reports]
-                   (when-let [{:keys [upstream-report-eid status]}
-                              (is-report-update? w body-report references)]
-                     (reset! done
-                             (report! {:report-type    w
-                                       :report-eid     upstream-report-eid
-                                       :status-trigger body-report
-                                       status          (add-mail!
-                                                        msg nil nil
-                                                        (some #{"-1" "+1"} (list body-report)))})))))))))))))
+             (doseq [body-report body-reports]
+               (when-let [{:keys [upstream-report-eid report-type status]}
+                          (is-report-update? body-report references)]
+                 (report! {:report-type    report-type
+                           :report-eid     upstream-report-eid
+                           :status-trigger body-report
+                           status          (add-mail!
+                                            msg nil nil
+                                            (some #{"-1" "+1"}
+                                                  (list body-report)))}))))))))))
 
 ;;; Inbox monitoring
 (defn read-and-process-mail [mails]
