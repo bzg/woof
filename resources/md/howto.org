@@ -105,9 +105,9 @@ Woof! web interface allow users to search reports.
 
 - =agenda= will find reports which subject matches =agenda=
 - =from:user@woof.io= will list reports from user@woof.io
-- =acked:user@woof.io= will list reports acked by user@woof.io
-- =owned:user@woof.io= will list reports acked by user@woof.io
-- =closed:user@woof.io= will list reports acked by user@woof.io
+- =acked:user@woof.io= will list reports /acked/ by user@woof.io
+- =owned:user@woof.io= will list reports /owned/ by user@woof.io
+- =closed:user@woof.io= will list reports /closed/ by user@woof.io
 
 You can use abbreviations (f[rom], a[cked], o[wned], c[losed]) and
 combine search parameters:
