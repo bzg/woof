@@ -294,7 +294,7 @@
         (walk/keywordize-keys (apply conj (:headers msg)))
         id              (true-id id)
         now             (java.util.Date.)
-        msg-infos       {:source-id   source-id
+        msg-infos       {:source-id   (or source-id "")
                          :message-id  id
                          :archived-at Archived-At}
         references      (parse-refs References)
@@ -307,7 +307,7 @@
     (update-person! {:email email :username username})
     ;; Add the email
     (d/transact! db/conn [{:message-id  id
-                           :source-id   source-id
+                           :source-id   (or source-id "")
                            :subject     trimmed-subject
                            :archived-at archived-at-url
                            :references  references
