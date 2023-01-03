@@ -11,9 +11,14 @@ important information exposed on a web page.
 
 [[file:woof.png]]
 
-See [[file:resources/md/howto.org][this howto]] for basic instructions on how to use Woof!.
+*CAVEAT: Woof! is still in alpha, things can move.*
 
-See [[https://woof.bzg.fr][woof.bzg.fr]] for a Woof! instance tracking the [[https://lists.sr.ht/~bzg/woof][Woof! mailing list]].
+See [[file:resources/md/howto.org][this howto]] for basic instructions on how to use Woof!
+
+See [[https://woof.bzg.fr/source/woof/][woof.bzg.fr]] for a Woof! instance tracking the [[https://lists.sr.ht/~bzg/woof][Woof! mailing list]].
+
+To follow what happens on this Woof! instance, you can also subscribe
+to [[https://woof.bzg.fr/source/woof/index.rss][this RSS feed]].
 
 * We don't want no issue tracker
 
