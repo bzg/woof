@@ -510,24 +510,25 @@
 ;;; Core functions to return db entries
 
 (defn- new? [source-id msg]
-  (let [subject-match-re (get-subject-match-re source-id)
-        subject          (:subject msg)]
-    (if (or
-         ;; New patches with a subject starting with "[PATCH..."
-         (re-find (:patch subject-match-re) subject)
-         ;; New patches with a text/x-diff or text/x-patch MIME part
-         (and (:multipart? msg)
-              (not-empty
-               (filter #(re-matches #"^text/x-(diff|patch).*" %)
-                       (map :content-type (:body msg))))))
-      [:patch nil]
-      (when-let
-          ;; Get [:report-type "version"], e.g. [:bug "0.3"]
-          [res (->> (map  (fn [k] [k (re-find (get subject-match-re k) subject)])
-                          (remove #(= :patch %) (keys (:watch db/config))))
-                    (into {})
-                    (filter val))]
-        ((fn [[k v]] [k (peek v)]) (first res))))))
+  (let [subject-match-re (get-subject-match-re source-id)]
+    (when-let [subject (:subject msg)]
+      (if (or
+           ;; New patches with a subject starting with "[PATCH..."
+           (re-find (:patch subject-match-re) subject)
+           ;; New patches with a text/x-diff or text/x-patch MIME part
+           (and (:multipart? msg)
+                (not-empty
+                 (filter #(re-matches #"^text/x-(diff|patch).*" %)
+                         (map :content-type (:body msg))))))
+        [:patch nil]
+        (when-let
+            ;; Get [:report-type "version"], e.g. [:bug "0.3"]
+            [res (->> (map  (fn [k] [k (re-find (get subject-match-re k) subject)])
+                            (remove #(= :patch %) (keys (:watch db/config))))
+                      (into {})
+                      (filter val)
+                      seq)]
+          ((fn [[k v]] [k (peek v)]) (first res)))))))
 
 (defn- add-admin! [cmd-val from]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
