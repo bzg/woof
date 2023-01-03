@@ -47,12 +47,15 @@
 
 ;; TODO: Use fulltext search for reports?
 (defn reports [{:keys [source-id report-type search closed? as-mail]}]
-  (let [report-type-cfg (-> db/config :watch report-type)
-        m-any           (fn [to-split cmp]
-                          (if to-split
-                            (when-let [f (string/split to-split #"[;,]")]
-                              (some (into #{} f) (list cmp)))
-                            true))
+  (let [report-type-cfg
+        (-> db/config :watch report-type)
+        m-any
+        (fn [to-split cmp]
+          (if to-split
+            (when-let [f (string/split to-split #"[;,]")]
+              (some (->> f (map string/lower-case) (into #{}))
+                    (list cmp)))
+            true))
         reports
         (->> (d/q
               (if source-id
@@ -61,7 +64,7 @@
               db/db)
              (map #(d/entity db/db (first %)))
              (remove (if-not (= closed? "on") :closed false?))
-             (filter #(re-find (re-pattern (or (:raw search) ""))
+             (filter #(re-find (re-pattern (str "(?i)" (:raw search)))
                                (:subject (report-type %))))
              (filter (if-let [[cp v] (:version search)]
                        #(version-search-true? cp v (:version %))
