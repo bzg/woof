@@ -242,55 +242,6 @@
          (into #{}))
     #{}))
 
-(defn- add-mail!
-  "Add a mail to the database."
-  [{:keys [id from subject source-id] :as msg}
-   & [with-body? config-mail? vote-mail? update-related?]]
-  (let [{:keys [References Archived-At X-Mailer]}
-        (walk/keywordize-keys (apply conj (:headers msg)))
-        id              (true-id id)
-        now             (java.util.Date.)
-        msg-infos       {:source-id   source-id
-                         :message-id  id
-                         :archived-at Archived-At}
-        references      (parse-refs References)
-        archived-at-url (archived-message msg-infos)
-        trimmed-subject (trim-subject-prefix subject)]
-    ;; Add the email
-    (d/transact! db/conn [{:message-id  id
-                           :source-id   source-id
-                           :subject     trimmed-subject
-                           :archived-at archived-at-url
-                           :references  references
-                           :config      (or config-mail? false)
-                           :vote        (or vote-mail? false)
-                           :from        (:address (first from))
-                           :username    (:name (first from))
-                           :date        now
-                           :refs-count  1}])
-    ;; Possibly add body
-    (when-let [body (and with-body? (get-mail-body msg))]
-      (d/transact! db/conn [{:message-id id :body body}]))
-    ;; Possibly add patch/patch-url
-    (let [patch (get-mail-patch msg)
-          patch-url
-          (cond (re-matches #"^git-send-email.*" (or X-Mailer ""))
-                (str archived-message-raw msg-infos)
-                patch (str (:baseurl db/config) "/patch/" id))]
-      (when patch-url
-        (d/transact! db/conn [{:message-id id
-                               :patch-body patch
-                               :patch-url  patch-url}])))
-    ;; Update related references for relevant emails
-    (when update-related? (update-related-refs id references))
-    ;; Return the added mail eid
-    (:db/id (get-msg-from-id id))))
-
-(defn- add-config-mail!
-  "Add a configuration mail to the database."
-  [msg]
-  (add-mail! msg nil (java.util.Date.)))
-
 (defn update-person! [{:keys [email username role]} & [action]]
   ;; An email is enough to update a person
   (let [existing-person    (get-user email)
@@ -334,6 +285,60 @@
                   (format "Added %s (%s) as a contributor"
                           username email))]
         (timbre/info msg)))))
+
+(defn- add-mail!
+  "Add a mail to the database."
+  [{:keys [id from subject source-id] :as msg}
+   & [with-body? config-mail? vote-mail? update-related?]]
+  (let [{:keys [References Archived-At X-Mailer]}
+        (walk/keywordize-keys (apply conj (:headers msg)))
+        id              (true-id id)
+        now             (java.util.Date.)
+        msg-infos       {:source-id   source-id
+                         :message-id  id
+                         :archived-at Archived-At}
+        references      (parse-refs References)
+        archived-at-url (archived-message msg-infos)
+        trimmed-subject (trim-subject-prefix subject)
+        true-from       (first from)
+        email           (:address true-from)
+        username        (or (:name true-from) "")]
+    ;; Possibly add a new person
+    (update-person! {:email email :username username})
+    ;; Add the email
+    (d/transact! db/conn [{:message-id  id
+                           :source-id   source-id
+                           :subject     trimmed-subject
+                           :archived-at archived-at-url
+                           :references  references
+                           :config      (or config-mail? false)
+                           :vote        (or vote-mail? false)
+                           :from        email
+                           :username    username
+                           :date        now
+                           :refs-count  1}])
+    ;; Possibly add body
+    (when-let [body (and with-body? (get-mail-body msg))]
+      (d/transact! db/conn [{:message-id id :body body}]))
+    ;; Possibly add patch/patch-url
+    (let [patch (get-mail-patch msg)
+          patch-url
+          (cond (re-matches #"^git-send-email.*" (or X-Mailer ""))
+                (str archived-message-raw msg-infos)
+                patch (str (:baseurl db/config) "/patch/" id))]
+      (when patch-url
+        (d/transact! db/conn [{:message-id id
+                               :patch-body patch
+                               :patch-url  patch-url}])))
+    ;; Update related references for relevant emails
+    (when update-related? (update-related-refs id references))
+    ;; Return the added mail eid
+    (:db/id (get-msg-from-id id))))
+
+(defn- add-config-mail!
+  "Add a configuration mail to the database."
+  [msg]
+  (add-mail! msg nil (java.util.Date.)))
 
 (def config-strings-re
   (let [{:keys [admin maintainer contributor]} (:permissions db/config)]
@@ -653,8 +658,10 @@
       (some user allowed-roles-for-action))))
 
 (defn- config! [{:keys [commands msg]}]
-  (let [from (:address (first (:from msg)))
-        user (get-user from)]
+  (let [true-from (first (:from msg))
+        from      (:address true-from)
+        username  (:name true-from)
+        user      (get-user from)]
     (doseq [[cmd cmd-val] commands]
       (when (user-allowed?
              user (->> (:admin-report-triggers db/config)
@@ -674,9 +681,12 @@
           "Delete"               (delete! cmd-val)
           "Ignore"               (ignore! cmd-val)
           ;; Global commands also for contributors
-          "Home"                 (update-person! {:email from} [:home cmd-val])
-          "Support"              (update-person! {:email from} [:support cmd-val])
-          "Notifications"        (update-person! {:email from} [:notifications cmd-val]))))
+          "Home"                 (update-person! {:email from :username username}
+                                                 [:home cmd-val])
+          "Support"              (update-person! {:email from :username username}
+                                                 [:support cmd-val])
+          "Notifications"        (update-person! {:email from :username username}
+                                                 [:notifications cmd-val]))))
     (add-config-mail! msg)))
 
 ;; Main reports functions
@@ -692,8 +702,7 @@
         status-report-eid (and status (status report))
         from              (or (:from (d/entity db/db report-eid))
                               (:from (d/entity db/db status-report-eid)))
-        username          (or (:username (d/entity db/db report-eid))
-                              (:username (d/entity db/db status-report-eid)))
+        user              (get-user from)
         effective?        (let [closed-statuses
                                 ;; First closed status indicates an
                                 ;; "effective" report (e.g. Fixed,
@@ -702,33 +711,30 @@
                             (if (and status status-trigger (< 1 (count closed-statuses)))
                               (true? (= status-trigger (first closed-statuses)))
                               false))]
-    ;; Possibly add a new person
-    (update-person! {:email from :username username})
-    (let [user (get-user from)]
-      (if status-report-eid
-        ;; This is a status update about an existing report
-        (cond
-          ;; Status is about undoing, retract attribute
-          (re-matches #"^un(.+)" status-name)
-          (d/transact! db/conn [[:db/retract report-eid
-                                 (keyword (string/replace status-name #"^un" ""))]])
-          ;; Status is about voting, update :up or :down set with the email address
-          (= status-name "last-vote")
-          (d/transact! db/conn [(merge {:db/id report-eid status status-report-eid}
-                                       (let [eid (d/entity db/db report-eid)]
-                                         (if (re-matches #"^-1" status-trigger)
-                                           {:down (into #{} (conj (:down eid) from))}
-                                           {:up (into #{} (conj (:up eid) from))})))])
-          ;; Status is a positive statement, set it to the eid of the report
-          :else
-          (d/transact! db/conn [{:db/id     report-eid
-                                 status     status-report-eid
-                                 :effective effective?}]))
-        ;; This is a change or a or a release
-        (when (user-allowed? user report-type)
-          (if version
-            (d/transact! db/conn [{report-type report-eid :version version}])
-            (d/transact! db/conn [{report-type report-eid}])))))))
+    (if status-report-eid
+      ;; This is a status update about an existing report
+      (cond
+        ;; Status is about undoing, retract attribute
+        (re-matches #"^un(.+)" status-name)
+        (d/transact! db/conn [[:db/retract report-eid
+                               (keyword (string/replace status-name #"^un" ""))]])
+        ;; Status is about voting, update :up or :down set with the email address
+        (= status-name "last-vote")
+        (d/transact! db/conn [(merge {:db/id report-eid status status-report-eid}
+                                     (let [eid (d/entity db/db report-eid)]
+                                       (if (re-matches #"^-1" status-trigger)
+                                         {:down (into #{} (conj (:down eid) from))}
+                                         {:up (into #{} (conj (:up eid) from))})))])
+        ;; Status is a positive statement, set it to the eid of the report
+        :else
+        (d/transact! db/conn [{:db/id     report-eid
+                               status     status-report-eid
+                               :effective effective?}]))
+      ;; This is a change or a or a release
+      (when (user-allowed? user report-type)
+        (if version
+          (d/transact! db/conn [{report-type report-eid :version version}])
+          (d/transact! db/conn [{report-type report-eid}]))))))
 
 (defn- release-changes! [source-id version release-id]
   (let [changes-reports
