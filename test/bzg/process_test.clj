@@ -48,16 +48,16 @@
 (def release1 (read-mail "release1"))
 (def patch2-bug1 (read-mail "patch2-bug1"))
 
-(defn- count-bug1-related []
-  (count (map first (d/q '[:find ?r :where
-                           [?e :message-id "bug1@woof.io"]
+(defn- count-related [email]
+  (count (map first (d/q `[:find ?r :where
+                           [?e :message-id ~email]
                            [?e :related-refs ?r]] db/db))))
 
 ;; Run tests
 (deftest processes
   (testing "Adding bug1"
     (do (core/read-and-process-mail (list bug1))
-        (is (= 1 (count-bug1-related)))
+        (is (= 1 (count-related "bug1@woof.io")))
         (is (= 1 (count (fetch/unconfirmed-bugs "test@list.io"))))
         (is (= 1 (count (fetch/unclosed-bugs "test@list.io"))))))
   (testing "Adding bug2"
@@ -67,7 +67,7 @@
   (testing "Confirming bug1"
     (do (core/read-and-process-mail (list bug1-confirmed))
         ;; Confirming does not update related references
-        (is (= 1 (count-bug1-related)))
+        (is (= 1 (count-related "bug1@woof.io")))
         (is (= 1 (count (fetch/unconfirmed-bugs "test@list.io"))))
         (is (= 2 (count (fetch/unclosed-bugs "test@list.io"))))))
   (testing "Declaring bug1 as urgent"
@@ -85,7 +85,7 @@
   (testing "Adding a patch against bug1"
     (do (core/read-and-process-mail (list patch2-bug1))
         ;; Creating a patch while replying to a bug updates related refs
-        (is (= 2 (count-bug1-related)))
+        (is (= 2 (count-related "bug1@woof.io")))
         (is (= 1 (count (fetch/unapproved-patches "test@list.io"))))))
   (testing "Fixing bug1"
     (do (core/read-and-process-mail (list bug1-fixed))
