@@ -350,13 +350,16 @@
          re-pattern)))
 
 ;; Check whether a report is an action against a known entity
-(defn- is-in-a-known-thread?
-  "Given `refs` (a set), if one of them refers to an existing message id
-  in the database, increase refs count."
+(defn- inc-refs-from-known-reports!
+  "Given `refs` (a set), if they refer to an existing report in the
+  database, increase the refs count of the report's mail."
   [refs]
-  (doseq [id (mails-from-refs refs)]
-    (let [refs (:refs-count (get-msg-from-id id))]
-      (d/transact! db/conn [{:message-id id :refs-count (inc refs)}]))))
+  (when-let [mails (mails-from-refs refs)]
+    (doseq [id mails]
+      (let [refs (:refs-count (get-msg-from-id id))]
+        (d/transact! db/conn [{:message-id id :refs-count (inc refs)}])))
+    ;; Return the number of affected mails
+    (count mails)))
 
 (defn- get-report-from-msg-id
   "Given `id` (a string), return the report corresponding to this id."
@@ -778,7 +781,8 @@
            (or source-id to-woof-inbox?))
 
       ;; Possibly increment refs-count in known reports
-      (is-in-a-known-thread? references)
+      (when-not to-woof-inbox?
+        (inc-refs-from-known-reports! references))
 
       (or
        ;; Detect a new report
