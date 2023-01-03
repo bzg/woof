@@ -93,7 +93,7 @@ Adding a report to Woof! is done by using subject prefixes:
 -   `bug` : `[BUG]` or `[BUG x]` where x is a version number
 -   `release` : `[RELEASE x]` or `[REL x]` where x is a version number
 -   `change` : `[CHANGE x]` where x is a future (not released) version number
--   `patch` : `[PATCH]` or `[PATCH n/m]`
+-   `patch` : `[PATCH]` or `[PATCH n/m]` or an email with a diff or patch attachment
 -   `request` : `[FR]` or one of `[FP, RFC, RFE, TASK, POLL]`
 -   `blog` : `[BLOG]` or `[TIP]`
 -   `annoucement` : `[ANNOUCEMENT]` or `[ANN]`
