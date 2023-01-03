@@ -85,9 +85,14 @@
     (into #{} (un-ify original-report-triggers))))
 
 (defn- get-user
-  "Given `from`, an email address (a string), return the db user."
+  "Given `from`, an email address string, return the db user."
   [^String from]
   (d/entity db/db [:email from]))
+
+(defn- get-msg-from-id
+  "Given `id`, a Message-Id string, return the db message."
+  [^String id]
+  (d/entity db/db [:message-id id]))
 
 (defn make-to
   "Make a \"Name <email>\" string suitable for a To: header."
@@ -220,7 +225,7 @@
   (let [related-mails (mails-from-refs refs)
         updated-mails (atom #{message-id})]
     (doseq [m related-mails]
-      (let [e          (d/entity db/db [:message-id m])
+      (let [e          (get-msg-from-id m)
             e-msg-id   (:message-id e)
             e-rel-refs (:related-refs e)]
         (swap! updated-mails conj e-msg-id)
@@ -279,7 +284,7 @@
     ;; Update related references for relevant emails
     (when update-related? (update-related-refs id references))
     ;; Return the added mail eid
-    (:db/id (d/entity db/db [:message-id id]))))
+    (:db/id (get-msg-from-id id))))
 
 (defn- add-config-mail!
   "Add a configuration mail to the database."
@@ -288,7 +293,7 @@
 
 (defn update-person! [{:keys [email username role]} & [action]]
   ;; An email is enough to update a person
-  (let [existing-person    (d/entity db/db [:email email])
+  (let [existing-person    (get-user email)
         ts                 (java.util.Date.)
         contributor-since? (or (:contributor existing-person) ts)
         maintainer-since?  (or (:maintainer existing-person) ts)
@@ -344,9 +349,19 @@
   "Given `refs` (a set), if one of them refers to an existing message id
   in the database, increase refs count."
   [refs]
-  (doseq [i (mails-from-refs refs)]
-    (let [refs (:refs-count (d/entity db/db [:message-id i]))]
-      (d/transact! db/conn [{:message-id i :refs-count (inc refs)}]))))
+  (doseq [id (mails-from-refs refs)]
+    (let [refs (:refs-count (get-msg-from-id id))]
+      (d/transact! db/conn [{:message-id id :refs-count (inc refs)}]))))
+
+(defn- get-reports-from-msg-id
+  "Given `report-type` (a keyword) and `id` (a string), return the report
+  id corresponding to this message id."
+  [report-type ^String id]
+  (ffirst (d/q `[:find ?e
+                 :where
+                 [?e ~report-type ?ref]
+                 [?ref :message-id ~id]]
+               db/db)))
 
 (defn- is-report-update? [report-type body-report references]
   ;; Is there a known trigger (e.g. "Canceled") for this report type
@@ -359,15 +374,11 @@
               (some (report-triggers report-type) (list body-report)))
       ;; Does this email triggers an action against a known report,
       ;; and if so, which one?
-      (when-let [e (-> #(ffirst (d/q `[:find ?e
-                                       :where
-                                       [?e ~report-type ?ref]
-                                       [?ref :message-id ~%]]
-                                     db/db))
-                       (map references)
-                       ;; FIXME: Is this below really needed?
-                       (as-> refs (remove nil? refs))
-                       first)]
+      (when-let [e (->>
+                    (map #(get-reports-from-msg-id report-type %) references)
+                    ;; FIXME: Is this below really needed?
+                    (remove nil?)
+                    first)]
         (let [status ;; :important :urgent :acked, :owned or :closed ?
               (cond priority-word?
                     (if (re-find #"(?i)important" body-report) :important :urgent)
@@ -465,7 +476,7 @@
 (def mail-chan (async/chan))
 
 (defn- mail [msg body purpose & new-msg]
-  (if (:global-notifications (d/entity db/db [:defaults "init"]))
+  (if (:global-notifications (:defaults db/config))
     (async/put! mail-chan {:msg         msg
                            :body        body
                            :purpose     purpose
@@ -503,7 +514,7 @@
 (defn- add-admin! [cmd-val from]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
     (doseq [email emails]
-      (when-let [person (not-empty (into {} (d/entity db/db [:email email])))]
+      (when-let [person (not-empty (into {} (get-user email)))]
         (let [output (d/transact! db/conn [(conj person [:admin (java.util.Date.)])])]
           (mail nil (format "Hi %s,\n\n%s added you as an admin.
 \nSee this page on how to use Woof! as an admin:\n%s/howto\n\nThanks!"
@@ -520,19 +531,19 @@
 (defn- remove-admin! [cmd-val]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
     (doseq [email emails]
-      (let [admin-entity (d/entity db/db [:email email])]
+      (let [admin-entity (get-user email)]
         (if (true? (:root admin-entity))
           (timbre/error "Trying to remove the root admin: ignore")
           (when-let [output
                      (d/transact!
-                      db/conn [[:db/retract (d/entity db/db [:email email]) :admin]])]
+                      db/conn [[:db/retract (get-user email) :admin]])]
             (timbre/info (format "%s has been denied admin permissions" email))
             output))))))
 
 (defn- add-maintainer! [cmd-val from]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
     (doseq [email emails]
-      (when-let [person (not-empty (into {} (d/entity db/db [:email email])))]
+      (when-let [person (not-empty (into {} (get-user email)))]
         (let [output (d/transact! db/conn [(conj person [:maintainer (java.util.Date.)])])]
           (mail nil (format "Hi %s,\n\n%s added you as an maintainer.
 \nSee this page on how to use Woof! as an maintainer:\n%s/howto\n\nThanks!"
@@ -551,7 +562,7 @@
     (doseq [email emails]
       (when-let [output
                  (d/transact!
-                  db/conn [[:db/retract (d/entity db/db [:email email]) :maintainer]])]
+                  db/conn [[:db/retract (get-user email) :maintainer]])]
         (timbre/info (format "%s has been removed maintainer permissions" email))
         output))))
 
@@ -598,14 +609,14 @@
     (doseq [email emails]
       (when-let [output
                  (d/transact!
-                  db/conn [[:db/retract (d/entity db/db [:email email]) :ignored]])]
+                  db/conn [[:db/retract (get-user email) :ignored]])]
         (timbre/info (format "Mails from %s won't be ignored anymore" email))
         output))))
 
 (defn- ignore! [cmd-val]
   (let [emails (->> (string/split cmd-val #"\s") (remove empty?))]
     (doseq [email emails]
-      (let [person     (into {} (d/entity db/db [:email email]))
+      (let [person     (into {} (get-user email))
             as-ignored (conj person [:ignored (java.util.Date.)])]
         ;; Never ignore the root admin
         (when-not (true? (:root person))
