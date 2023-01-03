@@ -37,7 +37,7 @@ Adding a report to Woof! is done by using subject prefixes:
 - =release= : =[RELEASE x]= or =[REL x]= where x is a version number
 - =change= : =[CHANGE x]= where x is a future (not released) version number
 - =patch= : =[PATCH]= or =[PATCH n/m]=
-- =request= : =[FR]= or one of =[FP, RFC, RFE, TODO, POLL]=
+- =request= : =[FR]= or one of =[FP, RFC, RFE, TASK, POLL]=
 - =blog= : =[BLOG]= or =[TIP]=
 - =annoucement= : =[ANNOUCEMENT]= or =[ANN]=
 
