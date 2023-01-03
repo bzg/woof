@@ -760,25 +760,27 @@
 (defn process-mail [{:keys [from to] :as msg}]
   (let [{:keys [References List-Post X-BeenThere]}
         (walk/keywordize-keys (apply conj (:headers msg)))
-        references     (parse-refs References)
-        tos            (map :address to)
-        to-all         (->> (concat tos (list List-Post X-BeenThere))
-                            (map true-email-address)
-                            (remove nil?)
-                            (into #{}))
-        source-id      (some to-all (keys (:sources db/config)))
-        msg            (assoc msg :source-id source-id)
-        to-woof-inbox? (some (into #{} tos) (list (:inbox-user db/config)))
-        from           (:address (first from))
-        user           (get-user from)
-        maintenance?   (:maintenance (:defaults db/config))]
+        references       (parse-refs References)
+        tos              (map :address to)
+        to-all           (->> (concat tos (list List-Post X-BeenThere))
+                              (map true-email-address)
+                              (remove nil?)
+                              (into #{}))
+        source-id        (some to-all (keys (:sources db/config)))
+        msg              (assoc msg :source-id source-id)
+        to-woof-inbox?   (some (into #{} tos) (list (:inbox-user db/config)))
+        from             (:address (first from))
+        user             (get-user from)
+        from-maintainer? (:maintainer user)
+        maintenance?     (:maintenance (:defaults db/config))]
 
     (when (and
            ;; Don't process anything when under maintenance
            (not maintenance?)
            ;; Don't process emails from ignored users
            (not (:ignored user))
-           ;; Process mails sent to an identified source or to Woof inbox
+           ;; Process mails sent to an identified source Or to the
+           ;; Woof! inbox user
            (or source-id to-woof-inbox?))
 
       ;; Possibly increment refs-count in known reports
@@ -804,31 +806,31 @@
 
        ;; Or a command or new actions against known reports
        (let [body-seq (get-mail-body-as-seq msg)]
-         (if (empty? references)
-           ;; Maybe a configuration command sent to the Woof inbox
-           (when to-woof-inbox?
-             (when-let
-                 [cmds
-                  (->> body-seq
-                       (map #(when-let [m (re-matches config-strings-re %)] (rest m)))
-                       (remove nil?))]
-               (config! {:commands cmds :msg msg})))
+         (if ;; Maybe a configuration command sent directly to the Woof inbox
+             (and to-woof-inbox? (empty? references))
+           (when-let
+               [cmds
+                (->> body-seq
+                     (map #(when-let [m (re-matches config-strings-re %)] (rest m)))
+                     (remove nil?))]
+             (config! {:commands cmds :msg msg}))
            ;; Or a report against a known patch, bug, etc
-           (when-let [body-reports
-                      (->> body-seq
-                           (map #(re-find report-triggers-re %))
-                           (remove nil?))]
-             ;; New action against a known patch/bug/request
-             (doseq [body-report body-reports]
-               (when-let [{:keys [upstream-report-eid report-type status]}
-                          (is-report-update? body-report references)]
-                 (report! {:report-type    report-type
-                           :report-eid     upstream-report-eid
-                           :status-trigger body-report
-                           status          (add-mail!
-                                            msg nil nil
-                                            (some #{"-1" "+1"}
-                                                  (list body-report)))}))))))))))
+           (when (or (and to-woof-inbox? from-maintainer?) (not to-woof-inbox?))
+             (when-let [body-reports
+                        (->> body-seq
+                             (map #(re-find report-triggers-re %))
+                             (remove nil?))]
+               ;; Handle each new action against a known report
+               (doseq [trigger body-reports]
+                 (when-let [{:keys [upstream-report-eid report-type status]}
+                            (is-report-update? trigger references)]
+                   (report! {:report-type    report-type
+                             :report-eid     upstream-report-eid
+                             :status-trigger trigger
+                             status          (add-mail!
+                                              msg nil nil
+                                              (some #{"-1" "+1"}
+                                                    (list trigger)))})))))))))))
 
 ;;; Inbox monitoring
 (defn read-and-process-mail [mails]
