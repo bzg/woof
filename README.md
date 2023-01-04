@@ -1,13 +1,20 @@
 
 
-# Extract useful mailing lists interactions from your mailbox
+# Watch Over Our Folders!
 
-Woof! monitors a mailbox, capture useful email interactions and expose
-them on a web page.  Imagine, for example, that your email address is
-subscribed to numerous free software development lists and you want to
-catch bugs reports, patches, feature requests sent to all these lists:
-then you can plug Woof! and have your mailbox monitored, with the most
-important information exposed on a web page.
+When plugged to a mailbox subscribed to mailing lists, Woof! captures
+some of the emails sent to these lists (bug reports, patches, feature
+requests, etc.) and expose them on a webpage.
+
+If you love emails and mailing lists and use them for free software
+development, you may consider giving Woof! a try: it can serve both as
+a replacement for traditional issue trackers and as a kind of personal
+information manager, e.g. tracking patches you send to various mailing
+lists.
+
+Woof! has been developed based on years of relying on the Org mailing
+list for [Emacs Org-mode](https://orgmode.org/) development: I hope it can be useful to other
+projects too.
 
 ![img](woof.png)
 
@@ -28,23 +35,21 @@ patches by email works fine.
 
 At some point, you may need to track bug reports, patches, etc.
 
-If you are using [sourcehut.org](https://sourcehut.org/), perhaps you will set up a new tracker
-for your project.  If your software is part of the GNU project, then
-perhaps you'll set up debbugs for your package.  But these trackers
+If you are using , perhaps you will set up a new tracker
+for your project.  Or if your software is part of the GNU project,
+perhaps you will set up debbugs for your package.  But these trackers
 create *new communication channels*, new "databases" that you will have
 to *maintain*&#x2014;and they are probably overkill for your needs.
 
 **This is where Woof! comes in handy as a way to monitor mailing lists**.
+
 You plug Woof! into your mailbox, it monitors emails sent to mailing
 lists this mailbox is subscribed to and it extracts and exposes useful
 information: bug reports, patches, changes, announcements, etc.
 
-Woof! has been developed to help with [Emacs Org-mode](https://orgmode.org/) development where
-there is a mailing list with a lot of useful interactions and the need
-to promote upcoming changes, bug reports, patches to review, etc.
-
-**Woof! is not a full-fledged project management tool**: e.g. it does not
+Woof! is not a full-fledged project management tool: e.g. it does not
 allow someone to assign tasks to someone else, to close reports, etc.
+If you really need such tools, Woof! is not a good candidate.
 
 
 # Design rationale
