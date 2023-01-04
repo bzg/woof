@@ -796,7 +796,8 @@
              (timbre/error
               (format "%s tried to announce a change/release against an existing version %s"
                       from version))
-             (let [report-eid (add-mail! msg nil nil nil :update-related)]
+             (let [report-eid (add-mail! msg (some #{:blog :announcement} (list w))
+                                         nil nil :update-related)]
                (when (= w :release) (release-changes! source-id version report-eid))
                (report!
                 {:report-type w
