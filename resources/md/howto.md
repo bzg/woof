@@ -99,7 +99,7 @@ Adding a report to Woof! is done by using subject prefixes:
 -   `announcement` : `[ANNOUNCEMENT]` or `[ANN]`
 
 
-## The various report states
+## Report states
 
 All report types can be in a combination of these states: (un)acked,
 (un)owned and (un)closed.
