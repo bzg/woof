@@ -59,28 +59,28 @@ patches, proposing feature requests, sharing tips, etc.
 <tr>
 <td class="org-left"><code>blog</code></td>
 <td class="org-left">Anyone</td>
-<td class="org-left">the full body of the email is indexed/searched</td>
+<td class="org-left">The body of the email is exposed in the RSS feeds</td>
 </tr>
 
 
 <tr>
-<td class="org-left"><code>annoucement</code></td>
+<td class="org-left"><code>announcement</code></td>
 <td class="org-left">Maintainers</td>
-<td class="org-left">the full body of the email is indexed/searched</td>
+<td class="org-left">The body of the email is exposed in the RSS feeds</td>
 </tr>
 
 
 <tr>
 <td class="org-left"><code>release</code></td>
 <td class="org-left">Maintainers</td>
-<td class="org-left">a new release closes the related changes</td>
+<td class="org-left">Requires a version number for the released changes</td>
 </tr>
 
 
 <tr>
 <td class="org-left"><code>change</code></td>
 <td class="org-left">Maintainers</td>
-<td class="org-left">to announce upcoming changes only</td>
+<td class="org-left">Requires a version number for the upcoming change</td>
 </tr>
 </tbody>
 </table>
@@ -96,10 +96,10 @@ Adding a report to Woof! is done by using subject prefixes:
 -   `patch` : `[PATCH]` or `[PATCH n/m]` or an email with a diff or patch attachment
 -   `request` : `[FR]` or one of `[FP, RFC, RFE, TASK, POLL]`
 -   `blog` : `[BLOG]` or `[TIP]`
--   `annoucement` : `[ANNOUCEMENT]` or `[ANN]`
+-   `announcement` : `[ANNOUNCEMENT]` or `[ANN]`
 
 
-## Report states
+## The various report states
 
 All report types can be in a combination of these states: (un)acked,
 (un)owned and (un)closed.
@@ -112,13 +112,10 @@ All report types can be in a combination of these states: (un)acked,
     fixed (for a bug), canceled or done in any fashion.
 
 
-## STRT 
-
-
-## Triggering updates
+## Updating a report
 
 Some words at the beginning of a line in the body of a reply to a
-report will trigger updates of this report.
+report trigger an update of this report.
 
 E.g. if a line in your reply to a bug report starts with `Confirmed.`,
 the bug report will be updated as "Confirmed" in Woof!.
@@ -130,18 +127,20 @@ update:
 -   `blog` : `Canceled`
 -   `patch` : `Approved`, `Reviewed`, `Handled`, `Applied` or `Canceled`
 -   `request` : `Approved`, `Handled`, `Done, Closed` or `Canceled`
--   `annoucement` : `Canceled`
+-   `announcement` : `Canceled`
 -   `release` : `Canceled`
 -   `change` : `Canceled`
 
-**Note**: A punctuation mark among `;:,.` is *mandatory* for these reports and
-action words (`Confirmed`, `Approved`, etc.) are all case-sensitive.
+**Note**: These words (`Confirmed`, `Approved`, etc.) are case-sensitive and a
+punctuation mark among `;:,.` is *mandatory* after each of them.
 
 
-## Updating priority
+## Updating the priority
 
 You cannot set the priority of a report directly: it is computed based
 on whether the report is important and urgent.
+
+But you can update a report as (un)important and/or (not-)urgent.
 
 -   To set a report as important, use "Important" in a reply.
 -   To set a report as unimportant, use "Unimportant" in a reply.
@@ -160,6 +159,21 @@ against a bug report:
 
 will mark the bug report as confirmed, and set it as important and
 urgent, giving it the highest priority.
+
+
+## Updating a report without replying to the mailing list
+
+Sometimes it can be useful to create or update a report without
+notifying all the subscribers of the mailing list: maintainers can do
+this by writing *directly* to the Woof! inbox (i.e. :inbox-user in the
+config\_example.edn file.)
+
+Say for example that someone sends a feature request; after two years,
+you decide to cancel this feature request but don't want to notify the
+list.  In this case, and provided you are a maintainer of this Woof!
+instance, you simply hit "reply" from your email client and add the
+Woof! monitored email in the `To:` field: the report will be unlisted
+from feature requests.
 
 
 # Search

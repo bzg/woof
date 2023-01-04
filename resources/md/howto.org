@@ -19,15 +19,15 @@ patches, proposing feature requests, sharing tips, etc.
 
 ** Report types
 
-| Report      | Permission  | Specificity                                             |
-|-------------+-------------+---------------------------------------------------------|
-| =bug=         | Anyone      | Bug can have a version number as [BUG version]          |
-| =patch=       | Anyone      | Woof! stores and exposes the patch itself when possible |
-| =request=     | Anyone      | Any request can be voted upon with +1 and -1            |
-| =blog=        | Anyone      | the full body of the email is indexed/searched          |
-| =annoucement= | Maintainers | the full body of the email is indexed/searched          |
-| =release=     | Maintainers | a new release closes the related changes                |
-| =change=      | Maintainers | to announce upcoming changes only                       |
+| Report       | Permission  | Specificity                                             |
+|--------------+-------------+---------------------------------------------------------|
+| =bug=          | Anyone      | Bug can have a version number as [BUG version]          |
+| =patch=        | Anyone      | Woof! stores and exposes the patch itself when possible |
+| =request=      | Anyone      | Any request can be voted upon with +1 and -1            |
+| =blog=         | Anyone      | The body of the email is exposed in the RSS feeds       |
+| =announcement= | Maintainers | The body of the email is exposed in the RSS feeds       |
+| =release=      | Maintainers | Requires a version number for the released changes      |
+| =change=       | Maintainers | Requires a version number for the upcoming change       |
 
 ** Adding a report
 
@@ -39,9 +39,9 @@ Adding a report to Woof! is done by using subject prefixes:
 - =patch= : =[PATCH]= or =[PATCH n/m]= or an email with a diff or patch attachment
 - =request= : =[FR]= or one of =[FP, RFC, RFE, TASK, POLL]=
 - =blog= : =[BLOG]= or =[TIP]=
-- =annoucement= : =[ANNOUCEMENT]= or =[ANN]=
+- =announcement= : =[ANNOUNCEMENT]= or =[ANN]=
 
-** Report states
+** The various report states
 
 All report types can be in a combination of these states: (un)acked,
 (un)owned and (un)closed.
@@ -53,12 +53,10 @@ All report types can be in a combination of these states: (un)acked,
 - =Closed= means the report has been closed, either because it has been
   fixed (for a bug), canceled or done in any fashion.
 
-** STRT 
-
-** Triggering updates
+** Updating a report
 
 Some words at the beginning of a line in the body of a reply to a
-report will trigger updates of this report.
+report trigger an update of this report.
 
 E.g. if a line in your reply to a bug report starts with =Confirmed.=,
 the bug report will be updated as "Confirmed" in Woof!.
@@ -70,17 +68,19 @@ update:
 - =blog= : =Canceled=
 - =patch= : =Approved=, =Reviewed=, =Handled=, =Applied= or =Canceled=
 - =request= : =Approved=, =Handled=, =Done, Closed= or =Canceled=
-- =annoucement= : =Canceled=
+- =announcement= : =Canceled=
 - =release= : =Canceled=
 - =change= : =Canceled=
 
-*Note*: A punctuation mark among =;:,.= is /mandatory/ for these reports and
-action words (=Confirmed=, =Approved=, etc.) are all case-sensitive.
+*Note*: These words (=Confirmed=, =Approved=, etc.) are case-sensitive and a
+punctuation mark among =;:,.= is /mandatory/ after each of them.
 
-** Updating priority
+** Updating the priority
 
 You cannot set the priority of a report directly: it is computed based
 on whether the report is important and urgent.
+
+But you can update a report as (un)important and/or (not-)urgent.
 
 - To set a report as important, use "Important" in a reply.
 - To set a report as unimportant, use "Unimportant" in a reply.
@@ -98,6 +98,20 @@ against a bug report:
 
 will mark the bug report as confirmed, and set it as important and
 urgent, giving it the highest priority.
+
+** Updating a report without replying to the mailing list
+
+Sometimes it can be useful to create or update a report without
+notifying all the subscribers of the mailing list: maintainers can do
+this by writing /directly/ to the Woof! inbox (i.e. :inbox-user in the
+config_example.edn file.)
+
+Say for example that someone sends a feature request; after two years,
+you decide to cancel this feature request but don't want to notify the
+list.  In this case, and provided you are a maintainer of this Woof!
+instance, you simply hit "reply" from your email client and add the
+Woof! monitored email in the =To:= field: the report will be unlisted
+from feature requests.
 
 * Search
 
