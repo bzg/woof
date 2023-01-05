@@ -175,6 +175,11 @@ instance, you simply hit "reply" from your email client and add the
 Woof! monitored email in the `To:` field: the report will be unlisted
 from feature requests.
 
+This also goes for updating reports: say someone forgot to add the
+"[BUG]" prefix for reporting a bug.  As a maintainer, you can edit the
+subject of the email you received and resend it to the Woof! inbox, it
+will be store as a bug report.
+
 
 # Search
 
