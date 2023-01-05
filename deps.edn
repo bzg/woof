@@ -25,7 +25,7 @@
                com.draines/postal                  {:mvn/version "2.0.5"}
                com.taoensso/timbre                 {:mvn/version "6.0.4"}
                selmer/selmer                       {:mvn/version "1.12.55"}
-               datalevin/datalevin                 {:mvn/version "0.7.7"}
+               datalevin/datalevin                 {:mvn/version "0.7.8"}
                com.cognitect/transit-clj           {:mvn/version "1.0.329"}
                medley/medley                       {:mvn/version "1.4.0"}
                aero/aero                           {:mvn/version "1.1.6"}
