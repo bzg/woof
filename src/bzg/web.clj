@@ -48,8 +48,8 @@
      (map linkify-maybe))))
 
 (defn- html-defaults [& [source-id]]
-  (let [sources    (:sources db/config)
-        source-cfg (or (get (:sources db/config) source-id)
+  (let [sources    (filter #(not (:hidden (val %))) (:sources db/config))
+        source-cfg (or (get sources source-id source-id)
                        (and (= 1 (count sources))
                             (val (first sources))))]
     (-> (merge (:ui db/config)
