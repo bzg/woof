@@ -5,10 +5,14 @@
 (ns bzg.config-test
   (:require [aero.core :refer (read-config)]
             [bzg.config :as config]
+            [bzg.core :as core]
             [clojure.spec.alpha :as spec]
             [clojure.test :refer [deftest is testing]]))
 
 (def config (merge config/defaults (read-config "config.edn")))
+
+(defn- email? [^String s]
+  (boolean (re-matches core/email-re s)))
 
 (spec/def ::smtp-host (spec/nilable string?))
 (spec/def ::smtp-port integer?)
@@ -16,7 +20,7 @@
 (spec/def ::smtp-login (spec/nilable string?))
 (spec/def ::smtp-password (spec/nilable string?))
 
-(spec/def ::inbox-user string?)
+(spec/def ::inbox-user email?)
 (spec/def ::inbox-server string?)
 (spec/def ::inbox-password string?)
 (spec/def ::inbox-folder string?)
@@ -29,7 +33,7 @@
 
 (spec/def ::log vector?)
 
-(spec/def ::admin-address string?)
+(spec/def ::admin-address email?)
 (spec/def ::admin-username string?)
 (spec/def ::admin-report-triggers string?)
 
@@ -93,7 +97,7 @@
 (spec/def ::address string?)
 (spec/def ::slug string?)
 
-(spec/def ::source-id string?)
+(spec/def ::source-id email?)
 (spec/def ::list-config
   (spec/keys
    :req-un [::slug]
@@ -152,8 +156,7 @@
             ::data-formats]))
 
 (deftest configuration
-  (testing "Testing configuration"
-    (is (spec/valid? ::admin-address (:admin-address config)))
+  (testing "Testing core inbox and mail server variables"
     (is (spec/valid? ::inbox-user (:inbox-user config)))
     (is (spec/valid? ::inbox-server (:inbox-server config)))
     (is (spec/valid? ::inbox-user (:inbox-user config)))
@@ -163,11 +166,18 @@
     (is (spec/valid? ::smtp-login (:smtp-login config)))
     (is (spec/valid? ::smtp-port (:smtp-port config)))
     (is (spec/valid? ::smtp-use-tls (:smtp-use-tls config)))
-    (is (spec/valid? ::smtp-password (:smtp-password config)))
+    (is (spec/valid? ::smtp-password (:smtp-password config))))
+  (testing "Testing other configuration"
+    (is (spec/valid? ::admin-address (:admin-address config)))
+    (is (spec/valid? ::admin-username (:admin-username config)))
     (is (spec/valid? ::title (:ui (:title config))))
     (is (spec/valid? ::project-name (:ui (:project-name config))))
-    (is (spec/valid? ::project-url (:ui (:project-url config))))
+    (is (spec/valid? ::project-url (:ui (:project-url config)))))
+  (testing "Testing sources, watch, pages and core config"
     (is (spec/valid? ::sources (:sources config)))
     (is (spec/valid? ::watch (:watch config)))
     (is (spec/valid? ::pages (:pages (:ui config))))
-    (is (spec/valid? ::config config))))
+    (is (spec/valid? ::config config)))
+  (testing "Testing distinct slug strings in sources"
+    (let [slugs (map #(:slug (val %)) (:sources config))]
+      (is (= (count slugs) (count (distinct slugs)))))))
