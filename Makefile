@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Bastien Guerry <bzg@gnu.org>
+# Copyright (c) 2022-2023 Bastien Guerry <bzg@gnu.org>
 # SPDX-License-Identifier: EPL-2.0
 # License-Filename: LICENSES/EPL-2.0.txt
 
