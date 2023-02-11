@@ -31,7 +31,7 @@
                aero/aero                           {:mvn/version "1.1.6"}
                clojure.java-time/clojure.java-time {:mvn/version "1.2.0"}
                version-clj/version-clj             {:mvn/version "2.0.2"}
-               lambdaisland/kaocha                 {:mvn/version "1.76.1230"}}
+               lambdaisland/kaocha                 {:mvn/version "1.77.1236"}}
  :aliases
  {:run {:main-opts ["-m" "bzg.init"]
         :jvm-opts  ["--add-opens=java.base/java.nio=ALL-UNNAMED"
