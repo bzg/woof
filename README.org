@@ -58,7 +58,7 @@ If you really need such tools, Woof! is not a good candidate.
   is no login, no way to update stuff from the website.
 
 - *Decentralized*: Since Woof! is based on mailboxes and only reflects
-  upstream intereactions, you can have several Woof! instances for the
+  upstream interactions, you can have several Woof! instances for the
   same mailing lists: each instance will reflect what is of interest
   for the person who deployed it.
 
