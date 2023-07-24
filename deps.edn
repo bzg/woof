@@ -12,26 +12,26 @@
                org.clojure/core.async              {:mvn/version "1.6.673"}
                org.clojure/data.json               {:mvn/version "2.4.0"}
                io.forward/clojure-mail             {:mvn/version "1.0.8"}
-               http-kit/http-kit                   {:mvn/version "2.6.0"}
+               http-kit/http-kit                   {:mvn/version "2.7.0"}
                clj-rss/clj-rss                     {:mvn/version "0.4.0"}
                markdown-clj/markdown-clj           {:mvn/version "1.11.4"}
-               metosin/reitit                      {:mvn/version "0.5.18"}
-               metosin/reitit-ring                 {:mvn/version "0.5.18"}
-               metosin/reitit-middleware           {:mvn/version "0.5.18"}
-               ring/ring-devel                     {:mvn/version "1.9.6"}
+               metosin/reitit                      {:mvn/version "0.6.0"}
+               metosin/reitit-ring                 {:mvn/version "0.6.0"}
+               metosin/reitit-middleware           {:mvn/version "0.6.0"}
+               ring/ring-devel                     {:mvn/version "1.10.0"}
                ring-cors/ring-cors                 {:mvn/version "0.1.13"}
-               integrant/integrant                 {:mvn/version "0.8.0"}
+               integrant/integrant                 {:mvn/version "0.8.1"}
                tea-time/tea-time                   {:mvn/version "1.0.1"}
                com.draines/postal                  {:mvn/version "2.0.5"}
-               com.taoensso/timbre                 {:mvn/version "6.0.4"}
-               selmer/selmer                       {:mvn/version "1.12.55"}
-               datalevin/datalevin                 {:mvn/version "0.8.4"}
-               com.cognitect/transit-clj           {:mvn/version "1.0.329"}
+               com.taoensso/timbre                 {:mvn/version "6.2.2"}
+               selmer/selmer                       {:mvn/version "1.12.59"}
+               datalevin/datalevin                 {:mvn/version "0.8.18"}
+               com.cognitect/transit-clj           {:mvn/version "1.0.333"}
                medley/medley                       {:mvn/version "1.4.0"}
                aero/aero                           {:mvn/version "1.1.6"}
                clojure.java-time/clojure.java-time {:mvn/version "1.2.0"}
                version-clj/version-clj             {:mvn/version "2.0.2"}
-               lambdaisland/kaocha                 {:mvn/version "1.77.1236"}}
+               lambdaisland/kaocha                 {:mvn/version "1.85.1342"}}
  :aliases
  {:run {:main-opts ["-m" "bzg.init"]
         :jvm-opts  ["--add-opens=java.base/java.nio=ALL-UNNAMED"
