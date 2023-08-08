@@ -37,11 +37,11 @@
         :jvm-opts  ["--add-opens=java.base/java.nio=ALL-UNNAMED"
                     "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]}
 
-  :uberdeps {:extra-deps {uberdeps/uberdeps {:mvn/version "1.2.0"}}
+  :uberdeps {:extra-deps {uberdeps/uberdeps {:mvn/version "1.3.0"}}
              :main-opts  ["-m" "uberdeps.uberjar"]}
 
   :test {:extra-paths ["test"]
-         :extra-deps  {lambdaisland/kaocha {:mvn/version "1.71.1119"}}
+         :extra-deps  {lambdaisland/kaocha {:mvn/version "1.85.1342"}}
          :main-opts   ["-m" "kaocha.runner"]
          :jvm-opts    ["--add-opens=java.base/java.nio=ALL-UNNAMED"
                        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]}
