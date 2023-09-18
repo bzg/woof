@@ -9,7 +9,7 @@
             :url  "http://www.eclipse.org/legal/epl-v20.html"}
 
   :dependencies [[org.clojure/clojure       "1.11.1"]
-                 [org.clojure/core.async    "1.6.673"]
+                 [org.clojure/core.async    "1.6.681"]
                  [org.clojure/data.json     "2.4.0"]
                  [io.forward/clojure-mail   "1.0.8"]
                  [http-kit/http-kit         "2.7.0"]
@@ -25,13 +25,13 @@
                  [com.draines/postal        "2.0.5"]
                  [com.taoensso/timbre       "6.2.2"]
                  [selmer/selmer             "1.12.59"]
-                 [datalevin/datalevin       "0.8.18"]
+                 [datalevin/datalevin       "0.8.19"]
                  [com.cognitect/transit-clj "1.0.333"]
                  [medley/medley             "1.4.0"]
                  [aero/aero                 "1.1.6"]
-                 [clojure.java-time/clojure.java-time "1.2.0"]
+                 [clojure.java-time/clojure.java-time "1.3.0"]
                  [version-clj/version-clj "2.0.2"]
-                 [lambdaisland/kaocha "1.85.1342"]]
+                 [lambdaisland/kaocha "1.86.1355"]]
 
   :jvm-opts  ["--add-opens=java.base/java.nio=ALL-UNNAMED"
               "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]
