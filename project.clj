@@ -14,7 +14,7 @@
                  [io.forward/clojure-mail   "1.0.8"]
                  [http-kit/http-kit         "2.7.0"]
                  [clj-rss/clj-rss           "0.4.0"]
-                 [markdown-clj/markdown-clj "1.11.4"]
+                 [markdown-clj/markdown-clj "1.11.6"]
                  [metosin/reitit            "0.6.0"]
                  [metosin/reitit-ring       "0.6.0"]
                  [metosin/reitit-middleware "0.6.0"]

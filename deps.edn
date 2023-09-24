@@ -14,7 +14,7 @@
                io.forward/clojure-mail             {:mvn/version "1.0.8"}
                http-kit/http-kit                   {:mvn/version "2.7.0"}
                clj-rss/clj-rss                     {:mvn/version "0.4.0"}
-               markdown-clj/markdown-clj           {:mvn/version "1.11.4"}
+               markdown-clj/markdown-clj           {:mvn/version "1.11.6"}
                metosin/reitit                      {:mvn/version "0.6.0"}
                metosin/reitit-ring                 {:mvn/version "0.6.0"}
                metosin/reitit-middleware           {:mvn/version "0.6.0"}
