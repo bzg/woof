@@ -10,7 +10,7 @@
 
   :dependencies [[org.clojure/clojure       "1.11.1"]
                  [org.clojure/core.async    "1.6.681"]
-                 [org.clojure/data.json     "2.4.0"]
+                 [org.clojure/data.json     "2.5.0"]
                  [io.forward/clojure-mail   "1.0.8"]
                  [http-kit/http-kit         "2.7.0"]
                  [clj-rss/clj-rss           "0.4.0"]
@@ -25,11 +25,11 @@
                  [com.draines/postal        "2.0.5"]
                  [com.taoensso/timbre       "6.3.1"]
                  [selmer/selmer             "1.12.59"]
-                 [datalevin/datalevin       "0.8.20"]
+                 [datalevin/datalevin       "0.8.25"]
                  [com.cognitect/transit-clj "1.0.333"]
                  [medley/medley             "1.4.0"]
                  [aero/aero                 "1.1.6"]
-                 [clojure.java-time/clojure.java-time "1.3.0"]
+                 [clojure.java-time/clojure.java-time "1.4.2"]
                  [version-clj/version-clj "2.0.2"]
                  [lambdaisland/kaocha "1.87.1366"]]
 
