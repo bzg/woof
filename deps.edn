@@ -18,7 +18,7 @@
                metosin/reitit                      {:mvn/version "0.6.0"}
                metosin/reitit-ring                 {:mvn/version "0.6.0"}
                metosin/reitit-middleware           {:mvn/version "0.6.0"}
-               ring/ring-devel                     {:mvn/version "1.10.0"}
+               ring/ring-devel                     {:mvn/version "1.11.0"}
                ring-cors/ring-cors                 {:mvn/version "0.1.13"}
                integrant/integrant                 {:mvn/version "0.8.1"}
                tea-time/tea-time                   {:mvn/version "1.0.1"}

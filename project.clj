@@ -18,7 +18,7 @@
                  [metosin/reitit            "0.6.0"]
                  [metosin/reitit-ring       "0.6.0"]
                  [metosin/reitit-middleware "0.6.0"]
-                 [ring/ring-devel           "1.10.0"]
+                 [ring/ring-devel           "1.11.0"]
                  [ring-cors/ring-cors       "0.1.13"]
                  [integrant/integrant       "0.8.1"]
                  [tea-time/tea-time         "1.0.1"]
