@@ -18,3 +18,4 @@ log.txt
 .db/
 .dir-locals.el
 test-log.txt
+config.edn
