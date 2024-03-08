@@ -74,6 +74,8 @@
                     :requests (fetch/requests source-id search)
                     :patches  (fetch/patches source-id search)
                     :news     (fetch/news source-id search))
+        ;; Display the latest first.
+        resources (reverse (sort-by :date resources))
         headers   (condp = format
                     "rss"  {"Content-Type" "application/xml"}
                     "md"   {"Content-Type" "text/plain; charset=utf-8"}
