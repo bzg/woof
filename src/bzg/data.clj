@@ -75,20 +75,24 @@
                     :patches  (fetch/patches source-id search)
                     :news     (fetch/news source-id search))
         ;; Display the latest first.
-        resources (reverse (sort-by :date resources))
-        headers   (condp = format
-                    "rss"  {"Content-Type" "application/xml"}
-                    "md"   {"Content-Type" "text/plain; charset=utf-8"}
-                    "org"  {"Content-Type" "text/plain; charset=utf-8"}
-                    "json" {"Content-Type" "application/json; charset=utf-8"})]
-    {:status  200
-     :headers headers
-     :body
-     (condp = format
-       "rss"  (format-rss resources source-id)
-       "json" (json/write-str (map #(into {} %) resources))
-       "md"   (format-md resources source-id)
-       "org"  (format-org resources source-id))}))
+        resources (reverse (sort-by :date resources))]
+    (if-not (some #{"rss" "md" "org" "json"} (list format))
+      {:status  200
+       :headers {"Content-Type" "text/plain"}
+       :body    "Resource not found"}
+      (let [headers-and-body
+            (condp = format
+              "rss"  [{"Content-Type" "application/xml"}
+                      (format-rss resources source-id)]
+              "md"   [{"Content-Type" "text/plain; charset=utf-8"}
+                      (format-md resources source-id)]
+              "org"  [{"Content-Type" "text/plain; charset=utf-8"}
+                      (format-org resources source-id)]
+              "json" [{"Content-Type" "application/json; charset=utf-8"}
+                      (json/write-str (map #(into {} %) resources))])]
+        {:status  200
+         :headers (first headers-and-body)
+         :body    (last headers-and-body)}))))
 
 (defn get-all-data [params] (get-data :index params))
 (defn get-bugs-data [params] (get-data :bugs params))

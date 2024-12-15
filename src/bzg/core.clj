@@ -477,15 +477,15 @@
                  (when id {:in-reply-to id})))]
         (when (= (:error res) :SUCCESS)
           (timbre/info
-           (format
-            (condp = purpose
-              ;; TODO: really test
-              :ack-reporter    "Sent mail to %s to ack report against known report"
-              :ack-op-reporter "Sent mail to %s to ack report against initial report"
-              :ack-op          "Sent mail to %s to ack initial report"
-              :add-admin       "Sent mail to %s to ack as admin"
-              :add-maintainer  "Sent mail to %s to ack as maintainer")
-            to))))
+            (format
+             (condp = purpose
+               ;; TODO: really test
+               :ack-reporter    "Sent mail to %s to ack report against known report"
+               :ack-op-reporter "Sent mail to %s to ack report against initial report"
+               :ack-op          "Sent mail to %s to ack initial report"
+               :add-admin       "Sent mail to %s to ack as admin"
+               :add-maintainer  "Sent mail to %s to ack as maintainer")
+             to))))
       (catch Exception e
         (timbre/error (str "Cannot send email to %s: " to
                            (:cause (Throwable->map e) "\n")))))))
@@ -794,8 +794,8 @@
            (if (and (some (into #{w}) [:change :release])
                     (some (fetch/released-versions source-id) (list version)))
              (timbre/error
-              (format "%s tried to announce a change/release against an existing version %s"
-                      from version))
+               (format "%s tried to announce a change/release against an existing version %s"
+                       from version))
              (let [report-eid (add-mail! msg (some #{:blog :announcement} (list w))
                                          nil nil :update-related)]
                (when (= w :release) (release-changes! source-id version report-eid))
@@ -807,8 +807,7 @@
 
        ;; Or a command or new actions against known reports
        (let [body-seq (get-mail-body-as-seq msg)]
-         (if ;; Maybe a configuration command sent directly to the Woof inbox
-             (and to-woof-inbox? (empty? references))
+         (if to-woof-inbox? ;; A configuration command sent directly to the Woof inbox
            (when-let
                [cmds
                 (->> body-seq

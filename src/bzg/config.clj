@@ -60,21 +60,21 @@
            :bug          {:subject-prefix ["BUG"]
                           :subject-match  []
                           :doc            ""
-                          :triggers       {:acked  ["Confirmed"]
+                          :triggers       {:acked  ["Approved" "Confirmed"]
                                            :owned  ["Handled"]
-                                           :closed ["Fixed" "Canceled"]}}
+                                           :closed ["Canceled" "Fixed"]}}
            :patch        {:subject-prefix ["PATCH"]
                           :subject-match  []
                           :doc            ""
                           :triggers       {:acked  ["Approved" "Reviewed"]
                                            :owned  ["Handled"]
-                                           :closed ["Applied" "Canceled"]}}
+                                           :closed ["Canceled" "Applied"]}}
            :request      {:subject-prefix ["FP" "FR" "RFC" "RFE" "TASK" "POLL"]
                           :subject-match  []
                           :doc            ""
                           :triggers       {:acked  ["Approved"]
                                            :owned  ["Handled"]
-                                           :closed ["Done" "Closed" "Canceled"]}}}
+                                           :closed ["Canceled" "Done" "Closed"]}}}
 
    ;; A set of priority words that trigger a report update
    ;;

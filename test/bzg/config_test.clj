@@ -16,7 +16,7 @@
 
 (spec/def ::smtp-host (spec/nilable string?))
 (spec/def ::smtp-port integer?)
-(spec/def ::smtp-use-tls string?)
+(spec/def ::smtp-use-tls boolean?)
 (spec/def ::smtp-login (spec/nilable string?))
 (spec/def ::smtp-password (spec/nilable string?))
 
