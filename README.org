@@ -1,5 +1,23 @@
 #+title: 🐕 Woof!
 
+* Planning a rewrite
+
+In 2025, I want to make Woof more stable. I need to rethink the
+architecture to better articulate some processes.
+
+- Decouple the storage of emails from the storage of information derived from them.
+- Decouple the responsibility for storing emails from the responsibility for processing the information derived from them.
+- Decouple the process of storing data from the process of exposing it to a separate frontend.
+
+The idea is to have a separate process for storing emails, then a job
+for processing either all of them at once (when initializing Woof!) or
+the only those who have not yet been processed (when running as a cron
+job, for example), then a classical backend/frontend to expose data
+and display them.
+
+We will stick to the idea that all commands should happen by email: no
+interaction will be enabled via the frontend.
+
 * Watch Over Our Folders!
 
 When plugged to a mailbox subscribed to mailing lists, Woof! captures
