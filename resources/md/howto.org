@@ -8,7 +8,7 @@
 
 * About Woof!
 
-This website is an instance of [[https://sr.ht/~bzg/woof/][Woof!]], an application that tracks and
+This website is an instance of [[https://github.com/bzg/woof/][Woof!]], an application that tracks and
 exposes useful interactions on mailing lists.
 
 Woof! can typically be used for software development mailing lists
