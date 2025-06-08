@@ -1,5 +1,8 @@
 #+title: 🐕 Woof!
 
+⚠️ The project is active on [[https://codeberg.org/bzg/woof][Codeberg]] (for issues and patches) and
+mirrored on [[https://github.com/bzg/woof/][GitHub]].
+
 * Planning a rewrite
 
 In 2025, I want to make Woof more stable. I need to rethink the
