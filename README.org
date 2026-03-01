@@ -1,5 +1,7 @@
 #+title: 🐕 Woof!
 
+⚠️ Woof is not maintained, its successor is [[https://codeberg.org/bzg/bark][Bark]].
+
 ⚠️ The project is active on [[https://codeberg.org/bzg/woof][Codeberg]] (for issues and patches) and
 mirrored on [[https://github.com/bzg/woof/][GitHub]].
 
