@@ -779,6 +779,8 @@
            (not maintenance?)
            ;; Don't process emails from ignored users
            (not (:ignored user))
+           ;; Don't process emails with "barktest" in the subject
+           (not (re-find #"(?i)barktest" (or (:subject msg) "")))
            ;; Process mails sent to an identified source Or to the
            ;; Woof! inbox user
            (or source-id to-woof-inbox?))
